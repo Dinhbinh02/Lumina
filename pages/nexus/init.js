@@ -3,7 +3,6 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const isSidePanel = urlParams.get('sidepanel') === '1';
-    const viewParam = urlParams.get('view');
 
     function injectStyle(id, cssRules) {
         const style = document.createElement('style');
@@ -65,31 +64,45 @@
         }
     } catch (e) {}
 
-    if (viewParam === 'notes' || viewParam === 'sparks' || viewParam === 'tts') {
-        document.addEventListener('DOMContentLoaded', () => {
-            const mainContent = document.querySelector('.nexus-main-content');
-            if (mainContent) {
-                mainContent.setAttribute('data-active-view', viewParam);
-            }
-        });
-        if (viewParam === 'notes') {
-            document.title = 'Notes';
-            injectStyle('view-init-style', `
-                .nexus-page-view { display: none !important; }
-                #notes-page { display: flex !important; }
-            `);
-        } else if (viewParam === 'sparks') {
-            document.title = 'Sparks';
-            injectStyle('view-init-style', `
-                .nexus-page-view { display: none !important; }
-                #sparks-page { display: flex !important; }
-            `);
-        } else if (viewParam === 'tts') {
-            document.title = 'TTS Studio';
-            injectStyle('view-init-style', `
-                .nexus-page-view { display: none !important; }
-                #tts-page { display: flex !important; }
-            `);
+    const viewParam = urlParams.get('view') || 'chat';
+    const appId = urlParams.get('app');
+    const noteId = urlParams.get('noteId');
+
+    const pageIdMap = {
+        apps: 'apps-page',
+        notes: 'notes-page',
+        sparks: 'sparks-page',
+        tts: 'tts-page',
+        chat: 'chat-page'
+    };
+    const activePageId = pageIdMap[viewParam] || 'chat-page';
+
+    const titleMap = {
+        apps: 'Apps',
+        notes: 'Notes',
+        sparks: 'Sparks',
+        tts: 'TTS Studio',
+        chat: 'Nexus'
+    };
+    document.title = titleMap[viewParam] || 'Nexus';
+
+    injectStyle('view-init-style', `
+        .nexus-page-view { display: none !important; }
+        #${activePageId} { display: flex !important; }
+        ${viewParam === 'apps' && appId ? `
+        #apps-hub-view { display: none !important; }
+        #apps-studio-view { display: flex !important; }
+        ` : ''}
+        ${viewParam === 'notes' && noteId ? `
+        #notes-hub-view { display: none !important; }
+        #notes-detail-view { display: flex !important; }
+        ` : ''}
+    `);
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const mainContent = document.querySelector('.nexus-main-content');
+        if (mainContent) {
+            mainContent.setAttribute('data-active-view', viewParam);
         }
-    }
+    });
 })();

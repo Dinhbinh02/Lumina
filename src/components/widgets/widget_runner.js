@@ -9,21 +9,119 @@ export const WidgetRunner = {
     DEFAULT_HEIGHT: '380px',
 
     /**
-     * Extracts raw HTML/CSS/JS or JSON spec from inside <GenerateWidget>
+     * Applies SEARCH / REPLACE patch blocks to existing code (Aider/Cursor/Codex standard).
+     * Format:
+     * <<<<<<< SEARCH
+     * exact code to match
+     * =======
+     * updated replacement code
+     * >>>>>>> REPLACE
      */
-    extractWidgetCode(rawBody) {
-        if (!rawBody || typeof rawBody !== 'string') return '';
+    applySearchReplace(originalCode, patchText) {
+        if (!originalCode || !patchText) return { success: false, code: originalCode || '', count: 0 };
+        
+        let workingCode = originalCode;
+        let appliedCount = 0;
+
+        const patchRegex = /<<<<<<< SEARCH\r?\n([\s\S]*?)\r?\n=======\r?\n([\s\S]*?)\r?\n>>>>>>> REPLACE/g;
+        let match;
+
+        while ((match = patchRegex.exec(patchText)) !== null) {
+            const searchBlock = match[1];
+            const replaceBlock = match[2];
+
+            if (!searchBlock) continue;
+
+            if (workingCode.includes(searchBlock)) {
+                workingCode = workingCode.replace(searchBlock, replaceBlock);
+                appliedCount++;
+                continue;
+            }
+
+            const normWorking = workingCode.replace(/\r\n/g, '\n');
+            const normSearch = searchBlock.replace(/\r\n/g, '\n');
+            const normReplace = replaceBlock.replace(/\r\n/g, '\n');
+
+            if (normWorking.includes(normSearch)) {
+                workingCode = normWorking.replace(normSearch, normReplace);
+                appliedCount++;
+                continue;
+            }
+
+            const searchLines = normSearch.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (searchLines.length > 0) {
+                const codeLines = normWorking.split('\n');
+                let foundStart = -1;
+                let foundEnd = -1;
+
+                for (let i = 0; i <= codeLines.length - searchLines.length; i++) {
+                    let isMatch = true;
+                    for (let j = 0; j < searchLines.length; j++) {
+                        if (codeLines[i + j].trim() !== searchLines[j]) {
+                            isMatch = false;
+                            break;
+                        }
+                    }
+                    if (isMatch) {
+                        foundStart = i;
+                        foundEnd = i + searchLines.length;
+                        break;
+                    }
+                }
+
+                if (foundStart !== -1 && foundEnd !== -1) {
+                    const before = codeLines.slice(0, foundStart).join('\n');
+                    const after = codeLines.slice(foundEnd).join('\n');
+                    workingCode = (before ? before + '\n' : '') + normReplace + (after ? '\n' + after : '');
+                    appliedCount++;
+                }
+            }
+        }
+
+        return {
+            success: appliedCount > 0,
+            code: workingCode,
+            count: appliedCount
+        };
+    },
+
+    /**
+     * Extracts raw HTML/CSS/JS or applies targeted SEARCH/REPLACE patches
+     */
+    extractWidgetCode(rawBody, currentCode = '') {
+        if (!rawBody || typeof rawBody !== 'string') return null;
         let clean = rawBody.trim();
 
-        // 1. Strip leading code fence: ```html, ```js, ```javascript, ```json, or ```
-        clean = clean.replace(/^```[a-zA-Z0-9_-]*\s*\n?/i, '');
+        if (clean.includes('<<<<<<< SEARCH') && clean.includes('>>>>>>> REPLACE')) {
+            const patchContent = clean.includes('<PatchApp') || clean.includes('<PatchWidget')
+                ? (clean.match(/<(?:PatchApp|PatchWidget)[^>]*>([\s\S]*?)(?:<\/(?:PatchApp|PatchWidget)>|$)/i)?.[1] || clean)
+                : clean;
+            
+            const patchResult = this.applySearchReplace(currentCode, patchContent);
+            if (patchResult.success) {
+                return patchResult.code;
+            }
+        }
 
-        // 2. Strip trailing code fence: ```
-        clean = clean.replace(/\n?```\s*$/i, '');
+        const generateAppMatch = clean.match(/<(?:GenerateApp|GenerateWidget)[^>]*>([\s\S]*?)(?:<\/(?:GenerateApp|GenerateWidget)>|$)/i);
+        if (generateAppMatch) {
+            return generateAppMatch[1].trim();
+        }
 
-        clean = clean.trim();
+        const codeBlockMatch = clean.match(/```(?:html|xml)?\s*\n([\s\S]*?)\n```/i);
+        if (codeBlockMatch) {
+            const codeContent = codeBlockMatch[1].trim();
+            if (codeContent.includes('<') && (codeContent.includes('</div>') || codeContent.includes('</html>') || codeContent.includes('</script>') || codeContent.includes('</style>'))) {
+                return codeContent;
+            }
+        }
 
-        // 3. Check if it's JSON spec with html or code field
+        const docTypeMatch = clean.match(/(<!DOCTYPE html[\s\S]*<\/html>)/i) ||
+                             clean.match(/(<html[\s\S]*<\/html>)/i);
+        if (docTypeMatch) {
+            return docTypeMatch[1].trim();
+        }
+
         if (clean.startsWith('{') && clean.endsWith('}')) {
             try {
                 const parsed = JSON.parse(clean);
@@ -33,7 +131,7 @@ export const WidgetRunner = {
             } catch (_) { }
         }
 
-        return clean;
+        return null;
     },
 
     /**

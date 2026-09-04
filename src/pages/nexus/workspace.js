@@ -174,6 +174,10 @@ let chatUI = null;
 let sharedInputUI = null;
 
 function getHoveredInputEl() {
+    const appsStudioInput = document.getElementById('apps-studio-prompt-input');
+    if (appsStudioInput && !appsStudioInput.disabled && appsStudioInput.offsetParent !== null) {
+        return appsStudioInput;
+    }
     const sparkInput = document.getElementById('sparks-preview-input');
     if (sparkInput && !sparkInput.disabled && sparkInput.offsetParent !== null) {
         return sparkInput;
@@ -3089,13 +3093,13 @@ function initSidebar() {
             closeMobileSidebar();
         });
     }
-    const liveBtn = document.getElementById('sidebar-live-btn');
-    if (liveBtn) {
-        liveBtn.addEventListener('click', () => {
-            if (typeof window.initGeminiLiveModal === 'function') {
-                window.initGeminiLiveModal();
-            } else if (typeof initGeminiLiveModal === 'function') {
-                initGeminiLiveModal();
+    const appsBtn = document.getElementById('sidebar-apps-btn');
+    if (appsBtn) {
+        appsBtn.addEventListener('click', () => {
+            if (typeof window.appsOpenPage === 'function') {
+                window.appsOpenPage();
+            } else if (typeof viewManager !== 'undefined') {
+                viewManager.switchView('apps');
             }
             closeMobileSidebar();
         });
@@ -3110,6 +3114,9 @@ function initSidebar() {
             }
             if (typeof sparksClosePage === 'function') {
                 sparksClosePage();
+            }
+            if (typeof window.appsClosePage === 'function') {
+                window.appsClosePage();
             }
             resetChat();
             closeMobileSidebar();

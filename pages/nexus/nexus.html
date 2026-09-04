@@ -66,6 +66,16 @@
                     </svg>
                     <span class="nav-text">New chat</span>
                 </button>
+                <button class="sidebar-nav-item" id="sidebar-apps-btn">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+                        <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+                        <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+                        <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+                    </svg>
+                    <span class="nav-text">Apps</span>
+                </button>
                 <button class="sidebar-nav-item" id="sidebar-notes-btn">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -75,15 +85,6 @@
                         <path d="M8 16h4.5" />
                     </svg>
                     <span class="nav-text">Notes</span>
-                </button>
-                <button class="sidebar-nav-item" id="sidebar-live-btn">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                        <line x1="12" y1="19" x2="12" y2="22" />
-                    </svg>
-                    <span class="nav-text">Live</span>
                 </button>
                 <button class="sidebar-nav-item" id="sidebar-tts-btn">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
@@ -171,7 +172,7 @@
             </div>
         </aside>
 
-        <div class="nexus-main-content" data-active-view="chat">
+        <div class="nexus-main-content">
             <!-- 1. CHAT PAGE VIEW -->
             <section class="nexus-page-view" id="chat-page">
                 <header class="topbar nexus-view-topbar" id="nexus-topbar">
@@ -211,6 +212,191 @@
                         <div class="nexus-chat-scroll-content" id="chat-history"></div>
                     </div>
                     <div class="nexus-chat-input-container" id="input-area"></div>
+                </div>
+            </section>
+
+            <!-- APPS HUB & STUDIO PAGE VIEW (Universal Hub-Detail Framework) -->
+            <section class="nexus-page-view apps-page nexus-hub-container" id="apps-page" aria-label="Apps Workspace">
+                <!-- 1. HUB VIEW (Catalog of Built-in and Custom Apps) -->
+                <div class="nexus-hub-view" id="apps-hub-view">
+                    <!-- Standard Fixed Topbar (46px) -->
+                    <header class="nexus-hub-topbar">
+                        <div class="nexus-topbar-left">
+                            <button class="topbar-action-btn sidebar-toggle-btn" id="apps-sidebar-toggle-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+                                <svg class="sidebar-toggle-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+                                    <path d="M9 7v10"></path>
+                                    <path class="collapse-chevron" d="M16 9l-3 3 3 3"></path>
+                                </svg>
+                            </button>
+                            <span class="nexus-topbar-title">Apps</span>
+                            <div class="nexus-hub-search-wrapper">
+                                <svg class="nexus-hub-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                                <input type="text" class="nexus-hub-search-input" id="apps-search-input" placeholder="Search apps by name, tag, or description..." aria-label="Search apps">
+                            </div>
+                        </div>
+                        <div class="nexus-topbar-right">
+                            <button type="button" class="nexus-icon-btn nexus-primary-icon-btn" id="apps-create-btn" title="Create App" aria-label="Create App">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </header>
+
+                    <!-- Filter Bar (Borderless Sub-header Pills Strip) -->
+                    <div class="nexus-hub-pills-bar" id="apps-filter-bar" role="tablist">
+                        <div class="nexus-hub-pills-scroll" id="apps-filter-pills-scroll">
+                            <button type="button" class="nexus-hub-pill apps-filter-pill active" data-filter="all">All Apps</button>
+                            <button type="button" class="nexus-hub-pill apps-filter-pill" data-filter="my_apps">My Apps</button>
+                            <button type="button" class="nexus-hub-pill apps-filter-pill" data-filter="builtin">Built-in</button>
+                            <button type="button" class="nexus-hub-pill apps-filter-pill" data-filter="productivity">Productivity</button>
+                            <button type="button" class="nexus-hub-pill apps-filter-pill" data-filter="finance">Finance</button>
+                            <button type="button" class="nexus-hub-pill apps-filter-pill" data-filter="health">Weather & Health</button>
+                            <button type="button" class="nexus-hub-pill apps-filter-pill" data-filter="science">Science & Math</button>
+                            <button type="button" class="nexus-hub-pill apps-filter-pill" data-filter="utilities">Utilities</button>
+                        </div>
+                    </div>
+
+                    <!-- Hub Body (Grid) -->
+                    <main class="nexus-hub-body" id="apps-hub-body">
+                        <div class="nexus-hub-grid" id="apps-catalog-grid">
+                        </div>
+                    </main>
+                </div>
+
+                <!-- 2. STUDIO / DETAIL VIEW (Claude Artifacts & Codex style AI Editor) -->
+                <div class="nexus-detail-view apps-studio-view" id="apps-studio-view">
+                    <!-- Studio Topbar -->
+                    <header class="nexus-detail-topbar">
+                        <div class="nexus-topbar-left">
+                            <div class="nexus-breadcrumb">
+                                <button type="button" class="nexus-back-btn" id="apps-studio-back-btn" title="Back to Apps (Esc)" aria-label="Back to Apps">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M15 18l-6-6 6-6"></path>
+                                    </svg>
+                                    <span>Apps</span>
+                                </button>
+                                <span class="nexus-breadcrumb-sep">/</span>
+                                <input type="text" class="nexus-search-input apps-studio-title-input" id="apps-studio-title-input" value="Untitled App" placeholder="Untitled App" spellcheck="false" aria-label="App title" />
+                            </div>
+                        </div>
+                        <div class="topbar-actions nexus-topbar-right">
+                            <button type="button" class="nexus-secondary-btn apps-mode-toggle-btn" id="apps-studio-mode-toggle-btn" style="height: 28px; padding: 0 10px; font-size: 12px; gap: 5px; border-radius: 6px;" title="Toggle AI Assistant Panel">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 20h9"></path>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                </svg>
+                                <span id="apps-studio-mode-label">Edit with AI</span>
+                            </button>
+                            <div class="nexus-view-toggle-group apps-studio-toggle-group" id="apps-code-preview-group">
+                                <button type="button" class="nexus-view-toggle-btn active" id="apps-tab-preview" title="Live Preview" aria-label="Live Preview">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                    <span>Preview</span>
+                                </button>
+                                <button type="button" class="nexus-view-toggle-btn" id="apps-tab-code" title="View / Edit Code" aria-label="View Code">
+                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="16 18 22 12 16 6"></polyline>
+                                        <polyline points="8 6 2 12 8 18"></polyline>
+                                    </svg>
+                                    <span>Code</span>
+                                </button>
+                            </div>
+                            <button type="button" class="nexus-icon-btn" id="apps-studio-reload-btn" title="Reload Sandbox" aria-label="Reload Sandbox">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                </svg>
+                            </button>
+                            <button type="button" class="nexus-icon-btn" id="apps-studio-export-btn" title="Export HTML" aria-label="Export HTML">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                            </button>
+                            <button type="button" class="nexus-icon-btn nexus-primary-icon-btn" id="apps-studio-save-btn" title="Save App" aria-label="Save App">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                    <polyline points="7 3 7 8 15 8"></polyline>
+                                </svg>
+                            </button>
+                            <button type="button" class="nexus-icon-btn danger" id="apps-studio-delete-btn" title="Delete App" aria-label="Delete App">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </header>
+
+                    <!-- Studio Split Body -->
+                    <div class="apps-studio-container">
+                        <!-- Left Pane: AI Prompt & Revision Chat (Exact Chat Layout UI) -->
+                        <div class="apps-studio-left-pane">
+                            <div class="layout apps-chat-layout" id="apps-chat-layout">
+                                <div class="nexus-chat-container">
+                                    <div id="apps-studio-chat-messages" class="nexus-chat-scroll-content" style="display: block; opacity: 1;">
+                                    </div>
+                                </div>
+                                <div class="nexus-chat-input-container" id="apps-input-area">
+                                    <div class="nexus-chat-input-wrapper">
+                                        <div class="nexus-input-meta-container" id="apps-input-meta-container" style="display: none;">
+                                            <div class="nexus-web-chips" id="apps-web-chips-group"></div>
+                                            <div class="nexus-redirect-group" id="apps-redirect-chips-group"></div>
+                                        </div>
+                                        <div class="nexus-input-container">
+                                            <div class="nexus-file-preview-container nexus-image-preview-container"></div>
+                                            <div class="nexus-input-bar" id="apps-input-bar">
+                                                <div class="nexus-left-actions">
+                                                    <button type="button" class="nexus-upload-btn" id="apps-upload-btn" title="Upload File">
+                                                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                                    </button>
+                                                    <div class="nexus-model-selector" id="apps-model-selector">
+                                                        <button type="button" class="nexus-model-btn" id="apps-model-btn">
+                                                            <span class="nexus-current-model" id="apps-model-label">Lite</span>
+                                                            <svg class="nexus-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" style="opacity: 0.85;"><path d="M18 15l-6-6-6 6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <textarea id="apps-studio-prompt-input" class="nexus-chat-input" placeholder="Ask AI to modify, design, or add features..." rows="1"></textarea>
+                                                <div class="nexus-trailing-group">
+                                                    <button type="button" class="nexus-mic-btn" id="apps-mic-btn" title="Voice Input">
+                                                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="6" height="10" rx="3"></rect><path d="M5 12a7 7 0 0 0 14 0"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                                                    </button>
+                                                    <button type="button" class="nexus-action-btn send" id="apps-studio-send-btn" title="Send" disabled="true">
+                                                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                            <line x1="12" y1="19" x2="12" y2="5"></line>
+                                                            <polyline points="5 12 12 5 19 12"></polyline>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="nexus-hover-trigger"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Pane: Live Interactive Sandbox & Source Code (Borderless full-bleed canvas) -->
+                        <div class="apps-studio-right-pane">
+                            <div id="apps-preview-pane" class="apps-studio-canvas-pane">
+                                <div id="apps-native-widget-host" class="apps-native-widget-host" style="display: none;"></div>
+                                <iframe class="apps-studio-preview-iframe" id="apps-studio-preview-iframe" sandbox="allow-scripts allow-forms allow-popups allow-modals"></iframe>
+                            </div>
+                            <div id="apps-code-pane" class="apps-studio-canvas-pane" style="display: none;">
+                                <textarea class="apps-studio-code-editor" id="apps-studio-code-editor" spellcheck="false"></textarea>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -719,7 +905,7 @@
                 <!-- 1. HUB VIEW -->
                 <div class="nexus-hub-view" id="notes-hub-view">
                     <!-- Standard Fixed Topbar (46px) -->
-                    <header class="topbar nexus-view-topbar nexus-hub-topbar">
+                    <header class="nexus-hub-topbar">
                         <div class="nexus-topbar-left">
                             <button class="topbar-action-btn sidebar-toggle-btn" id="notes-sidebar-toggle-btn" title="Toggle Sidebar" aria-label="Toggle Sidebar">
                                 <svg class="sidebar-toggle-svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -729,29 +915,6 @@
                                 </svg>
                             </button>
                             <span class="nexus-topbar-title">Notes</span>
-                        </div>
-                        <div class="nexus-topbar-right">
-                            <button type="button" class="nexus-secondary-btn" id="notes-batch-mode-btn" title="Select notes for batch actions">
-                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/>
-                                    <path d="m9 12 2 2 4-4"/>
-                                </svg>
-                                <span>Select</span>
-                            </button>
-                            <button type="button" class="nexus-primary-btn" id="notes-new-note-btn" title="Create new note">
-                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/>
-                                    <line x1="12" y1="8.5" x2="12" y2="15.5"/>
-                                    <line x1="8.5" y1="12" x2="15.5" y2="12"/>
-                                </svg>
-                                <span>New Note</span>
-                            </button>
-                        </div>
-                    </header>
-
-                    <!-- Scrollable Hub Body -->
-                    <main class="nexus-hub-body">
-                        <div class="nexus-hub-toolbar">
                             <div class="nexus-hub-search-wrapper">
                                 <svg class="nexus-hub-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <circle cx="11" cy="11" r="8"></circle>
@@ -759,49 +922,66 @@
                                 </svg>
                                 <input type="text" class="nexus-hub-search-input" id="notes-search-input" placeholder="Search notes in title & content..." aria-label="Search notes">
                             </div>
-
-                            <div class="nexus-hub-view-controls">
-                                <select class="nexus-sort-select" id="notes-sort-select" aria-label="Sort notes">
-                                    <option value="modified">Last Modified</option>
-                                    <option value="created">Date Created</option>
-                                    <option value="az">Alphabetical (A–Z)</option>
-                                </select>
-
-                                <div class="nexus-view-toggle-group">
-                                    <button type="button" class="nexus-view-toggle-btn active" id="notes-view-grid-btn" title="Grid View" aria-label="Grid View">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <rect x="3" y="3" width="7" height="7"></rect>
-                                            <rect x="14" y="3" width="7" height="7"></rect>
-                                            <rect x="14" y="14" width="7" height="7"></rect>
-                                            <rect x="3" y="14" width="7" height="7"></rect>
-                                        </svg>
-                                    </button>
-                                    <button type="button" class="nexus-view-toggle-btn" id="notes-view-list-btn" title="List View" aria-label="List View">
-                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <line x1="8" y1="6" x2="21" y2="6"></line>
-                                            <line x1="8" y1="12" x2="21" y2="12"></line>
-                                            <line x1="8" y1="18" x2="21" y2="18"></line>
-                                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
                         </div>
+                        <div class="nexus-topbar-right">
+                            <button type="button" class="nexus-sort-trigger-btn" id="notes-sort-btn" title="Sort notes" aria-label="Sort notes">
+                                <span id="notes-sort-label">Last Modified</span>
+                                <svg class="nexus-dropdown-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
 
-                        <!-- Collection Pills Bar -->
-                        <div class="nexus-hub-pills-bar" id="notes-collections-bar" role="tablist">
-                            <button type="button" class="nexus-new-pill-btn" id="notes-new-collection-btn" title="New Collection">
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <div class="nexus-view-toggle-group">
+                                <button type="button" class="nexus-view-toggle-btn active" id="notes-view-grid-btn" title="Grid View" aria-label="Grid View">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="7" height="7"></rect>
+                                        <rect x="14" y="3" width="7" height="7"></rect>
+                                        <rect x="14" y="14" width="7" height="7"></rect>
+                                        <rect x="3" y="14" width="7" height="7"></rect>
+                                    </svg>
+                                </button>
+                                <button type="button" class="nexus-view-toggle-btn" id="notes-view-list-btn" title="List View" aria-label="List View">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <button type="button" class="nexus-icon-btn" id="notes-batch-mode-btn" title="Select notes" aria-label="Select notes">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3.5" y="3.5" width="17" height="17" rx="4.5"/>
+                                    <path d="m9 12 2 2 4-4"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="nexus-icon-btn nexus-primary-icon-btn" id="notes-new-note-btn" title="New Note" aria-label="New Note">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
-                                <span>Collection</span>
                             </button>
-                            <div class="nexus-hub-pills-scroll" id="notes-collections-pills">
-                            </div>
                         </div>
+                    </header>
+
+                    <!-- Collection Pills Bar (Harmonious sub-bar strip) -->
+                    <div class="nexus-hub-pills-bar" id="notes-collections-bar" role="tablist">
+                        <button type="button" class="nexus-new-pill-btn" id="notes-new-collection-btn" title="New Collection">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span>Collection</span>
+                        </button>
+                        <div class="nexus-hub-pills-scroll" id="notes-collections-pills">
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Hub Body -->
+                    <main class="nexus-hub-body">
 
                         <!-- Cards Container -->
                         <div class="nexus-hub-content" id="notes-hub-cards-container">
@@ -843,7 +1023,7 @@
                 <!-- 2. DETAIL VIEW -->
                 <div class="nexus-detail-view" id="notes-detail-view">
                     <!-- Standard Fixed Topbar (46px) -->
-                    <header class="topbar nexus-view-topbar nexus-detail-topbar">
+                    <header class="nexus-detail-topbar">
                         <div class="nexus-topbar-left">
                             <div class="nexus-breadcrumb">
                                 <button type="button" class="nexus-back-btn" id="notes-back-btn" title="Back to Notes (Esc)" aria-label="Back to Notes">

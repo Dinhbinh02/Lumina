@@ -141,7 +141,8 @@ export class NotesPanel {
         this.newCollectionBtn = document.getElementById('notes-new-collection-btn');
         this.newNoteBtn = document.getElementById('notes-new-note-btn');
         this.notesSearchInput = document.getElementById('notes-search-input');
-        this.sortSelect = document.getElementById('notes-sort-select');
+        this.sortBtn = document.getElementById('notes-sort-btn');
+        this.sortLabel = document.getElementById('notes-sort-label');
         this.gridBtn = document.getElementById('notes-view-grid-btn');
         this.listBtn = document.getElementById('notes-view-list-btn');
         this.batchModeBtn = document.getElementById('notes-batch-mode-btn');
@@ -194,10 +195,30 @@ export class NotesPanel {
             });
         }
 
-        if (this.sortSelect) {
-            this.sortSelect.addEventListener('change', (e) => {
-                this.sortMode = e.target.value;
-                this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
+        if (this.sortBtn) {
+            this.sortBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                NexusMenu.show({
+                    anchor: this.sortBtn,
+                    placement: 'bottom-end',
+                    items: [
+                        {
+                            label: 'Last Modified',
+                            active: this.sortMode === 'modified',
+                            action: () => this.setSortMode('modified')
+                        },
+                        {
+                            label: 'Date Created',
+                            active: this.sortMode === 'created',
+                            action: () => this.setSortMode('created')
+                        },
+                        {
+                            label: 'Alphabetical (A–Z)',
+                            active: this.sortMode === 'az',
+                            action: () => this.setSortMode('az')
+                        }
+                    ]
+                });
             });
         }
 
@@ -304,6 +325,19 @@ export class NotesPanel {
         localStorage.setItem('nexus_notes_view_mode', mode);
         if (this.gridBtn) this.gridBtn.classList.toggle('active', mode === 'grid');
         if (this.listBtn) this.listBtn.classList.toggle('active', mode === 'list');
+        this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
+    }
+
+    setSortMode(mode) {
+        this.sortMode = mode;
+        if (this.sortLabel) {
+            const map = {
+                modified: 'Last Modified',
+                created: 'Date Created',
+                az: 'Alphabetical (A–Z)'
+            };
+            this.sortLabel.textContent = map[mode] || 'Last Modified';
+        }
         this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || '');
     }
 

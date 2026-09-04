@@ -1,8 +1,38 @@
-/**
- * Nexus Shared UI Component: NexusSearchSelect
- * Reusable Searchable Dropdown Popover with Keyboard Navigation (ArrowUp/Down, Enter, Esc).
- * Zero-flicker live filtering and singleton active instance management.
- */
+export const CURRENCY_SVG_FLAGS = {
+    USD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#B22234"/><path d="M0 1.08h20v1.08H0zM0 3.23h20v1.08H0zM0 5.38h20v1.08H0zM0 7.54h20v1.08H0zM0 9.69h20v1.08H0zM0 11.85h20v1.08H0z" fill="#fff"/><rect width="8" height="7.54" fill="#3C3B6E"/></svg>`,
+    VND: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#DA251D"/><polygon points="10,2.8 11.4,6.8 15.6,6.8 12.2,9.3 13.5,13.3 10,10.8 6.5,13.3 7.8,9.3 4.4,6.8 8.6,6.8" fill="#FFFF00"/></svg>`,
+    EUR: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#003399"/><circle cx="10" cy="7" r="4.2" fill="none" stroke="#FFCC00" stroke-width="1.2" stroke-dasharray="0.8 1.4"/></svg>`,
+    JPY: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#ffffff"/><circle cx="10" cy="7" r="4" fill="#BC002D"/></svg>`,
+    GBP: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#012169"/><path d="M0 0l20 14M20 0L0 14" stroke="#fff" stroke-width="2.5"/><path d="M0 0l20 14M20 0L0 14" stroke="#C8102E" stroke-width="1.5"/><path d="M10 0v14M0 7h20" stroke="#fff" stroke-width="4.5"/><path d="M10 0v14M0 7h20" stroke="#C8102E" stroke-width="2.7"/></svg>`,
+    CNY: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#DE2910"/><polygon points="4,2.5 4.6,4.2 6.3,4.2 4.9,5.2 5.5,6.8 4,5.8 2.5,6.8 3.1,5.2 1.7,4.2 3.4,4.2" fill="#FFDE00"/></svg>`,
+    KRW: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#ffffff"/><circle cx="10" cy="7" r="3.5" fill="#CD2E3A"/><path d="M6.5 7a3.5 3.5 0 0 0 7 0 1.75 1.75 0 0 1-3.5 0 1.75 1.75 0 0 0-3.5 0z" fill="#0047A0"/></svg>`,
+    SGD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="7" fill="#ED2939"/><rect y="7" width="20" height="7" fill="#ffffff"/><circle cx="4" cy="3.5" r="2.2" fill="#ffffff"/><circle cx="4.7" cy="3.5" r="1.9" fill="#ED2939"/></svg>`,
+    AUD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#00008B"/><rect width="8" height="6" fill="#012169"/><path d="M0 0l8 6M8 0L0 6" stroke="#fff" stroke-width="1.2"/><path d="M4 0v6M0 3h8" stroke="#fff" stroke-width="2"/><path d="M4 0v6M0 3h8" stroke="#C8102E" stroke-width="1.2"/></svg>`,
+    CAD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="5" height="14" fill="#FF0000"/><rect x="5" width="10" height="14" fill="#ffffff"/><rect x="15" width="5" height="14" fill="#FF0000"/><path d="M10 3.5l1 2.2 1.8-.6-1 1.8 1.4 1-1.8.4.2 2-1.6-1.2-1.6 1.2.2-2-1.8-.4 1.4-1-1-1.8 1.8.6z" fill="#FF0000"/></svg>`,
+    CHF: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#D52B1E"/><path d="M8.5 3.5h3v7h-3zM5 5.5h10v3H5z" fill="#ffffff"/></svg>`,
+    THB: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#A51931"/><rect y="2.3" width="20" height="9.4" fill="#F4F5F8"/><rect y="4.7" width="20" height="4.6" fill="#2D2A4A"/></svg>`,
+    IDR: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="7" fill="#CE1126"/><rect y="7" width="20" height="7" fill="#ffffff"/></svg>`,
+    MYR: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#CC0000"/><path d="M0 1.5h20v1.5H0zM0 4.5h20v1.5H0zM0 7.5h20v1.5H0zM0 10.5h20v1.5H0z" fill="#ffffff"/><rect width="10" height="7.5" fill="#000066"/></svg>`,
+    PHP: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="7" fill="#0038A8"/><rect y="7" width="20" height="7" fill="#CE1126"/><polygon points="0,0 8,7 0,14" fill="#ffffff"/></svg>`,
+    INR: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="4.7" fill="#FF9933"/><rect y="4.7" width="20" height="4.6" fill="#ffffff"/><rect y="9.3" width="20" height="4.7" fill="#138808"/><circle cx="10" cy="7" r="1.8" fill="none" stroke="#000080" stroke-width="0.8"/></svg>`,
+    NZD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#00247D"/><rect width="8" height="6" fill="#012169"/><path d="M0 0l8 6M8 0L0 6" stroke="#fff" stroke-width="1.2"/><path d="M4 0v6M0 3h8" stroke="#fff" stroke-width="2"/><path d="M4 0v6M0 3h8" stroke="#C8102E" stroke-width="1.2"/></svg>`,
+    RUB: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="4.7" fill="#ffffff"/><rect y="4.7" width="20" height="4.6" fill="#0039A6"/><rect y="9.3" width="20" height="4.7" fill="#D52B1E"/></svg>`,
+    BRL: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#009C3B"/><polygon points="10,1.5 18.5,7 10,12.5 1.5,7" fill="#FFDF00"/><circle cx="10" cy="7" r="3" fill="#002776"/></svg>`,
+    MXN: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="6.7" height="14" fill="#006847"/><rect x="6.7" width="6.6" height="14" fill="#ffffff"/><rect x="13.3" width="6.7" height="14" fill="#CE1126"/></svg>`,
+    AED: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="4.7" fill="#00732F"/><rect y="4.7" width="20" height="4.6" fill="#ffffff"/><rect y="9.3" width="20" height="4.7" fill="#000000"/><rect width="5" height="14" fill="#FF0000"/></svg>`,
+    SAR: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#006C35"/><path d="M5 8.5h10M7 7l6 3" stroke="#fff" stroke-width="0.8"/></svg>`,
+    HKD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#ED1C24"/><circle cx="10" cy="7" r="3.2" fill="#fff"/></svg>`,
+    TWD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#FE0000"/><rect width="10" height="7" fill="#000095"/><circle cx="5" cy="3.5" r="2.2" fill="#fff"/><circle cx="5" cy="3.5" r="1.6" fill="#000095"/><circle cx="5" cy="3.5" r="1.2" fill="#fff"/></svg>`
+};
+
+export function getFlagHtml(code) {
+    const key = (code || '').toUpperCase();
+    if (CURRENCY_SVG_FLAGS[key]) {
+        return CURRENCY_SVG_FLAGS[key];
+    }
+    const clean = key.slice(0, 2);
+    return `<span class="nexus-flag-badge" style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 13px; font-size: 8.5px; font-weight: 700; background: rgba(255,255,255,0.14); border-radius: 2px; color: inherit; line-height: 1;">${clean}</span>`;
+}
 
 export class NexusSearchSelect {
     static activeInstance = null;
@@ -16,7 +46,7 @@ export class NexusSearchSelect {
 
     constructor(containerEl, options = {}) {
         this.containerEl = containerEl;
-        this.options = options.options || []; // Array of { value, label, flag, symbol, description }
+        this.options = options.options || [];
         this.value = options.value || (this.options[0] ? this.options[0].value : '');
         this.onChange = options.onChange || (() => {});
         this.placeholder = options.placeholder || 'Search...';
@@ -54,7 +84,6 @@ export class NexusSearchSelect {
         return this.options.find(o => o.value === this.value) || {
             value: this.value,
             label: this.value,
-            flag: '🌐',
             symbol: this.value
         };
     }
@@ -77,11 +106,12 @@ export class NexusSearchSelect {
 
     render() {
         const selected = this._getSelectedItem();
+        const flagHtml = selected.flagHtml || getFlagHtml(selected.value);
 
         this.containerEl.innerHTML = `
             <div class="nexus-select-wrap" style="width: ${this.width};">
                 <button type="button" class="nexus-select-btn" data-action="toggle-select">
-                    <span class="nexus-select-btn-flag">${selected.flag || '🌐'}</span>
+                    <span class="nexus-select-btn-flag">${flagHtml}</span>
                     <span class="nexus-select-btn-val" data-btn-val>${selected.value}</span>
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="nexus-select-chevron">
                         <polyline points="6 9 12 15 18 9"></polyline>
@@ -111,9 +141,10 @@ export class NexusSearchSelect {
         return this.filteredOptions.map((item, idx) => {
             const isSelected = item.value === this.value;
             const isHighlighted = idx === this.highlightIndex;
+            const flagHtml = item.flagHtml || getFlagHtml(item.value);
             return `
                 <div class="nexus-select-item ${isSelected ? 'is-selected' : ''} ${isHighlighted ? 'is-highlighted' : ''}" data-item-index="${idx}" data-item-value="${item.value}">
-                    ${item.flag ? `<span class="nexus-select-item-flag">${item.flag}</span>` : ''}
+                    <span class="nexus-select-item-flag">${flagHtml}</span>
                     <div class="nexus-select-item-info">
                         <span class="nexus-select-item-code">${item.value}</span>
                         ${item.label && item.label !== item.value ? `<span class="nexus-select-item-name">${item.label}</span>` : ''}
@@ -150,7 +181,8 @@ export class NexusSearchSelect {
         const selected = this._getSelectedItem();
         const flagEl = this.containerEl.querySelector('.nexus-select-btn-flag');
         const valEl = this.containerEl.querySelector('[data-btn-val]');
-        if (flagEl) flagEl.textContent = selected.flag || '🌐';
+        const flagHtml = selected.flagHtml || getFlagHtml(selected.value);
+        if (flagEl) flagEl.innerHTML = flagHtml;
         if (valEl) valEl.textContent = selected.value;
     }
 

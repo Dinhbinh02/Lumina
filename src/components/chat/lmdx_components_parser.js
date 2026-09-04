@@ -199,13 +199,19 @@ export function initLmdxComponentsParser() {
                 }
             },
 
-            // 5. <GenerateWidget> (Interactive Sandbox Widgets)
+            // 5. <GenerateApp> & <GenerateWidget> (Interactive Sandbox Apps / Widgets)
             {
                 name: 'generateWidget',
                 level: 'block',
-                start(src) { return src.indexOf('<GenerateWidget'); },
+                start(src) {
+                    const i1 = src.indexOf('<GenerateApp');
+                    const i2 = src.indexOf('<GenerateWidget');
+                    if (i1 === -1) return i2;
+                    if (i2 === -1) return i1;
+                    return Math.min(i1, i2);
+                },
                 tokenizer(src) {
-                    const completeMatch = src.match(/^<GenerateWidget([^>]*)>([\s\S]*?)<\/GenerateWidget>/i);
+                    const completeMatch = src.match(/^<(?:GenerateApp|GenerateWidget)([^>]*)>([\s\S]*?)<\/(?:GenerateApp|GenerateWidget)>/i);
                     if (completeMatch) {
                         const attrs = completeMatch[1] || '';
                         const heightMatch = attrs.match(/\bheight="([^"]*)"/i);
@@ -214,12 +220,12 @@ export function initLmdxComponentsParser() {
                             type: 'generateWidget',
                             raw: completeMatch[0],
                             height: heightMatch ? heightMatch[1] : '380px',
-                            title: titleMatch ? titleMatch[1] : 'Interactive Widget',
+                            title: titleMatch ? titleMatch[1] : 'Interactive App',
                             body: completeMatch[2] || '',
                             isComplete: true
                         };
                     }
-                    const partialMatch = src.match(/^<GenerateWidget([^>]*)>([\s\S]*)$/i);
+                    const partialMatch = src.match(/^<(?:GenerateApp|GenerateWidget)([^>]*)>([\s\S]*)$/i);
                     if (partialMatch) {
                         const attrs = partialMatch[1] || '';
                         const heightMatch = attrs.match(/\bheight="([^"]*)"/i);
@@ -228,20 +234,18 @@ export function initLmdxComponentsParser() {
                             type: 'generateWidget',
                             raw: partialMatch[0],
                             height: heightMatch ? heightMatch[1] : '380px',
-                            title: titleMatch ? titleMatch[1] : 'Interactive Widget',
+                            title: titleMatch ? titleMatch[1] : 'Interactive App',
                             body: partialMatch[2] || '',
                             isComplete: false
                         };
                     }
-                    const tagShieldMatch = src.match(/^<GenerateWidget[^>]*$/i);
+                    const tagShieldMatch = src.match(/^<(?:GenerateApp|GenerateWidget)[^>]*$/i);
                     if (tagShieldMatch) {
-                        const attrs = tagShieldMatch[0] || '';
-                        const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
                         return {
                             type: 'generateWidget',
                             raw: tagShieldMatch[0],
                             height: '380px',
-                            title: titleMatch ? titleMatch[1] : 'Interactive Widget',
+                            title: 'Loading App...',
                             body: '',
                             isComplete: false
                         };

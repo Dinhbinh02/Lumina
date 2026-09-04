@@ -7,6 +7,7 @@ export const NexusViewManager = {
             hasTopbar: true,
             displayType: '',
             onOpen: () => {
+                document.getElementById('sidebar-apps-btn')?.classList.remove('active');
                 document.getElementById('sidebar-notes-btn')?.classList.remove('active');
                 document.getElementById('sidebar-tts-btn')?.classList.remove('active');
                 const topBar = document.getElementById('nexus-topbar');
@@ -15,11 +16,48 @@ export const NexusViewManager = {
                 }
             }
         },
+        apps: {
+            el: '#apps-page',
+            hasTopbar: false,
+            displayType: 'flex',
+            onOpen: (params) => {
+                document.getElementById('sidebar-apps-btn')?.classList.add('active');
+                document.getElementById('sidebar-notes-btn')?.classList.remove('active');
+                document.getElementById('sidebar-tts-btn')?.classList.remove('active');
+                document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
+                document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
+
+                const appsPage = document.getElementById('apps-page');
+                if (appsPage) {
+                    if (params?.appId) {
+                        appsPage.classList.add('is-detail');
+                        const hub = document.getElementById('apps-hub-view');
+                        const studio = document.getElementById('apps-studio-view');
+                        if (hub) hub.style.display = 'none';
+                        if (studio) studio.style.display = 'flex';
+                    } else {
+                        appsPage.classList.remove('is-detail');
+                        const hub = document.getElementById('apps-hub-view');
+                        const studio = document.getElementById('apps-studio-view');
+                        if (hub) hub.style.display = 'flex';
+                        if (studio) studio.style.display = 'none';
+                    }
+                }
+
+                if (!window.nexusAppsPanelInstance && typeof AppsPanel !== 'undefined') {
+                    window.nexusAppsPanelInstance = new AppsPanel();
+                }
+                if (window.nexusAppsPanelInstance && typeof window.nexusAppsPanelInstance.init === 'function') {
+                    window.nexusAppsPanelInstance.init(params?.appId, params?.mode);
+                }
+            }
+        },
         notes: {
             el: '#notes-page',
             hasTopbar: false,
             displayType: 'flex',
             onOpen: (params) => {
+                document.getElementById('sidebar-apps-btn')?.classList.remove('active');
                 document.getElementById('sidebar-notes-btn')?.classList.add('active');
                 document.getElementById('sidebar-tts-btn')?.classList.remove('active');
                 document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
@@ -38,6 +76,7 @@ export const NexusViewManager = {
             hasTopbar: false,
             displayType: 'flex',
             onOpen: (params) => {
+                document.getElementById('sidebar-apps-btn')?.classList.remove('active');
                 document.getElementById('sidebar-tts-btn')?.classList.add('active');
                 document.getElementById('sidebar-notes-btn')?.classList.remove('active');
                 document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
@@ -56,6 +95,7 @@ export const NexusViewManager = {
             hasTopbar: false,
             displayType: 'flex',
             onOpen: (params) => {
+                document.getElementById('sidebar-apps-btn')?.classList.remove('active');
                 document.getElementById('sidebar-notes-btn')?.classList.remove('active');
                 document.getElementById('sidebar-tts-btn')?.classList.remove('active');
                 document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
@@ -72,16 +112,18 @@ export const NexusViewManager = {
         if (!this.views[targetView]) return;
         this.currentView = targetView;
 
-        const initStyle = document.getElementById('view-init-style');
-        if (initStyle) initStyle.remove();
-
         const mainContent = document.querySelector('.nexus-main-content');
         if (mainContent) {
             mainContent.setAttribute('data-active-view', targetView);
         }
 
+        const initStyle = document.getElementById('view-init-style');
+        if (initStyle) initStyle.remove();
+
         if (targetView === 'tts') {
             document.title = 'TTS Studio';
+        } else if (targetView === 'apps') {
+            document.title = 'Apps';
         } else if (targetView === 'notes') {
             document.title = 'Notes';
         } else if (targetView === 'sparks') {
@@ -104,8 +146,21 @@ export const NexusViewManager = {
 
     updateUrl(viewName, params = {}) {
         const urlParams = new URLSearchParams(window.location.search);
-        if (viewName === 'notes') {
+        if (viewName === 'apps') {
             urlParams.delete('sid');
+            urlParams.delete('noteId');
+            urlParams.delete('colId');
+            urlParams.delete('sparkId');
+            urlParams.delete('recordingId');
+            urlParams.set('view', 'apps');
+            if (params.appId) {
+                urlParams.set('appId', params.appId);
+            } else {
+                urlParams.delete('appId');
+            }
+        } else if (viewName === 'notes') {
+            urlParams.delete('sid');
+            urlParams.delete('appId');
             urlParams.delete('sparkId');
             urlParams.delete('recordingId');
             urlParams.set('view', 'notes');
@@ -121,6 +176,7 @@ export const NexusViewManager = {
             }
         } else if (viewName === 'sparks') {
             urlParams.delete('sid');
+            urlParams.delete('appId');
             urlParams.delete('noteId');
             urlParams.delete('colId');
             urlParams.delete('recordingId');
@@ -132,6 +188,7 @@ export const NexusViewManager = {
             }
         } else if (viewName === 'tts') {
             urlParams.delete('sid');
+            urlParams.delete('appId');
             urlParams.delete('noteId');
             urlParams.delete('colId');
             urlParams.delete('sparkId');
@@ -143,6 +200,7 @@ export const NexusViewManager = {
             }
         } else {
             urlParams.delete('view');
+            urlParams.delete('appId');
             urlParams.delete('noteId');
             urlParams.delete('colId');
             urlParams.delete('recordingId');
@@ -196,6 +254,14 @@ export function ttsClosePage() {
     NexusViewManager.switchView('chat');
 }
 
+export function appsOpenPage(appId, mode) {
+    NexusViewManager.switchView('apps', { appId, mode });
+}
+
+export function appsClosePage() {
+    NexusViewManager.switchView('chat');
+}
+
 if (typeof window !== 'undefined') {
     window.NexusViewManager = NexusViewManager;
     window.updateNotesUrl = updateNotesUrl;
@@ -205,11 +271,15 @@ if (typeof window !== 'undefined') {
     window.sparksClosePage = sparksClosePage;
     window.ttsOpenPage = ttsOpenPage;
     window.ttsClosePage = ttsClosePage;
+    window.appsOpenPage = appsOpenPage;
+    window.appsClosePage = appsClosePage;
 
     document.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
         const view = urlParams.get('view');
-        if (view === 'notes') {
+        if (view === 'apps') {
+            NexusViewManager.switchView('apps', { appId: urlParams.get('app') || urlParams.get('appId') });
+        } else if (view === 'notes') {
             NexusViewManager.switchView('notes', { noteId: urlParams.get('noteId'), colId: urlParams.get('colId') });
         } else if (view === 'sparks') {
             NexusViewManager.switchView('sparks', { sparkId: urlParams.get('sparkId') });

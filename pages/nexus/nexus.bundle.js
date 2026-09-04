@@ -21391,6 +21391,40 @@ ${script}`;
   };
 
   // src/components/ui/nexus_search_select.js
+  var CURRENCY_SVG_FLAGS = {
+    USD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#B22234"/><path d="M0 1.08h20v1.08H0zM0 3.23h20v1.08H0zM0 5.38h20v1.08H0zM0 7.54h20v1.08H0zM0 9.69h20v1.08H0zM0 11.85h20v1.08H0z" fill="#fff"/><rect width="8" height="7.54" fill="#3C3B6E"/></svg>`,
+    VND: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#DA251D"/><polygon points="10,2.8 11.4,6.8 15.6,6.8 12.2,9.3 13.5,13.3 10,10.8 6.5,13.3 7.8,9.3 4.4,6.8 8.6,6.8" fill="#FFFF00"/></svg>`,
+    EUR: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#003399"/><circle cx="10" cy="7" r="4.2" fill="none" stroke="#FFCC00" stroke-width="1.2" stroke-dasharray="0.8 1.4"/></svg>`,
+    JPY: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#ffffff"/><circle cx="10" cy="7" r="4" fill="#BC002D"/></svg>`,
+    GBP: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#012169"/><path d="M0 0l20 14M20 0L0 14" stroke="#fff" stroke-width="2.5"/><path d="M0 0l20 14M20 0L0 14" stroke="#C8102E" stroke-width="1.5"/><path d="M10 0v14M0 7h20" stroke="#fff" stroke-width="4.5"/><path d="M10 0v14M0 7h20" stroke="#C8102E" stroke-width="2.7"/></svg>`,
+    CNY: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#DE2910"/><polygon points="4,2.5 4.6,4.2 6.3,4.2 4.9,5.2 5.5,6.8 4,5.8 2.5,6.8 3.1,5.2 1.7,4.2 3.4,4.2" fill="#FFDE00"/></svg>`,
+    KRW: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#ffffff"/><circle cx="10" cy="7" r="3.5" fill="#CD2E3A"/><path d="M6.5 7a3.5 3.5 0 0 0 7 0 1.75 1.75 0 0 1-3.5 0 1.75 1.75 0 0 0-3.5 0z" fill="#0047A0"/></svg>`,
+    SGD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="7" fill="#ED2939"/><rect y="7" width="20" height="7" fill="#ffffff"/><circle cx="4" cy="3.5" r="2.2" fill="#ffffff"/><circle cx="4.7" cy="3.5" r="1.9" fill="#ED2939"/></svg>`,
+    AUD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#00008B"/><rect width="8" height="6" fill="#012169"/><path d="M0 0l8 6M8 0L0 6" stroke="#fff" stroke-width="1.2"/><path d="M4 0v6M0 3h8" stroke="#fff" stroke-width="2"/><path d="M4 0v6M0 3h8" stroke="#C8102E" stroke-width="1.2"/></svg>`,
+    CAD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="5" height="14" fill="#FF0000"/><rect x="5" width="10" height="14" fill="#ffffff"/><rect x="15" width="5" height="14" fill="#FF0000"/><path d="M10 3.5l1 2.2 1.8-.6-1 1.8 1.4 1-1.8.4.2 2-1.6-1.2-1.6 1.2.2-2-1.8-.4 1.4-1-1-1.8 1.8.6z" fill="#FF0000"/></svg>`,
+    CHF: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#D52B1E"/><path d="M8.5 3.5h3v7h-3zM5 5.5h10v3H5z" fill="#ffffff"/></svg>`,
+    THB: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#A51931"/><rect y="2.3" width="20" height="9.4" fill="#F4F5F8"/><rect y="4.7" width="20" height="4.6" fill="#2D2A4A"/></svg>`,
+    IDR: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="7" fill="#CE1126"/><rect y="7" width="20" height="7" fill="#ffffff"/></svg>`,
+    MYR: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#CC0000"/><path d="M0 1.5h20v1.5H0zM0 4.5h20v1.5H0zM0 7.5h20v1.5H0zM0 10.5h20v1.5H0z" fill="#ffffff"/><rect width="10" height="7.5" fill="#000066"/></svg>`,
+    PHP: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="7" fill="#0038A8"/><rect y="7" width="20" height="7" fill="#CE1126"/><polygon points="0,0 8,7 0,14" fill="#ffffff"/></svg>`,
+    INR: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="4.7" fill="#FF9933"/><rect y="4.7" width="20" height="4.6" fill="#ffffff"/><rect y="9.3" width="20" height="4.7" fill="#138808"/><circle cx="10" cy="7" r="1.8" fill="none" stroke="#000080" stroke-width="0.8"/></svg>`,
+    NZD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#00247D"/><rect width="8" height="6" fill="#012169"/><path d="M0 0l8 6M8 0L0 6" stroke="#fff" stroke-width="1.2"/><path d="M4 0v6M0 3h8" stroke="#fff" stroke-width="2"/><path d="M4 0v6M0 3h8" stroke="#C8102E" stroke-width="1.2"/></svg>`,
+    RUB: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="4.7" fill="#ffffff"/><rect y="4.7" width="20" height="4.6" fill="#0039A6"/><rect y="9.3" width="20" height="4.7" fill="#D52B1E"/></svg>`,
+    BRL: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#009C3B"/><polygon points="10,1.5 18.5,7 10,12.5 1.5,7" fill="#FFDF00"/><circle cx="10" cy="7" r="3" fill="#002776"/></svg>`,
+    MXN: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="6.7" height="14" fill="#006847"/><rect x="6.7" width="6.6" height="14" fill="#ffffff"/><rect x="13.3" width="6.7" height="14" fill="#CE1126"/></svg>`,
+    AED: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="4.7" fill="#00732F"/><rect y="4.7" width="20" height="4.6" fill="#ffffff"/><rect y="9.3" width="20" height="4.7" fill="#000000"/><rect width="5" height="14" fill="#FF0000"/></svg>`,
+    SAR: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#006C35"/><path d="M5 8.5h10M7 7l6 3" stroke="#fff" stroke-width="0.8"/></svg>`,
+    HKD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#ED1C24"/><circle cx="10" cy="7" r="3.2" fill="#fff"/></svg>`,
+    TWD: `<svg viewBox="0 0 20 14" width="18" height="13" class="nexus-flag-svg" style="border-radius: 2px; flex-shrink: 0; display: block;"><rect width="20" height="14" fill="#FE0000"/><rect width="10" height="7" fill="#000095"/><circle cx="5" cy="3.5" r="2.2" fill="#fff"/><circle cx="5" cy="3.5" r="1.6" fill="#000095"/><circle cx="5" cy="3.5" r="1.2" fill="#fff"/></svg>`
+  };
+  function getFlagHtml(code) {
+    const key = (code || "").toUpperCase();
+    if (CURRENCY_SVG_FLAGS[key]) {
+      return CURRENCY_SVG_FLAGS[key];
+    }
+    const clean = key.slice(0, 2);
+    return `<span class="nexus-flag-badge" style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 13px; font-size: 8.5px; font-weight: 700; background: rgba(255,255,255,0.14); border-radius: 2px; color: inherit; line-height: 1;">${clean}</span>`;
+  }
   var NexusSearchSelect = class _NexusSearchSelect {
     static activeInstance = null;
     static closeActive() {
@@ -21435,7 +21469,6 @@ ${script}`;
       return this.options.find((o) => o.value === this.value) || {
         value: this.value,
         label: this.value,
-        flag: "\u{1F310}",
         symbol: this.value
       };
     }
@@ -21456,10 +21489,11 @@ ${script}`;
     }
     render() {
       const selected = this._getSelectedItem();
+      const flagHtml = selected.flagHtml || getFlagHtml(selected.value);
       this.containerEl.innerHTML = `
             <div class="nexus-select-wrap" style="width: ${this.width};">
                 <button type="button" class="nexus-select-btn" data-action="toggle-select">
-                    <span class="nexus-select-btn-flag">${selected.flag || "\u{1F310}"}</span>
+                    <span class="nexus-select-btn-flag">${flagHtml}</span>
                     <span class="nexus-select-btn-val" data-btn-val>${selected.value}</span>
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="nexus-select-chevron">
                         <polyline points="6 9 12 15 18 9"></polyline>
@@ -21487,9 +21521,10 @@ ${script}`;
       return this.filteredOptions.map((item, idx) => {
         const isSelected = item.value === this.value;
         const isHighlighted = idx === this.highlightIndex;
+        const flagHtml = item.flagHtml || getFlagHtml(item.value);
         return `
                 <div class="nexus-select-item ${isSelected ? "is-selected" : ""} ${isHighlighted ? "is-highlighted" : ""}" data-item-index="${idx}" data-item-value="${item.value}">
-                    ${item.flag ? `<span class="nexus-select-item-flag">${item.flag}</span>` : ""}
+                    <span class="nexus-select-item-flag">${flagHtml}</span>
                     <div class="nexus-select-item-info">
                         <span class="nexus-select-item-code">${item.value}</span>
                         ${item.label && item.label !== item.value ? `<span class="nexus-select-item-name">${item.label}</span>` : ""}
@@ -21523,7 +21558,8 @@ ${script}`;
       const selected = this._getSelectedItem();
       const flagEl = this.containerEl.querySelector(".nexus-select-btn-flag");
       const valEl = this.containerEl.querySelector("[data-btn-val]");
-      if (flagEl) flagEl.textContent = selected.flag || "\u{1F310}";
+      const flagHtml = selected.flagHtml || getFlagHtml(selected.value);
+      if (flagEl) flagEl.innerHTML = flagHtml;
       if (valEl) valEl.textContent = selected.value;
     }
     open() {
@@ -21626,6 +21662,80 @@ ${script}`;
           this.close();
         }
       });
+    }
+  };
+
+  // src/components/ui/nexus_chat_input.js
+  var NexusChatInput = class {
+    static getHTML(options = {}) {
+      const {
+        idPrefix = "",
+        placeholder = "Ask anything...",
+        modelLabel = "Lite",
+        showUpload = true,
+        showModel = true,
+        showMic = true,
+        showWebChips = false,
+        disabled = false
+      } = options;
+      const disabledAttr = disabled ? 'disabled="true"' : "";
+      const disabledStyle = disabled ? "cursor: not-allowed; opacity: 0.5;" : "";
+      return `
+            <div class="nexus-chat-input-wrapper" id="${idPrefix}input-wrapper">
+                <div class="nexus-input-meta-container" id="${idPrefix}input-meta-container" style="${showWebChips ? "display: flex;" : "display: none;"}">
+                    ${showWebChips ? `<div class="nexus-web-chips" id="${idPrefix}web-chips-group"></div>` : ""}
+                    <div class="nexus-redirect-group" id="${idPrefix}redirect-chips-group"></div>
+                </div>
+                <div class="nexus-input-container">
+                    <div class="nexus-file-preview-container nexus-image-preview-container" id="${idPrefix}file-preview"></div>
+                    <div class="nexus-input-bar" id="${idPrefix}input-bar">
+                        <div class="nexus-left-actions">
+                            ${showUpload ? `
+                                <button type="button" class="nexus-upload-btn" id="${idPrefix}upload-btn" title="Upload File" ${disabledAttr} style="${disabledStyle}">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                </button>
+                            ` : ""}
+                            ${showModel ? `
+                                <div class="nexus-model-selector" id="${idPrefix}model-selector">
+                                    <button type="button" class="nexus-model-btn" id="${idPrefix}model-btn" ${disabledAttr} style="${disabledStyle}">
+                                        <span class="nexus-current-model" id="${idPrefix}model-label">${modelLabel}</span>
+                                        <svg class="nexus-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" style="opacity: 0.85;">
+                                            <path d="M18 15l-6-6-6 6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            ` : ""}
+                        </div>
+                        <textarea id="${idPrefix}chat-input" class="nexus-chat-input" placeholder="${placeholder}" rows="1" ${disabledAttr}></textarea>
+                        <div class="nexus-trailing-group">
+                            ${showMic ? `
+                                <button type="button" class="nexus-mic-btn" id="${idPrefix}mic-btn" title="Voice Input" ${disabledAttr} style="${disabledStyle}">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="9" y="4" width="6" height="10" rx="3"></rect>
+                                        <path d="M5 12a7 7 0 0 0 14 0"></path>
+                                        <line x1="12" y1="19" x2="12" y2="22"></line>
+                                    </svg>
+                                </button>
+                            ` : ""}
+                            <button type="button" class="nexus-action-btn send" id="${idPrefix}action-btn" title="Send" disabled="true">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="19" x2="12" y2="5"></line>
+                                    <polyline points="5 12 12 5 19 12"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="nexus-hover-trigger"></div>
+            </div>
+        `;
+    }
+    static bindAutoGrow(textareaEl) {
+      if (!textareaEl) return;
+      textareaEl.style.removeProperty("height");
     }
   };
 
@@ -22242,7 +22352,8 @@ ${script}`;
       this.newCollectionBtn = document.getElementById("notes-new-collection-btn");
       this.newNoteBtn = document.getElementById("notes-new-note-btn");
       this.notesSearchInput = document.getElementById("notes-search-input");
-      this.sortSelect = document.getElementById("notes-sort-select");
+      this.sortBtn = document.getElementById("notes-sort-btn");
+      this.sortLabel = document.getElementById("notes-sort-label");
       this.gridBtn = document.getElementById("notes-view-grid-btn");
       this.listBtn = document.getElementById("notes-view-list-btn");
       this.batchModeBtn = document.getElementById("notes-batch-mode-btn");
@@ -22290,10 +22401,30 @@ ${script}`;
           this.renderNotesList(e.target.value.trim().toLowerCase());
         });
       }
-      if (this.sortSelect) {
-        this.sortSelect.addEventListener("change", (e) => {
-          this.sortMode = e.target.value;
-          this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
+      if (this.sortBtn) {
+        this.sortBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          NexusMenu.show({
+            anchor: this.sortBtn,
+            placement: "bottom-end",
+            items: [
+              {
+                label: "Last Modified",
+                active: this.sortMode === "modified",
+                action: () => this.setSortMode("modified")
+              },
+              {
+                label: "Date Created",
+                active: this.sortMode === "created",
+                action: () => this.setSortMode("created")
+              },
+              {
+                label: "Alphabetical (A\u2013Z)",
+                active: this.sortMode === "az",
+                action: () => this.setSortMode("az")
+              }
+            ]
+          });
         });
       }
       if (this.gridBtn && this.listBtn) {
@@ -22389,6 +22520,18 @@ ${script}`;
       localStorage.setItem("nexus_notes_view_mode", mode);
       if (this.gridBtn) this.gridBtn.classList.toggle("active", mode === "grid");
       if (this.listBtn) this.listBtn.classList.toggle("active", mode === "list");
+      this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
+    }
+    setSortMode(mode) {
+      this.sortMode = mode;
+      if (this.sortLabel) {
+        const map = {
+          modified: "Last Modified",
+          created: "Date Created",
+          az: "Alphabetical (A\u2013Z)"
+        };
+        this.sortLabel.textContent = map[mode] || "Last Modified";
+      }
       this.renderNotesList(this.notesSearchInput?.value?.trim()?.toLowerCase() || "");
     }
     clearBatchSelection() {
@@ -23203,6320 +23346,6 @@ ${extractNoteText(note.content)}`;
   };
   if (typeof window !== "undefined") {
     window.NotesPanel = NotesPanel2;
-  }
-
-  // src/components/panels/tts_panel.js
-  var TTSPanel2 = class {
-    constructor() {
-      this.currentMode = "single";
-      this.audioElement = new Audio();
-      this.sampleAudioElement = new Audio();
-      this.currentRecordingId = null;
-      this.currentAudioBlob = null;
-      this.currentWavBlob = null;
-      this.recordings = [];
-      this.activeFilter = "all";
-      this.searchQuery = "";
-      this.voiceSearchQuery = "";
-      this.selectedVoiceTraits = /* @__PURE__ */ new Set();
-      this.isPlaying = false;
-      this.isGenerating = false;
-      this.isPracticeMode = false;
-      this.currentActiveSentenceEnd = null;
-      this.activeSpeakerTarget = "1";
-      this.selectedVoice1 = "Kore";
-      this.selectedVoice2 = "Puck";
-      this.selectedStyle = "";
-      this.selectedPace = "";
-      this.selectedAccent = "";
-      this.audioProfile = "";
-      this.loadLastVoiceSettings();
-      this.initDOMElements();
-      this.bindEvents();
-      this.renderDirectorDropdowns();
-      this.renderVoiceFilterMenu();
-      this.renderVoiceCards();
-      this.renderCustomPresets();
-    }
-    loadLastVoiceSettings() {
-      try {
-        const raw = localStorage.getItem("nexus_tts_last_settings");
-        if (raw) {
-          const settings = JSON.parse(raw);
-          if (settings.mode) this.currentMode = settings.mode;
-          if (settings.voice1) this.selectedVoice1 = settings.voice1;
-          if (settings.voice2) this.selectedVoice2 = settings.voice2;
-          if (settings.style !== void 0) this.selectedStyle = settings.style;
-          if (settings.pace !== void 0) this.selectedPace = settings.pace;
-          if (settings.accent !== void 0) this.selectedAccent = settings.accent;
-          if (settings.audioProfile !== void 0) this.audioProfile = settings.audioProfile;
-        }
-      } catch (_) {
-      }
-    }
-    saveLastVoiceSettings() {
-      try {
-        const settings = {
-          mode: this.currentMode,
-          voice1: this.selectedVoice1,
-          voice2: this.selectedVoice2,
-          speaker1: this.speaker1Input ? this.speaker1Input.value : "Joe",
-          speaker2: this.speaker2Input ? this.speaker2Input.value : "Jane",
-          style: this.selectedStyle,
-          pace: this.selectedPace,
-          accent: this.selectedAccent,
-          audioProfile: this.profileInput ? this.profileInput.value : this.audioProfile
-        };
-        localStorage.setItem("nexus_tts_last_settings", JSON.stringify(settings));
-      } catch (_) {
-      }
-    }
-    async init(recordingId = null) {
-      this.initDOMElements();
-      this.renderDirectorDropdowns();
-      this.renderVoiceFilterMenu();
-      this.renderVoiceCards();
-      this.renderCustomPresets();
-      await this.loadRecordings();
-      if (recordingId) {
-        await this.selectRecording(recordingId);
-      }
-    }
-    initDOMElements() {
-      this.page = document.getElementById("tts-page");
-      this.sidebarToggleBtn = document.getElementById("tts-sidebar-toggle-btn");
-      this.backBtn = document.getElementById("tts-back-btn");
-      this.newAudioBtn = document.getElementById("tts-new-audio-btn");
-      this.searchInput = document.getElementById("tts-search-input");
-      this.recordingsListEl = document.getElementById("tts-recordings-list");
-      this.countLabel = document.getElementById("tts-count-label");
-      this.filterBtns = document.querySelectorAll("#tts-filter-controls .notes-sort-btn");
-      this.presetQuickChips = document.querySelectorAll(".tts-preset-quick-chip");
-      this.customPresetsGrid = document.getElementById("tts-custom-presets-grid");
-      this.savePresetBtn = document.getElementById("tts-save-preset-btn");
-      this.modeBtns = document.querySelectorAll(".tts-mode-btn");
-      this.duplicateBtn = document.getElementById("tts-duplicate-btn");
-      this.deleteCurrentBtn = document.getElementById("tts-delete-current-btn");
-      this.viewContainer = document.getElementById("tts-view-container");
-      this.composeContainer = document.getElementById("tts-compose-container");
-      this.modeSwitcher = document.getElementById("tts-mode-switcher");
-      this.viewInfoBadge = document.getElementById("tts-view-info-badge");
-      this.viewBadgeVoice = document.getElementById("tts-view-badge-voice");
-      this.viewBadgeMode = document.getElementById("tts-view-badge-mode");
-      this.viewBadgeDate = document.getElementById("tts-view-badge-date");
-      this.viewActions = document.getElementById("tts-view-actions");
-      this.viewScriptBody = document.getElementById("tts-view-script-body");
-      this.heroTitle = document.getElementById("tts-hero-title");
-      this.editCurrentBtn = document.getElementById("tts-edit-current-btn");
-      this.downloadMp3Btn = document.getElementById("tts-download-mp3-btn");
-      this.scriptInput = document.getElementById("tts-script-input");
-      this.tagChips = document.querySelectorAll(".tts-tag-chip");
-      this.voicePickerWrapper = document.getElementById("tts-voice-picker-wrapper");
-      this.voicePickerPill = document.getElementById("tts-voice-picker-pill");
-      this.voiceSettingsPopover = document.getElementById("tts-voice-settings-popover");
-      this.activeVoiceLabel = document.getElementById("tts-active-voice-label");
-      this.profileInput = document.getElementById("tts-profile-input");
-      this.styleChip = document.getElementById("tts-style-chip");
-      this.styleChipLabel = document.getElementById("tts-style-chip-label");
-      this.styleDropdown = document.getElementById("tts-style-dropdown");
-      this.paceChip = document.getElementById("tts-pace-chip");
-      this.paceChipLabel = document.getElementById("tts-pace-chip-label");
-      this.paceDropdown = document.getElementById("tts-pace-dropdown");
-      this.accentChip = document.getElementById("tts-accent-chip");
-      this.accentChipLabel = document.getElementById("tts-accent-chip-label");
-      this.accentDropdown = document.getElementById("tts-accent-dropdown");
-      this.speakerTabSwitch = document.getElementById("tts-speaker-tab-switch");
-      this.speakerNamesGroup = document.getElementById("tts-speaker-names-group");
-      this.speaker1Input = document.getElementById("tts-speaker-1-name");
-      this.speaker2Input = document.getElementById("tts-speaker-2-name");
-      this.speakerTabBtns = document.querySelectorAll(".tts-speaker-tab-btn");
-      this.s1Badge = document.getElementById("tts-s1-badge");
-      this.s2Badge = document.getElementById("tts-s2-badge");
-      this.voiceSearchInput = document.getElementById("tts-voice-search-input");
-      this.voiceFilterBtn = document.getElementById("tts-voice-filter-btn");
-      this.voiceFilterMenu = document.getElementById("tts-voice-filter-menu");
-      this.voiceCardsContainer = document.getElementById("tts-voice-cards-container");
-      this.generateBtn = document.getElementById("tts-generate-btn");
-      this.generateBtnText = document.getElementById("tts-generate-btn-text");
-      this.generateSpinner = document.getElementById("tts-generate-spinner");
-      this.statusText = document.getElementById("tts-status-text");
-      this.playPauseBtn = document.getElementById("tts-play-pause-btn");
-      this.rewind5sBtn = document.getElementById("tts-rewind-5s-btn");
-      this.forward5sBtn = document.getElementById("tts-forward-5s-btn");
-      this.playIcon = document.getElementById("tts-play-icon");
-      this.pauseIcon = document.getElementById("tts-pause-icon");
-      this.progressBar = document.getElementById("tts-progress-bar");
-      this.currentTimeEl = document.getElementById("tts-current-time");
-      this.durationTimeEl = document.getElementById("tts-duration-time");
-      this.speedBtn = document.getElementById("tts-speed-btn");
-      this.practiceModeBtn = document.getElementById("tts-practice-mode-btn");
-    }
-    bindEvents() {
-      if (this.sidebarToggleBtn) {
-        this.sidebarToggleBtn.addEventListener("click", () => {
-          if (typeof window.toggleSidebar === "function") {
-            window.toggleSidebar();
-          } else if (typeof toggleSidebar === "function") {
-            toggleSidebar();
-          }
-        });
-      }
-      if (this.backBtn) {
-        this.backBtn.addEventListener("click", () => {
-          if (this.page) {
-            this.page.classList.remove("show-studio");
-          }
-        });
-      }
-      if (this.newAudioBtn) {
-        this.newAudioBtn.addEventListener("click", () => this.resetStudioForNew());
-      }
-      if (this.searchInput) {
-        this.searchInput.addEventListener("input", (e) => {
-          this.searchQuery = e.target.value.toLowerCase().trim();
-          this.renderRecordingsList();
-        });
-      }
-      this.filterBtns.forEach((btn) => {
-        btn.addEventListener("click", () => {
-          this.filterBtns.forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-          this.activeFilter = btn.dataset.filter || "all";
-          this.renderRecordingsList();
-        });
-      });
-      this.presetQuickChips.forEach((chip) => {
-        chip.addEventListener("click", () => {
-          const presetKey = chip.dataset.preset;
-          this.applyPreset(presetKey);
-          if (this.page) {
-            this.page.classList.add("show-studio");
-          }
-        });
-      });
-      this.modeBtns.forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const mode = btn.dataset.mode;
-          this.setMode(mode);
-          this.saveLastVoiceSettings();
-        });
-      });
-      if (this.duplicateBtn) {
-        this.duplicateBtn.addEventListener("click", () => this.duplicateCurrent());
-      }
-      if (this.editCurrentBtn) {
-        this.editCurrentBtn.addEventListener("click", () => this.duplicateCurrent());
-      }
-      if (this.deleteCurrentBtn) {
-        this.deleteCurrentBtn.addEventListener("click", () => {
-          if (this.currentRecordingId) {
-            this.deleteRecording(this.currentRecordingId);
-          }
-        });
-      }
-      this.tagChips.forEach((chip) => {
-        chip.addEventListener("click", () => {
-          const tag = chip.dataset.tag;
-          this.insertTagAtCursor(tag);
-        });
-      });
-      if (this.profileInput) {
-        this.profileInput.addEventListener("input", (e) => {
-          this.audioProfile = e.target.value;
-          this.saveLastVoiceSettings();
-        });
-      }
-      if (this.speaker1Input) {
-        this.speaker1Input.addEventListener("input", () => this.saveLastVoiceSettings());
-      }
-      if (this.speaker2Input) {
-        this.speaker2Input.addEventListener("input", () => this.saveLastVoiceSettings());
-      }
-      if (this.savePresetBtn) {
-        this.savePresetBtn.addEventListener("click", () => this.handleSaveAsPreset());
-      }
-      if (this.voicePickerPill && this.voiceSettingsPopover) {
-        this.voicePickerPill.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const isOpen = this.voiceSettingsPopover.classList.contains("show");
-          document.querySelectorAll(".tts-attribute-dropdown, .tts-voice-filter-menu").forEach((d) => d.classList.remove("show"));
-          if (!isOpen) {
-            this.voiceSettingsPopover.classList.add("show");
-          } else {
-            this.voiceSettingsPopover.classList.remove("show");
-          }
-        });
-      }
-      this.setupDropdown(this.styleChip, this.styleDropdown);
-      this.setupDropdown(this.paceChip, this.paceDropdown);
-      this.setupDropdown(this.accentChip, this.accentDropdown);
-      if (this.voiceFilterBtn && this.voiceFilterMenu) {
-        this.voiceFilterBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const isOpen = this.voiceFilterMenu.classList.contains("show");
-          document.querySelectorAll(".tts-attribute-dropdown, .tts-voice-filter-menu").forEach((d) => d.classList.remove("show"));
-          if (!isOpen) {
-            this.voiceFilterMenu.classList.add("show");
-            this.voiceFilterBtn.classList.add("active");
-          } else {
-            this.voiceFilterBtn.classList.remove("active");
-          }
-        });
-      }
-      document.addEventListener("click", (e) => {
-        if (!e.target.closest(".tts-voice-picker-wrapper")) {
-          if (this.voiceSettingsPopover) this.voiceSettingsPopover.classList.remove("show");
-          if (this.voiceFilterMenu) this.voiceFilterMenu.classList.remove("show");
-          if (this.voiceFilterBtn) this.voiceFilterBtn.classList.remove("active");
-        }
-        if (!e.target.closest(".tts-attribute-chip-wrapper")) {
-          document.querySelectorAll(".tts-attribute-dropdown").forEach((d) => d.classList.remove("show"));
-        }
-      });
-      this.speakerTabBtns.forEach((btn) => {
-        btn.addEventListener("click", () => {
-          this.speakerTabBtns.forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
-          this.activeSpeakerTarget = btn.dataset.targetSpeaker || "1";
-          this.renderVoiceCards();
-        });
-      });
-      if (this.voiceSearchInput) {
-        this.voiceSearchInput.addEventListener("input", (e) => {
-          this.voiceSearchQuery = e.target.value.toLowerCase().trim();
-          this.renderVoiceCards();
-        });
-      }
-      if (this.generateBtn) {
-        this.generateBtn.addEventListener("click", () => this.handleGenerate());
-      }
-      if (this.playPauseBtn) {
-        this.playPauseBtn.addEventListener("click", () => this.togglePlayPause());
-      }
-      if (this.rewind5sBtn) {
-        this.rewind5sBtn.addEventListener("click", () => {
-          const newTime = Math.max(0, (this.audioElement.currentTime || 0) - 5);
-          this.audioElement.currentTime = newTime;
-          if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(newTime);
-        });
-      }
-      if (this.forward5sBtn) {
-        this.forward5sBtn.addEventListener("click", () => {
-          const dur = this.audioElement.duration && isFinite(this.audioElement.duration) ? this.audioElement.duration : this.currentRecordingDuration || 0;
-          const newTime = dur > 0 ? Math.min(dur, (this.audioElement.currentTime || 0) + 5) : (this.audioElement.currentTime || 0) + 5;
-          this.audioElement.currentTime = newTime;
-          if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(newTime);
-        });
-      }
-      if (this.progressBar) {
-        const handleSeek = (e) => {
-          const dur = this.audioElement.duration && isFinite(this.audioElement.duration) ? this.audioElement.duration : this.currentRecordingDuration;
-          if (dur && dur > 0) {
-            const targetTime = parseFloat(e.target.value) / 100 * dur;
-            this.audioElement.currentTime = targetTime;
-            if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(targetTime);
-          }
-        };
-        this.progressBar.addEventListener("input", handleSeek);
-        this.progressBar.addEventListener("change", handleSeek);
-      }
-      if (this.speedBtn) {
-        const speeds = [1, 1.25, 1.5, 1.75, 2, 0.8];
-        let speedIdx = 0;
-        this.speedBtn.addEventListener("click", () => {
-          speedIdx = (speedIdx + 1) % speeds.length;
-          const speed = speeds[speedIdx];
-          this.audioElement.playbackRate = speed;
-          this.speedBtn.textContent = `${speed}x`;
-        });
-      }
-      if (this.practiceModeBtn) {
-        this.practiceModeBtn.addEventListener("click", () => {
-          this.isPracticeMode = !this.isPracticeMode;
-          this.practiceModeBtn.classList.toggle("active", this.isPracticeMode);
-          if (this.isPracticeMode) {
-            this.showStatus("Practice Mode ON: Audio will pause after each sentence.", false);
-          } else {
-            this.showStatus("Practice Mode OFF: Continuous playback.", false);
-          }
-        });
-      }
-      if (this.heroTitle) {
-        this.heroTitle.addEventListener("change", async () => {
-          if (this.currentRecordingId) {
-            const newTitle = this.heroTitle.value.trim() || "Untitled Audio";
-            await TTSDB2.updateRecordingTitle(this.currentRecordingId, newTitle);
-            await this.loadRecordings();
-            if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
-              NexusSync.triggerDebouncedSync();
-            }
-          }
-        });
-        this.heroTitle.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") {
-            this.heroTitle.blur();
-          }
-        });
-      }
-      if (this.downloadMp3Btn) {
-        this.downloadMp3Btn.addEventListener("click", () => {
-          if (this.currentAudioBlob) {
-            const title = (this.heroTitle ? this.heroTitle.value : "audio").toLowerCase().replace(/[^a-z0-9]/gi, "-").slice(0, 30);
-            TTSManager.downloadMp3(this.currentAudioBlob, `${title || "speech"}.mp3`);
-          }
-        });
-      }
-      if (this.downloadWavBtn) {
-        this.downloadWavBtn.addEventListener("click", () => {
-          const blob = this.currentWavBlob || this.currentAudioBlob;
-          if (blob) {
-            const title = (this.heroTitle ? this.heroTitle.textContent : "audio").toLowerCase().replace(/[^a-z0-9]/gi, "-").slice(0, 30);
-            TTSManager.downloadWav(blob, `${title || "speech"}.wav`);
-          }
-        });
-      }
-      const updateAudioDuration = () => {
-        const dur = this.audioElement.duration;
-        if (dur && isFinite(dur) && !isNaN(dur) && dur > 0) {
-          if (this.durationTimeEl) this.durationTimeEl.textContent = this.formatTime(dur);
-        } else if (this.currentRecordingDuration) {
-          if (this.durationTimeEl) this.durationTimeEl.textContent = this.formatTime(this.currentRecordingDuration);
-        }
-      };
-      this.audioElement.addEventListener("timeupdate", () => {
-        const dur = this.audioElement.duration && isFinite(this.audioElement.duration) ? this.audioElement.duration : this.currentRecordingDuration;
-        if (dur && dur > 0) {
-          const progress = this.audioElement.currentTime / dur * 100;
-          if (this.progressBar) this.progressBar.value = Math.min(100, Math.max(0, progress));
-          if (this.durationTimeEl && (!this.durationTimeEl.textContent || this.durationTimeEl.textContent === "0:00" || this.durationTimeEl.textContent.includes("NaN"))) {
-            this.durationTimeEl.textContent = this.formatTime(dur);
-          }
-        }
-        if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(this.audioElement.currentTime);
-        this.highlightActiveSentence(this.audioElement.currentTime);
-      });
-      this.audioElement.addEventListener("loadedmetadata", updateAudioDuration);
-      this.audioElement.addEventListener("durationchange", updateAudioDuration);
-      this.audioElement.addEventListener("canplay", updateAudioDuration);
-      this.audioElement.addEventListener("ended", () => {
-        this.isPlaying = false;
-        this.updatePlayerUI();
-      });
-      this.audioElement.addEventListener("pause", () => {
-        this.isPlaying = false;
-        this.updatePlayerUI();
-      });
-      this.audioElement.addEventListener("play", () => {
-        this.isPlaying = true;
-        this.updatePlayerUI();
-      });
-      this.sampleAudioElement.addEventListener("ended", () => {
-        document.querySelectorAll(".tts-voice-play-sample-btn").forEach((b) => b.classList.remove("playing"));
-      });
-    }
-    setupDropdown(chipEl, dropdownEl) {
-      if (!chipEl || !dropdownEl) return;
-      chipEl.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const isOpen = dropdownEl.classList.contains("show");
-        document.querySelectorAll(".tts-attribute-dropdown, .tts-voice-filter-menu").forEach((d) => d.classList.remove("show"));
-        if (!isOpen) {
-          dropdownEl.classList.add("show");
-        }
-      });
-    }
-    renderDirectorDropdowns() {
-      if (this.styleDropdown) {
-        this.styleDropdown.innerHTML = `
-                <div class="tts-dropdown-item ${!this.selectedStyle ? "selected" : ""}" data-val="">None (Default)</div>
-                ${TTSManager.STYLE_OPTIONS.map((opt) => `
-                    <div class="tts-dropdown-item ${this.selectedStyle === opt.value ? "selected" : ""}" data-val="${this.escapeHtml(opt.value)}">${this.escapeHtml(opt.label)}</div>
-                `).join("")}
-            `;
-        this.styleDropdown.querySelectorAll(".tts-dropdown-item").forEach((item) => {
-          item.addEventListener("click", () => {
-            this.selectedStyle = item.dataset.val;
-            this.updateChipLabel(this.styleChip, this.styleChipLabel, "Style", this.selectedStyle);
-            this.styleDropdown.classList.remove("show");
-            this.renderDirectorDropdowns();
-            this.saveLastVoiceSettings();
-          });
-        });
-      }
-      if (this.paceDropdown) {
-        this.paceDropdown.innerHTML = `
-                <div class="tts-dropdown-item ${!this.selectedPace ? "selected" : ""}" data-val="">None (Default)</div>
-                ${TTSManager.PACE_OPTIONS.map((opt) => `
-                    <div class="tts-dropdown-item ${this.selectedPace === opt.value ? "selected" : ""}" data-val="${this.escapeHtml(opt.value)}">${this.escapeHtml(opt.label)}</div>
-                `).join("")}
-            `;
-        this.paceDropdown.querySelectorAll(".tts-dropdown-item").forEach((item) => {
-          item.addEventListener("click", () => {
-            this.selectedPace = item.dataset.val;
-            this.updateChipLabel(this.paceChip, this.paceChipLabel, "Pace", this.selectedPace);
-            this.paceDropdown.classList.remove("show");
-            this.renderDirectorDropdowns();
-            this.saveLastVoiceSettings();
-          });
-        });
-      }
-      if (this.accentDropdown) {
-        this.accentDropdown.innerHTML = `
-                <div class="tts-dropdown-item ${!this.selectedAccent ? "selected" : ""}" data-val="">None (Default)</div>
-                ${TTSManager.ACCENT_OPTIONS.map((opt) => `
-                    <div class="tts-dropdown-item ${this.selectedAccent === opt.value ? "selected" : ""}" data-val="${this.escapeHtml(opt.value)}">${this.escapeHtml(opt.label)}</div>
-                `).join("")}
-            `;
-        this.accentDropdown.querySelectorAll(".tts-dropdown-item").forEach((item) => {
-          item.addEventListener("click", () => {
-            this.selectedAccent = item.dataset.val;
-            this.updateChipLabel(this.accentChip, this.accentChipLabel, "Accent", this.selectedAccent);
-            this.accentDropdown.classList.remove("show");
-            this.renderDirectorDropdowns();
-            this.saveLastVoiceSettings();
-          });
-        });
-      }
-    }
-    renderVoiceFilterMenu() {
-      if (!this.voiceFilterMenu) return;
-      const availableTraits = TTSManager.VOICE_TRAITS.filter((t) => t !== "All");
-      this.voiceFilterMenu.innerHTML = `
-            <div class="tts-filter-menu-header">
-                <span>Filter Traits (${this.selectedVoiceTraits.size})</span>
-                ${this.selectedVoiceTraits.size > 0 ? '<button type="button" class="tts-filter-reset-btn" id="tts-filter-reset-btn">Clear all</button>' : ""}
-            </div>
-            ${availableTraits.map((trait) => {
-        const isChecked = this.selectedVoiceTraits.has(trait);
-        return `
-                    <label class="tts-filter-item-checkbox">
-                        <input type="checkbox" data-trait="${trait}" ${isChecked ? "checked" : ""} />
-                        <span>${trait}</span>
-                    </label>
-                `;
-      }).join("")}
-        `;
-      const resetBtn = this.voiceFilterMenu.querySelector("#tts-filter-reset-btn");
-      if (resetBtn) {
-        resetBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          this.selectedVoiceTraits.clear();
-          if (this.voiceFilterBtn) this.voiceFilterBtn.classList.remove("active");
-          this.renderVoiceFilterMenu();
-          this.renderVoiceCards();
-        });
-      }
-      this.voiceFilterMenu.querySelectorAll('input[type="checkbox"]').forEach((input) => {
-        input.addEventListener("change", (e) => {
-          e.stopPropagation();
-          const trait = input.dataset.trait;
-          if (input.checked) {
-            this.selectedVoiceTraits.add(trait);
-          } else {
-            this.selectedVoiceTraits.delete(trait);
-          }
-          if (this.voiceFilterBtn) {
-            if (this.selectedVoiceTraits.size > 0) {
-              this.voiceFilterBtn.classList.add("active");
-            } else {
-              this.voiceFilterBtn.classList.remove("active");
-            }
-          }
-          this.renderVoiceFilterMenu();
-          this.renderVoiceCards();
-        });
-      });
-    }
-    updateChipLabel(chipEl, labelEl, defaultText, currentValue) {
-      if (!chipEl || !labelEl) return;
-      if (currentValue) {
-        chipEl.classList.add("active-value");
-        const foundLabel = this.findOptionLabel(defaultText, currentValue);
-        labelEl.textContent = `${defaultText}: ${foundLabel}`;
-      } else {
-        chipEl.classList.remove("active-value");
-        labelEl.textContent = defaultText;
-      }
-    }
-    findOptionLabel(type, val) {
-      let list = [];
-      if (type === "Style") list = TTSManager.STYLE_OPTIONS;
-      else if (type === "Pace") list = TTSManager.PACE_OPTIONS;
-      else if (type === "Accent") list = TTSManager.ACCENT_OPTIONS;
-      const item = list.find((o) => o.value === val);
-      return item ? item.label : val.slice(0, 14);
-    }
-    renderVoiceCards() {
-      if (!this.voiceCardsContainer) return;
-      const currentSelected = this.activeSpeakerTarget === "2" ? this.selectedVoice2 : this.selectedVoice1;
-      let voices = TTSManager.VOICES;
-      if (this.selectedVoiceTraits.size > 0) {
-        const traitsArr = Array.from(this.selectedVoiceTraits).map((t) => t.toLowerCase());
-        voices = voices.filter((v) => {
-          return traitsArr.every(
-            (trait) => v.tone.toLowerCase().includes(trait) || v.pitch.toLowerCase().includes(trait) || v.gender.toLowerCase() === trait
-          );
-        });
-      }
-      if (this.voiceSearchQuery) {
-        voices = voices.filter(
-          (v) => v.name.toLowerCase().includes(this.voiceSearchQuery) || v.tone.toLowerCase().includes(this.voiceSearchQuery) || v.pitch.toLowerCase().includes(this.voiceSearchQuery) || v.gender.toLowerCase().includes(this.voiceSearchQuery)
-        );
-      }
-      if (voices.length === 0) {
-        this.voiceCardsContainer.innerHTML = `
-                <div style="padding: 16px; text-align: center; color: var(--nexus-text-muted, #94a3b8); font-size: 0.8rem;">
-                    No voices matching the selected filters.
-                </div>
-            `;
-        return;
-      }
-      this.voiceCardsContainer.innerHTML = voices.map((v) => {
-        const isSelected = v.name === currentSelected;
-        return `
-                <div class="tts-voice-card ${isSelected ? "selected" : ""}" data-voice-name="${v.name}">
-                    <button type="button" class="tts-voice-card-content" aria-label="${v.name}">
-                        <div class="tts-voice-row-primary">
-                            <span class="tts-voice-name">${v.name}</span>
-                            ${isSelected ? '<span class="tts-voice-current-badge">Current</span>' : ""}
-                        </div>
-                        <div class="tts-voice-traits">
-                            <span class="tts-trait-chip">${v.tone}</span>
-                            <span class="tts-trait-chip">${v.pitch}</span>
-                            <span class="tts-trait-chip">${v.gender}</span>
-                        </div>
-                    </button>
-                    <button type="button" class="tts-voice-play-sample-btn" data-voice-name="${v.name}" title="Play voice sample">
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
-                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                        </svg>
-                    </button>
-                </div>
-            `;
-      }).join("");
-      this.voiceCardsContainer.querySelectorAll(".tts-voice-card-content").forEach((card) => {
-        card.addEventListener("click", () => {
-          const voiceName = card.closest(".tts-voice-card").dataset.voiceName;
-          if (this.activeSpeakerTarget === "2") {
-            this.selectedVoice2 = voiceName;
-            if (this.s2Badge) this.s2Badge.textContent = voiceName;
-          } else {
-            this.selectedVoice1 = voiceName;
-            if (this.s1Badge) this.s1Badge.textContent = voiceName;
-          }
-          this.updateActiveVoiceHeaderLabel();
-          this.renderVoiceCards();
-          this.saveLastVoiceSettings();
-        });
-      });
-      this.voiceCardsContainer.querySelectorAll(".tts-voice-play-sample-btn").forEach((btn) => {
-        btn.addEventListener("click", async (e) => {
-          e.stopPropagation();
-          const voiceName = btn.dataset.voiceName;
-          await this.playVoiceSample(voiceName, btn);
-        });
-      });
-    }
-    updateActiveVoiceHeaderLabel() {
-      if (!this.activeVoiceLabel) return;
-      if (this.currentMode === "multi") {
-        this.activeVoiceLabel.textContent = `Voice: ${this.selectedVoice1} & ${this.selectedVoice2}`;
-      } else {
-        this.activeVoiceLabel.textContent = `Voice: ${this.selectedVoice1}`;
-      }
-    }
-    async playVoiceSample(voiceName, btnEl) {
-      try {
-        document.querySelectorAll(".tts-voice-play-sample-btn").forEach((b) => b.classList.remove("playing"));
-        btnEl.classList.add("playing");
-        this.showStatus(`Loading sample for ${voiceName}...`, false);
-        const result = await TTSManager.previewVoiceSample(voiceName);
-        this.sampleAudioElement.src = result.audioUrl;
-        this.sampleAudioElement.load();
-        await this.sampleAudioElement.play();
-        this.showStatus(`Playing sample for ${voiceName}`, false);
-      } catch (err) {
-        btnEl.classList.remove("playing");
-        this.showStatus(`Could not preview ${voiceName}: ${err.message}`, true);
-      }
-    }
-    async loadRecordings() {
-      try {
-        this.recordings = await TTSDB2.getAllRecordings();
-        this.renderRecordingsList();
-      } catch (err) {
-        console.error("Failed to load recordings from TTSDB:", err);
-      }
-    }
-    renderRecordingsList() {
-      if (!this.recordingsListEl) return;
-      let filtered = this.recordings;
-      if (this.activeFilter === "starred") {
-        filtered = filtered.filter((r) => r.starred);
-      }
-      if (this.searchQuery) {
-        filtered = filtered.filter(
-          (r) => r.title && r.title.toLowerCase().includes(this.searchQuery) || r.script && r.script.toLowerCase().includes(this.searchQuery) || r.voice && r.voice.toLowerCase().includes(this.searchQuery)
-        );
-      }
-      if (this.countLabel) {
-        this.countLabel.textContent = `Recordings (${filtered.length})`;
-      }
-      if (filtered.length === 0) {
-        this.recordingsListEl.innerHTML = `
-                <div class="notes-list-empty">
-                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.4; margin-bottom: 4px;">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                    </svg>
-                    <span>${this.searchQuery ? "No audio matching search." : "No audio recordings yet."}</span>
-                </div>
-            `;
-        return;
-      }
-      this.recordingsListEl.innerHTML = filtered.map((rec) => {
-        const isActive = rec.id === this.currentRecordingId ? "active" : "";
-        const starColor = rec.starred ? "#f59e0b" : "currentColor";
-        const voiceLabel = rec.mode === "multi" ? `${rec.voice} + ${rec.voice2}` : rec.voice;
-        const timeAgo2 = this.formatRelativeTime(rec.createdAt);
-        const durationStr = this.formatTime(rec.durationSeconds || 0);
-        return `
-                <div class="tts-recording-item ${isActive}" data-id="${rec.id}">
-                    <div class="tts-rec-header">
-                        <span class="tts-rec-title" title="${this.escapeHtml(rec.title)}">${this.escapeHtml(rec.title)}</span>
-                        <div class="tts-rec-quick-actions">
-                            <button type="button" class="notes-qa-btn tts-item-star-btn" data-id="${rec.id}" title="${rec.starred ? "Unstar" : "Star"}">
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="${rec.starred ? "#f59e0b" : "none"}" stroke="${starColor}" stroke-width="2">
-                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                                </svg>
-                            </button>
-                            <button type="button" class="notes-qa-btn tts-item-delete-btn" data-id="${rec.id}" title="Delete">
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="tts-rec-snippet">${this.escapeHtml(rec.script || "")}</div>
-                    <div class="tts-rec-meta">
-                        <span class="tts-rec-voice-tag">${this.escapeHtml(voiceLabel)}</span>
-                        <span class="tts-rec-duration">${durationStr}</span>
-                        <span class="tts-rec-time">${timeAgo2}</span>
-                    </div>
-                </div>
-            `;
-      }).join("");
-      this.recordingsListEl.querySelectorAll(".tts-recording-item").forEach((el) => {
-        el.addEventListener("click", (e) => {
-          if (e.target.closest(".tts-rec-quick-actions")) return;
-          const id = el.dataset.id;
-          this.selectRecording(id);
-          if (this.page) {
-            this.page.classList.add("show-studio");
-          }
-        });
-      });
-      this.recordingsListEl.querySelectorAll(".tts-item-star-btn").forEach((btn) => {
-        btn.addEventListener("click", async (e) => {
-          e.stopPropagation();
-          const id = btn.dataset.id;
-          await TTSDB2.toggleStar(id);
-          await this.loadRecordings();
-          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
-            NexusSync.triggerDebouncedSync();
-          }
-        });
-      });
-      this.recordingsListEl.querySelectorAll(".tts-item-delete-btn").forEach((btn) => {
-        btn.addEventListener("click", async (e) => {
-          e.stopPropagation();
-          const id = btn.dataset.id;
-          await this.deleteRecording(id);
-        });
-      });
-    }
-    renderScriptViewer(script, mode, speaker1, speaker2, alignment = null) {
-      if (!this.viewScriptBody) return;
-      const text = script || "";
-      this.currentAlignment = alignment;
-      if (mode === "multi") {
-        const lines = text.split("\n");
-        const html = lines.map((line) => {
-          const trimmed = line.trim();
-          if (!trimmed) return "";
-          const match = trimmed.match(/^([^:]+):\s*(.*)$/);
-          if (match) {
-            const spk = this.escapeHtml(match[1].trim());
-            const rawContent = match[2];
-            const contentHtml = this.formatScriptWithSentences(rawContent, alignment);
-            return `<div class="tts-view-dialogue-line"><span class="tts-view-speaker-name">${spk}:</span>${contentHtml}</div>`;
-          } else {
-            const contentHtml = this.formatScriptWithSentences(trimmed, alignment);
-            return `<div class="tts-view-dialogue-line">${contentHtml}</div>`;
-          }
-        }).filter(Boolean).join("");
-        this.viewScriptBody.innerHTML = html || '<div class="tts-view-dialogue-line">No transcript content.</div>';
-      } else {
-        const contentHtml = this.formatScriptWithSentences(text, alignment);
-        this.viewScriptBody.innerHTML = `<div class="tts-view-dialogue-line">${contentHtml}</div>`;
-      }
-      this.bindSentenceClickEvents();
-    }
-    formatScriptWithSentences(rawText, alignment = null) {
-      if (!rawText) return "";
-      let processedText = rawText.replace(/\b(p|a)\.m\./gi, "$1_m_dot_").replace(/\b(e\.g|i\.e|vs|etc|mr|mrs|ms|dr|prof)\./gi, "$1_dot_").replace(/(\d+)\.(\d+)/g, "$1_numdot_$2");
-      const sentenceRegex = /[^.!?:\n]+[.!?:]+["'”’]?|[^.!?:\n]+$/g;
-      const rawMatches = processedText.match(sentenceRegex) || [processedText];
-      const sentences = rawMatches.map((s) => {
-        return s.replace(/_m_dot_/gi, ".m.").replace(/_dot_/gi, ".").replace(/_numdot_/g, ".").trim();
-      }).filter(Boolean);
-      const segments = alignment && Array.isArray(alignment.segments) ? alignment.segments : [];
-      const words = alignment && Array.isArray(alignment.words) ? alignment.words : [];
-      if (words.length > 0) {
-        let wordCursor = 0;
-        return sentences.map((sent, sIdx) => {
-          const cleanWords = sent.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(Boolean);
-          let start = 0;
-          let end = 0;
-          if (cleanWords.length > 0 && wordCursor < words.length) {
-            start = words[wordCursor].start || 0;
-            const lastWord = cleanWords[cleanWords.length - 1];
-            let foundEndIdx = -1;
-            const searchLimit = Math.min(words.length, wordCursor + cleanWords.length + 5);
-            for (let i = wordCursor; i < searchLimit; i++) {
-              const wClean = (words[i].word || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-              if (wClean === lastWord) {
-                foundEndIdx = i;
-              }
-            }
-            if (foundEndIdx !== -1) {
-              end = words[foundEndIdx].end || start + 1;
-              wordCursor = foundEndIdx + 1;
-            } else {
-              const fallbackIdx = Math.min(words.length - 1, wordCursor + cleanWords.length - 1);
-              end = words[fallbackIdx].end || start + 1.5;
-              wordCursor = fallbackIdx + 1;
-            }
-          } else if (segments.length > 0) {
-            end = segments[segments.length - 1].end || 0;
-          }
-          if (sIdx === sentences.length - 1 && words.length > 0) {
-            end = Math.max(end, words[words.length - 1].end || end);
-          }
-          let escapedSent = this.escapeHtml(sent);
-          escapedSent = escapedSent.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
-          return `<span class="tts-sentence-segment" data-start="${start}" data-end="${end}" title="Click to play (${this.formatTime(start)})">${escapedSent}</span>`;
-        }).join(" ");
-      }
-      if (segments.length > 0) {
-        if (segments.length > 1 && sentences.length === segments.length) {
-          return sentences.map((sent, idx) => {
-            const seg = segments[idx];
-            const start = typeof seg.start === "number" ? seg.start : 0;
-            const end = typeof seg.end === "number" ? seg.end : start + 1;
-            let escapedSent = this.escapeHtml(sent);
-            escapedSent = escapedSent.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
-            return `<span class="tts-sentence-segment" data-start="${start}" data-end="${end}" title="Click to play (${this.formatTime(start)})">${escapedSent}</span>`;
-          }).join(" ");
-        }
-        const totalDuration = segments[segments.length - 1].end || 0;
-        const totalChars = sentences.reduce((sum, s) => sum + s.length, 0) || 1;
-        let currentAccumTime = 0;
-        return sentences.map((sent, idx) => {
-          const ratio = sent.length / totalChars;
-          const start = currentAccumTime;
-          const end = idx === sentences.length - 1 ? totalDuration : start + ratio * totalDuration;
-          currentAccumTime = end;
-          let escapedSent = this.escapeHtml(sent);
-          escapedSent = escapedSent.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
-          return `<span class="tts-sentence-segment" data-start="${start.toFixed(2)}" data-end="${end.toFixed(2)}" title="Click to play (${this.formatTime(start)})">${escapedSent}</span>`;
-        }).join(" ");
-      }
-      return sentences.map((sent) => {
-        let escapedSent = this.escapeHtml(sent);
-        escapedSent = escapedSent.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
-        return `<span class="tts-sentence-segment" data-start="0" data-end="0">${escapedSent}</span>`;
-      }).join(" ");
-    }
-    bindSentenceClickEvents() {
-      if (!this.viewScriptBody) return;
-      this.viewScriptBody.querySelectorAll(".tts-sentence-segment").forEach((seg) => {
-        seg.addEventListener("click", (e) => {
-          const startTime = parseFloat(seg.dataset.start || 0);
-          const endTime = parseFloat(seg.dataset.end || 0);
-          if (!isNaN(startTime) && this.audioElement) {
-            this.currentActiveSentenceEnd = endTime > startTime ? endTime : null;
-            this.audioElement.currentTime = Math.max(0, startTime);
-            this.audioElement.play().catch(() => {
-            });
-            this.highlightActiveSentence(startTime);
-          }
-        });
-      });
-    }
-    highlightActiveSentence(currentTime) {
-      if (!this.viewScriptBody) return;
-      const segments = this.viewScriptBody.querySelectorAll(".tts-sentence-segment");
-      let currentActiveSeg = null;
-      let matchedSegEl = null;
-      segments.forEach((seg) => {
-        const start = parseFloat(seg.dataset.start || 0);
-        const end = parseFloat(seg.dataset.end || 0);
-        if (end > start) {
-          const isWithin = currentTime >= start && currentTime < end;
-          const isJustEnded = this.isPracticeMode && Math.abs(currentTime - end) <= 0.25;
-          if (isWithin || isJustEnded) {
-            seg.classList.add("active");
-            currentActiveSeg = { start, end };
-            matchedSegEl = seg;
-          } else {
-            seg.classList.remove("active");
-          }
-        } else {
-          seg.classList.remove("active");
-        }
-      });
-      if (this.isPracticeMode && this.isPlaying && this.audioElement && !this.audioElement.paused) {
-        if (currentActiveSeg) {
-          this.currentActiveSentenceEnd = currentActiveSeg.end;
-        }
-        if (this.currentActiveSentenceEnd && currentTime >= this.currentActiveSentenceEnd - 0.05) {
-          this.audioElement.pause();
-          if (matchedSegEl) {
-            matchedSegEl.classList.add("active");
-          }
-          this.currentActiveSentenceEnd = null;
-        }
-      }
-    }
-    async selectRecording(recOrId) {
-      if (!recOrId) return;
-      let rec = recOrId;
-      if (typeof recOrId === "string") {
-        rec = await TTSDB2.getRecording(recOrId);
-      }
-      if (!rec) return;
-      this.currentRecordingId = rec.id;
-      this.currentAudioBlob = rec.audioBlob || null;
-      this.currentWavBlob = rec.audioBlob || null;
-      this.currentMode = rec.mode || "single";
-      if (this.modeSwitcher) this.modeSwitcher.style.display = "none";
-      if (this.voicePickerWrapper) this.voicePickerWrapper.style.display = "none";
-      if (this.generateBtn) this.generateBtn.style.display = "none";
-      if (this.viewInfoBadge) this.viewInfoBadge.style.display = "flex";
-      if (this.viewActions) this.viewActions.style.display = "flex";
-      if (this.viewContainer) this.viewContainer.style.display = "flex";
-      if (this.composeContainer) this.composeContainer.style.display = "none";
-      if (this.viewBadgeVoice) {
-        this.viewBadgeVoice.textContent = rec.mode === "multi" ? `${rec.voice} & ${rec.voice2}` : rec.voice || "Achernar";
-      }
-      if (this.viewBadgeMode) {
-        this.viewBadgeMode.textContent = rec.mode === "multi" ? "Multi-Speaker" : "Single Speaker";
-      }
-      if (this.viewBadgeDate) {
-        this.viewBadgeDate.textContent = this.formatRelativeTime(rec.createdAt);
-      }
-      if (this.heroTitle) this.heroTitle.value = rec.title || "Untitled Audio";
-      this.renderScriptViewer(rec.script, rec.mode, rec.speaker1, rec.speaker2, rec.alignment);
-      if (rec.audioBlob) {
-        this.currentRecordingDuration = rec.durationSeconds || 0;
-        if (this.durationTimeEl) {
-          this.durationTimeEl.textContent = this.formatTime(this.currentRecordingDuration);
-        }
-        const url = URL.createObjectURL(rec.audioBlob);
-        this.audioElement.src = url;
-        this.audioElement.load();
-        if (!rec.alignment && typeof GroqAligner !== "undefined") {
-          this.triggerBackgroundGroqAlign(rec);
-        }
-      }
-      this.showStatus("", false);
-      this.renderRecordingsList();
-      if (typeof NexusViewManager !== "undefined" && typeof NexusViewManager.updateUrl === "function") {
-        NexusViewManager.updateUrl("tts", { recordingId: rec.id });
-      }
-      if (this.page) {
-        this.page.classList.add("show-studio");
-      }
-    }
-    async triggerBackgroundGroqAlign(rec) {
-      if (!rec || !rec.audioBlob || rec._isAligning) return;
-      rec._isAligning = true;
-      try {
-        const alignment = await GroqAligner.align(rec.audioBlob, rec.script);
-        if (alignment && alignment.segments && alignment.segments.length > 0) {
-          rec.alignment = alignment;
-          await TTSDB2.saveRecording(rec);
-          if (this.currentRecordingId === rec.id) {
-            this.renderScriptViewer(rec.script, rec.mode, rec.speaker1, rec.speaker2, alignment);
-          }
-        }
-      } catch (err) {
-        console.warn("Groq STT alignment background task failed:", err);
-      } finally {
-        rec._isAligning = false;
-      }
-    }
-    resetStudioForNew() {
-      this.currentRecordingId = null;
-      this.currentAudioBlob = null;
-      this.currentWavBlob = null;
-      this.audioElement.pause();
-      this.audioElement.src = "";
-      if (typeof NexusViewManager !== "undefined" && typeof NexusViewManager.updateUrl === "function") {
-        NexusViewManager.updateUrl("tts", {});
-      }
-      if (this.modeSwitcher) this.modeSwitcher.style.display = "flex";
-      if (this.voicePickerWrapper) this.voicePickerWrapper.style.display = "block";
-      if (this.generateBtn) this.generateBtn.style.display = "inline-flex";
-      if (this.viewInfoBadge) this.viewInfoBadge.style.display = "none";
-      if (this.viewActions) this.viewActions.style.display = "none";
-      if (this.viewContainer) this.viewContainer.style.display = "none";
-      if (this.composeContainer) this.composeContainer.style.display = "flex";
-      if (this.scriptInput) {
-        this.scriptInput.value = "";
-        this.scriptInput.focus();
-      }
-      this.loadLastVoiceSettings();
-      this.modeBtns.forEach((btn) => {
-        btn.classList.toggle("active", btn.dataset.mode === this.currentMode);
-      });
-      this.updateModeUI();
-      if (this.profileInput) this.profileInput.value = this.audioProfile || "";
-      this.updateChipLabel(this.styleChip, this.styleChipLabel, "Style", this.selectedStyle);
-      this.updateChipLabel(this.paceChip, this.paceChipLabel, "Pace", this.selectedPace);
-      this.updateChipLabel(this.accentChip, this.accentChipLabel, "Accent", this.selectedAccent);
-      this.updateActiveVoiceHeaderLabel();
-      this.renderDirectorDropdowns();
-      this.renderVoiceCards();
-      this.updateGenerateButtonUI(false);
-      this.renderRecordingsList();
-      if (this.page) {
-        this.page.classList.add("show-studio");
-      }
-    }
-    duplicateCurrent() {
-      const recId = this.currentRecordingId;
-      if (!recId) return;
-      TTSDB2.getRecording(recId).then((rec) => {
-        if (!rec) return;
-        this.audioElement.pause();
-        this.audioElement.src = "";
-        if (this.modeSwitcher) this.modeSwitcher.style.display = "flex";
-        if (this.voicePickerWrapper) this.voicePickerWrapper.style.display = "block";
-        if (this.generateBtn) this.generateBtn.style.display = "inline-flex";
-        if (this.viewInfoBadge) this.viewInfoBadge.style.display = "none";
-        if (this.viewActions) this.viewActions.style.display = "none";
-        if (this.viewContainer) this.viewContainer.style.display = "none";
-        if (this.composeContainer) this.composeContainer.style.display = "flex";
-        this.currentMode = rec.mode || "single";
-        this.selectedVoice1 = rec.voice || "Kore";
-        this.selectedVoice2 = rec.voice2 || "Puck";
-        if (this.s1Badge) this.s1Badge.textContent = this.selectedVoice1;
-        if (this.s2Badge) this.s2Badge.textContent = this.selectedVoice2;
-        this.selectedStyle = rec.style || "";
-        this.selectedPace = rec.pace || "";
-        this.selectedAccent = rec.accent || "";
-        this.audioProfile = rec.audioProfile || "";
-        if (this.scriptInput) {
-          this.scriptInput.value = rec.script || "";
-          this.scriptInput.focus();
-        }
-        if (this.profileInput) this.profileInput.value = this.audioProfile;
-        if (this.speaker1Input) this.speaker1Input.value = rec.speaker1 || "Joe";
-        if (this.speaker2Input) this.speaker2Input.value = rec.speaker2 || "Jane";
-        this.setMode(this.currentMode);
-        this.updateChipLabel(this.styleChip, this.styleChipLabel, "Style", this.selectedStyle);
-        this.updateChipLabel(this.paceChip, this.paceChipLabel, "Pace", this.selectedPace);
-        this.updateChipLabel(this.accentChip, this.accentChipLabel, "Accent", this.selectedAccent);
-        this.updateActiveVoiceHeaderLabel();
-        this.renderDirectorDropdowns();
-        this.renderVoiceCards();
-        this.saveLastVoiceSettings();
-        if (this.page) {
-          this.page.classList.add("show-studio");
-        }
-      });
-    }
-    async deleteRecording(id) {
-      await TTSDB2.deleteRecording(id);
-      if (this.currentRecordingId === id) {
-        this.resetStudioForNew();
-      }
-      await this.loadRecordings();
-      if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
-        NexusSync.triggerDebouncedSync();
-      }
-    }
-    setMode(mode) {
-      this.currentMode = mode;
-      this.modeBtns.forEach((btn) => {
-        if (btn.dataset.mode === mode) {
-          btn.classList.add("active");
-        } else {
-          btn.classList.remove("active");
-        }
-      });
-      if (mode === "multi") {
-        if (this.speakerTabSwitch) this.speakerTabSwitch.style.display = "flex";
-        if (this.speakerNamesGroup) this.speakerNamesGroup.style.display = "grid";
-      } else {
-        if (this.speakerTabSwitch) this.speakerTabSwitch.style.display = "none";
-        if (this.speakerNamesGroup) this.speakerNamesGroup.style.display = "none";
-        this.activeSpeakerTarget = "1";
-      }
-      this.updateActiveVoiceHeaderLabel();
-      this.renderVoiceCards();
-    }
-    insertTagAtCursor(tag) {
-      if (!this.scriptInput) return;
-      const input = this.scriptInput;
-      const start = input.selectionStart || 0;
-      const end = input.selectionEnd || 0;
-      const text = input.value;
-      const tagToInsert = `${tag} `;
-      input.value = text.substring(0, start) + tagToInsert + text.substring(end);
-      input.focus();
-      input.selectionStart = input.selectionEnd = start + tagToInsert.length;
-    }
-    applyPreset(presetKey) {
-      if (!this.scriptInput) return;
-      switch (presetKey) {
-        case "podcast":
-          this.setMode("multi");
-          if (this.speaker1Input) this.speaker1Input.value = "Joe";
-          if (this.speaker2Input) this.speaker2Input.value = "Jane";
-          this.selectedVoice1 = "Kore";
-          this.selectedVoice2 = "Puck";
-          if (this.s1Badge) this.s1Badge.textContent = "Kore";
-          if (this.s2Badge) this.s2Badge.textContent = "Puck";
-          this.audioProfile = "Engaging tech podcast hosts sharing cutting-edge AI insights with genuine enthusiasm.";
-          this.selectedStyle = "Enthusiastic and energetic";
-          this.selectedPace = "Steady, conversational pace";
-          this.selectedAccent = "Standard English";
-          this.scriptInput.value = `Joe: [excitedly] Welcome back to the show, everyone! Jane, did you see the new speech synthesis update today?
-Jane: [laughs] I certainly did Joe! [amazed] The natural emotional inflections and control tags are genuinely impressive.
-Joe: Exactly. It completely changes how we produce audiobooks and podcasts!`;
-          break;
-        case "story":
-          this.setMode("single");
-          this.selectedVoice1 = "Enceladus";
-          if (this.s1Badge) this.s1Badge.textContent = "Enceladus";
-          this.audioProfile = "Mysterious, atmospheric storyteller around a crackling campfire.";
-          this.selectedStyle = "Mysterious, cinematic, intimate storyteller";
-          this.selectedPace = "Slow tempo with dramatic pauses";
-          this.selectedAccent = "British English accent as heard in London";
-          this.scriptInput.value = `[whispers] Listen closely... [short pause]
-The old grandfather clock in the hallway struck midnight, its hollow chimes echoing through the empty corridors.
-[gasp] Then, from behind the sealed oak door, quiet footsteps sounded...`;
-          break;
-        case "news":
-          this.setMode("single");
-          this.selectedVoice1 = "Charon";
-          if (this.s1Badge) this.s1Badge.textContent = "Charon";
-          this.audioProfile = "Authoritative, clear and professional morning news anchor.";
-          this.selectedStyle = "Authoritative, clear, and informative";
-          this.selectedPace = "Steady, conversational pace";
-          this.selectedAccent = "Standard English";
-          this.scriptInput.value = `Good morning. Here are the top headlines for today.
-Markets reached historic highs this morning following breakthroughs in artificial intelligence technology and renewable energy adoption.`;
-          break;
-        case "influencer":
-          this.setMode("single");
-          this.selectedVoice1 = "Zephyr";
-          if (this.s1Badge) this.s1Badge.textContent = "Zephyr";
-          this.audioProfile = "High-energy, charismatic tech influencer with contagious optimism.";
-          this.selectedStyle = "Bright, cheerful, and sunny with a vocal smile";
-          this.selectedPace = "Fast-paced, rapid energetic delivery";
-          this.selectedAccent = "General American accent";
-          this.scriptInput.value = `[excitedly] What is up, everyone! You will NOT believe what just dropped today!
-[laughs] Drop a like, subscribe, and let's dive right into the demo!`;
-          break;
-      }
-      if (this.profileInput) this.profileInput.value = this.audioProfile;
-      this.updateChipLabel(this.styleChip, this.styleChipLabel, "Style", this.selectedStyle);
-      this.updateChipLabel(this.paceChip, this.paceChipLabel, "Pace", this.selectedPace);
-      this.updateChipLabel(this.accentChip, this.accentChipLabel, "Accent", this.selectedAccent);
-      this.renderDirectorDropdowns();
-      this.renderVoiceCards();
-      this.saveLastVoiceSettings();
-    }
-    async getCustomPresets() {
-      try {
-        const raw = localStorage.getItem("nexus_tts_custom_presets");
-        return raw ? JSON.parse(raw) : [];
-      } catch (_) {
-        return [];
-      }
-    }
-    async saveCustomPresets(presets) {
-      try {
-        localStorage.setItem("nexus_tts_custom_presets", JSON.stringify(presets));
-        this.renderCustomPresets();
-      } catch (_) {
-      }
-    }
-    async renderCustomPresets() {
-      if (!this.customPresetsGrid) return;
-      const presets = await this.getCustomPresets();
-      if (presets.length === 0) {
-        this.customPresetsGrid.style.display = "none";
-        this.customPresetsGrid.innerHTML = "";
-        return;
-      }
-      this.customPresetsGrid.style.display = "flex";
-      this.customPresetsGrid.innerHTML = presets.map((p, idx) => `
-            <div class="tts-custom-preset-chip" data-index="${idx}">
-                <div class="tts-custom-preset-name" title="${this.escapeHtml(p.name)} (${p.mode === "multi" ? `${p.voice1} & ${p.voice2}` : p.voice1})">
-                    \u2B50 ${this.escapeHtml(p.name)}
-                </div>
-                <button type="button" class="tts-custom-preset-delete" data-index="${idx}" title="Delete Preset">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-        `).join("");
-      this.customPresetsGrid.querySelectorAll(".tts-custom-preset-chip").forEach((chip) => {
-        chip.addEventListener("click", (e) => {
-          if (e.target.closest(".tts-custom-preset-delete")) return;
-          const idx = parseInt(chip.dataset.index, 10);
-          this.applyCustomPreset(presets[idx]);
-          if (this.page) {
-            this.page.classList.add("show-studio");
-          }
-        });
-      });
-      this.customPresetsGrid.querySelectorAll(".tts-custom-preset-delete").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const idx = parseInt(btn.dataset.index, 10);
-          this.deleteCustomPreset(idx);
-        });
-      });
-    }
-    async handleSaveAsPreset() {
-      const defaultName = this.currentMode === "multi" ? `${this.selectedVoice1} & ${this.selectedVoice2} (${this.selectedStyle || "Default"})` : `${this.selectedVoice1} (${this.selectedStyle || "Preset"})`;
-      const name = prompt("Enter a name for this preset:", defaultName);
-      if (!name || !name.trim()) return;
-      const newPreset = {
-        id: "preset_" + Date.now(),
-        name: name.trim(),
-        mode: this.currentMode,
-        voice1: this.selectedVoice1,
-        voice2: this.selectedVoice2,
-        speaker1: this.speaker1Input ? this.speaker1Input.value : "Joe",
-        speaker2: this.speaker2Input ? this.speaker2Input.value : "Jane",
-        style: this.selectedStyle,
-        pace: this.selectedPace,
-        accent: this.selectedAccent,
-        audioProfile: this.profileInput ? this.profileInput.value : this.audioProfile,
-        createdAt: Date.now()
-      };
-      const presets = await this.getCustomPresets();
-      presets.unshift(newPreset);
-      await this.saveCustomPresets(presets);
-      this.showStatus(`Preset "${name.trim()}" saved successfully!`, false);
-    }
-    applyCustomPreset(preset) {
-      if (!preset) return;
-      this.setMode(preset.mode || "single");
-      this.selectedVoice1 = preset.voice1 || "Kore";
-      this.selectedVoice2 = preset.voice2 || "Puck";
-      if (this.s1Badge) this.s1Badge.textContent = this.selectedVoice1;
-      if (this.s2Badge) this.s2Badge.textContent = this.selectedVoice2;
-      if (this.speaker1Input && preset.speaker1) this.speaker1Input.value = preset.speaker1;
-      if (this.speaker2Input && preset.speaker2) this.speaker2Input.value = preset.speaker2;
-      this.selectedStyle = preset.style || "";
-      this.selectedPace = preset.pace || "";
-      this.selectedAccent = preset.accent || "";
-      this.audioProfile = preset.audioProfile || "";
-      if (this.profileInput) this.profileInput.value = this.audioProfile;
-      this.updateChipLabel(this.styleChip, this.styleChipLabel, "Style", this.selectedStyle);
-      this.updateChipLabel(this.paceChip, this.paceChipLabel, "Pace", this.selectedPace);
-      this.updateChipLabel(this.accentChip, this.accentChipLabel, "Accent", this.selectedAccent);
-      this.updateActiveVoiceHeaderLabel();
-      this.renderDirectorDropdowns();
-      this.renderVoiceCards();
-      this.saveLastVoiceSettings();
-      this.showStatus(`Applied preset: ${preset.name}`, false);
-    }
-    async deleteCustomPreset(idx) {
-      const presets = await this.getCustomPresets();
-      if (idx >= 0 && idx < presets.length) {
-        const removed = presets.splice(idx, 1);
-        await this.saveCustomPresets(presets);
-        this.showStatus(`Deleted preset "${removed[0]?.name || ""}"`, false);
-      }
-    }
-    async handleGenerate() {
-      const script = this.scriptInput ? this.scriptInput.value.trim() : "";
-      if (!script) {
-        if (this.scriptInput) this.scriptInput.focus();
-        return;
-      }
-      const taskPayload = {
-        mode: this.currentMode,
-        script,
-        voice1: this.selectedVoice1 || "Kore",
-        voice2: this.selectedVoice2 || "Puck",
-        speaker1: this.speaker1Input ? this.speaker1Input.value : "Joe",
-        speaker2: this.speaker2Input ? this.speaker2Input.value : "Jane",
-        audioProfile: this.profileInput ? this.profileInput.value : this.audioProfile,
-        style: this.selectedStyle,
-        pace: this.selectedPace,
-        accent: this.selectedAccent
-      };
-      this.updateGenerateButtonUI(true);
-      (async () => {
-        try {
-          const result = await TTSManager.generateSpeech({
-            mode: taskPayload.mode,
-            script: taskPayload.script,
-            voice: taskPayload.voice1,
-            voice2: taskPayload.voice2,
-            speaker1: taskPayload.speaker1,
-            speaker2: taskPayload.speaker2,
-            audioProfile: taskPayload.audioProfile,
-            style: taskPayload.style,
-            pace: taskPayload.pace,
-            accent: taskPayload.accent
-          });
-          const savedItem = await TTSDB2.saveRecording({
-            title: taskPayload.script.split("\n")[0].replace(/\[.*?\]/g, "").trim().slice(0, 45) || "Audio Recording",
-            script: taskPayload.script,
-            mode: taskPayload.mode,
-            voice: taskPayload.voice1,
-            voice2: taskPayload.voice2,
-            speaker1: taskPayload.speaker1,
-            speaker2: taskPayload.speaker2,
-            audioProfile: taskPayload.audioProfile,
-            style: taskPayload.style,
-            pace: taskPayload.pace,
-            accent: taskPayload.accent,
-            durationSeconds: result.durationSeconds,
-            audioBlob: result.blob
-          });
-          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
-            NexusSync.triggerDebouncedSync();
-          }
-          if (typeof GroqAligner !== "undefined") {
-            this.triggerBackgroundGroqAlign(savedItem);
-          }
-          await this.loadRecordings();
-          const isWritingNew = this.composeContainer && this.composeContainer.style.display !== "none" && this.scriptInput && this.scriptInput.value.trim().length > 0;
-          if (!isWritingNew) {
-            await this.selectRecording(savedItem);
-            try {
-              await this.audioElement.play();
-            } catch (_) {
-            }
-          }
-        } catch (error) {
-          console.error("TTS background generation failed:", error);
-        } finally {
-          this.updateGenerateButtonUI(false);
-        }
-      })();
-    }
-    togglePlayPause() {
-      if (!this.audioElement.src) return;
-      if (this.audioElement.paused) {
-        this.audioElement.play().catch(() => {
-        });
-      } else {
-        this.audioElement.pause();
-      }
-    }
-    updatePlayerUI() {
-      if (this.playIcon && this.pauseIcon) {
-        if (this.isPlaying) {
-          this.playIcon.style.display = "none";
-          this.pauseIcon.style.display = "block";
-        } else {
-          this.playIcon.style.display = "block";
-          this.pauseIcon.style.display = "none";
-        }
-      }
-    }
-    updateGenerateButtonUI(loading) {
-      if (this.generateBtn) {
-        this.generateBtn.disabled = loading;
-      }
-      if (this.generateSpinner) {
-        this.generateSpinner.style.display = loading ? "inline-block" : "none";
-      }
-      if (this.generateBtnText) {
-        this.generateBtnText.textContent = loading ? "Generating..." : "Generate";
-      }
-    }
-    showStatus(msg, isError = false) {
-      if (this.statusText) {
-        this.statusText.textContent = msg;
-        this.statusText.className = "tts-status-text";
-        if (isError) {
-          this.statusText.classList.add("error");
-        } else if (msg) {
-          this.statusText.classList.add("success");
-        }
-      }
-    }
-    formatTime(seconds) {
-      if (isNaN(seconds) || seconds < 0) return "0:00";
-      const mins = Math.floor(seconds / 60);
-      const secs = Math.floor(seconds % 60);
-      return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-    }
-    formatRelativeTime(timestamp) {
-      if (!timestamp) return "";
-      const now = Date.now();
-      const diff = now - timestamp;
-      const seconds = Math.floor(diff / 1e3);
-      if (seconds < 60) return "Just now";
-      const minutes = Math.floor(seconds / 60);
-      if (minutes < 60) return `${minutes}m ago`;
-      const hours = Math.floor(minutes / 60);
-      if (hours < 24) return `${hours}h ago`;
-      const days = Math.floor(hours / 24);
-      if (days < 7) return `${days}d ago`;
-      return new Date(timestamp).toLocaleDateString();
-    }
-    escapeHtml(str) {
-      if (!str) return "";
-      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
-  };
-  if (typeof window !== "undefined") {
-    window.TTSPanel = TTSPanel2;
-  }
-
-  // src/components/dictionary/dictionary_popup.js
-  var NexusDictionaryPopup2 = {
-    instance: null,
-    currentWord: "",
-    currentSource: "dictionary",
-    resultsCache: /* @__PURE__ */ new Map(),
-    ongoingRequests: /* @__PURE__ */ new Set(),
-    isManualSelection: false,
-    getFallbackSource(source) {
-      return null;
-    },
-    async show(word, options = {}) {
-      if (this.instance) {
-        this.instance.remove();
-      }
-      if (this.currentWord !== word) {
-        this.currentWord = word;
-      }
-      let initialSource = options.source || "dictionary";
-      if (initialSource === "freedict" || initialSource === "ai" || initialSource === "cambridge" || initialSource === "oxford") {
-        initialSource = "dictionary";
-      }
-      const saved = await chrome.storage.local.get(["preferredDictSource"]);
-      if (saved.preferredDictSource && saved.preferredDictSource !== "freedict" && saved.preferredDictSource !== "ai") {
-        initialSource = saved.preferredDictSource;
-      }
-      if (initialSource === "cambridge" || initialSource === "oxford") {
-        initialSource = "dictionary";
-      }
-      this.currentSource = initialSource;
-      this.isManualSelection = false;
-      if (!this.messageListenerAdded) {
-        chrome.runtime.onMessage.addListener((msg) => {
-          if (msg.action === "background_log") {
-            console.log(`%c[BG Bridge]%c ${msg.message}`, "color: #ff9800; font-weight: bold;", "color: inherit;");
-          }
-        });
-        this.messageListenerAdded = true;
-      }
-      const dimensions = await chrome.storage.local.get(["dictPopupWidth", "dictPopupHeight"]);
-      const width = dimensions.dictPopupWidth || 420;
-      const height = dimensions.dictPopupHeight || 460;
-      const popup = document.createElement("div");
-      popup.id = "nexus-dictionary-popup";
-      popup.className = "nexus-dictionary-popup";
-      let x = options.x || window.innerWidth / 2 - width / 2;
-      let y = options.y || window.innerHeight / 2 - height / 2;
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      if (x + width > viewportWidth - 10) x = viewportWidth - width - 10;
-      if (x < 10) x = 10;
-      if (y + height > viewportHeight - 10) y = viewportHeight - height - 10;
-      if (y < 10) y = 10;
-      popup.style.left = `${x}px`;
-      popup.style.top = `${y}px`;
-      popup.style.width = `${width}px`;
-      popup.style.height = `${height}px`;
-      popup.innerHTML = `
-            <div class="nexus-dict-body">
-                <div class="nexus-dict-scroll-area">
-                    <div class="nexus-dict-loading-state">
-                        <div class="nexus-loading-spinner"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="nexus-dict-footer" style="${this.currentSource === "translate" ? "display: none !important;" : ""}">
-                <div class="nexus-dict-tabs">
-                    <button class="nexus-dict-tab-btn ${this.currentSource === "dictionary" ? "active" : ""}" data-source="dictionary">Dictionary</button>
-                    <button class="nexus-dict-tab-btn ${this.currentSource === "images" ? "active" : ""}" data-source="images">Images</button>
-                </div>
-            </div>
-            <div class="nexus-dict-resizer-right"></div>
-            <div class="nexus-dict-resizer-bottom"></div>
-            <div class="nexus-dict-resizer-corner"></div>
-        `;
-      const shadowHost = document.getElementById("nexus-shadow-host");
-      if (shadowHost && shadowHost.shadowRoot) {
-        shadowHost.shadowRoot.appendChild(popup);
-      } else {
-        document.body.appendChild(popup);
-      }
-      this.instance = popup;
-      this.setupEvents();
-      this.fetchData(this.currentSource);
-    },
-    switchSource(source) {
-      if (!this.instance || source === this.currentSource) return;
-      const tabs3 = this.instance.querySelectorAll(".nexus-dict-tab-btn");
-      const targetTab = Array.from(tabs3).find((t) => t.dataset.source === source);
-      if (!targetTab) return;
-      tabs3.forEach((t) => t.classList.remove("active"));
-      targetTab.classList.add("active");
-      this.currentSource = source;
-      if (source !== "images" && source !== "translate") {
-        chrome.storage.local.set({ preferredDictSource: source });
-      }
-      this.fetchData(source);
-    },
-    setupEvents() {
-      if (!this.instance) return;
-      const tabs3 = this.instance.querySelectorAll(".nexus-dict-tab-btn");
-      tabs3.forEach((tab) => {
-        tab.onclick = () => {
-          this.isManualSelection = true;
-          this.switchSource(tab.dataset.source);
-        };
-      });
-      const cornerResizer = this.instance.querySelector(".nexus-dict-resizer-corner");
-      const rightResizer = this.instance.querySelector(".nexus-dict-resizer-right");
-      const bottomResizer = this.instance.querySelector(".nexus-dict-resizer-bottom");
-      let isResizing = false;
-      let resizingMode = null;
-      let startX, startY, startW, startH;
-      const startResize = (e, mode) => {
-        isResizing = true;
-        resizingMode = mode;
-        startX = e.clientX;
-        startY = e.clientY;
-        startW = this.instance.offsetWidth;
-        startH = this.instance.offsetHeight;
-        this.instance.classList.add("is-resizing");
-        e.preventDefault();
-        e.stopPropagation();
-      };
-      if (cornerResizer) cornerResizer.onmousedown = (e) => startResize(e, "corner");
-      if (rightResizer) rightResizer.onmousedown = (e) => startResize(e, "right");
-      if (bottomResizer) bottomResizer.onmousedown = (e) => startResize(e, "bottom");
-      const moveHandler = (e) => {
-        if (isResizing) {
-          const dw = e.clientX - startX;
-          const dh = e.clientY - startY;
-          if (resizingMode === "right" || resizingMode === "corner") {
-            this.instance.style.width = `${Math.max(300, startW + dw)}px`;
-          }
-          if (resizingMode === "bottom" || resizingMode === "corner") {
-            this.instance.style.height = `${Math.max(250, startH + dh)}px`;
-          }
-          if (window._dictResizeTimer) clearTimeout(window._dictResizeTimer);
-          window._dictResizeTimer = setTimeout(() => {
-            chrome.storage.local.set({
-              dictPopupWidth: parseInt(this.instance.style.width),
-              dictPopupHeight: parseInt(this.instance.style.height)
-            });
-          }, 500);
-        }
-      };
-      const upHandler = () => {
-        if (isResizing) {
-          isResizing = false;
-          this.instance.classList.remove("is-resizing");
-        }
-      };
-      const outsideClickHandler = (e) => {
-        if (!this.instance) return;
-        const path = e.composedPath();
-        const isInside = path.some(
-          (el) => el === this.instance || el.id === "nexus-dictionary-popup" || el.id === "nexus-shadow-host" || el.classList && el.classList.contains && el.classList.contains("nexus-dictionary-popup")
-        );
-        if (!isInside) {
-          this.hide();
-        }
-      };
-      window.addEventListener("mousemove", moveHandler);
-      window.addEventListener("mouseup", upHandler);
-      window.addEventListener("mousedown", outsideClickHandler, true);
-      this.instance._cleanup = () => {
-        window.removeEventListener("mousemove", moveHandler);
-        window.removeEventListener("mouseup", upHandler);
-        window.removeEventListener("mousedown", outsideClickHandler, true);
-      };
-    },
-    hide() {
-      if (this.instance) {
-        if (this.instance._cleanup) this.instance._cleanup();
-        this.instance.remove();
-        this.instance = null;
-      }
-    },
-    showLoading(source) {
-      if (!this.instance) return;
-      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
-      if (!scrollArea) return;
-      scrollArea.innerHTML = `
-            <div class="nexus-dict-loading-state">
-                <div class="nexus-loading-spinner"></div>
-            </div>
-        `;
-    },
-    async fetchData(source = this.currentSource) {
-      const cacheKey = `${this.currentWord}_${source}`;
-      const now = Date.now();
-      const cached = this.resultsCache.get(cacheKey);
-      if (cached && now - cached.timestamp < 36e5) {
-        if (source === this.currentSource) {
-          if (source === "images") this.renderImages(cached.data);
-          else if (source === "translate") this.renderTranslation(cached.data);
-          else this.renderData(cached.data);
-        }
-        return;
-      }
-      const requestKey = `${this.currentWord}_${source}`;
-      if (this.ongoingRequests.has(requestKey)) return;
-      this.ongoingRequests.add(requestKey);
-      if (source === this.currentSource) {
-        this.showLoading(source);
-      }
-      try {
-        if (source === "images") {
-          const images = typeof searchGoogleImages === "function" ? await searchGoogleImages(this.currentWord) : [];
-          this.resultsCache.set(cacheKey, { data: images, timestamp: Date.now() });
-          if (source === this.currentSource) this.renderImages(images);
-          return;
-        }
-        const actionMap = {
-          "dictionary": "fetch_dictionary",
-          "translate": "translate"
-        };
-        const action = actionMap[source];
-        let payload;
-        if (source === "translate") {
-          payload = { action, text: this.currentWord, targetLang: "vi" };
-        } else {
-          payload = { action, word: this.currentWord };
-        }
-        const response = await new Promise((resolve) => {
-          chrome.runtime.sendMessage(payload, (res) => {
-            if (chrome.runtime.lastError) {
-              resolve({ success: false, error: chrome.runtime.lastError.message });
-            } else {
-              resolve(res);
-            }
-          });
-        });
-        if (response && !response.error) {
-          if (source === "translate") {
-            this.resultsCache.set(cacheKey, { data: response, timestamp: Date.now() });
-            if (source === this.currentSource) this.renderTranslation(response);
-            return;
-          }
-          const parser = window.FreeDictParser || FreeDictParser2;
-          const finalData = response.data ? parser.parse(response.data) : null;
-          if (finalData) {
-            this.resultsCache.set(cacheKey, { data: finalData, timestamp: Date.now() });
-            if (source === this.currentSource) this.renderData(finalData);
-          }
-          if (!finalData || !finalData.entries || finalData.entries.length === 0) {
-            if (source === this.currentSource) {
-              const emptyData = finalData || { word: this.currentWord, entries: [] };
-              this.renderData(emptyData);
-            }
-          }
-        } else {
-          throw new Error(response?.error || "Failed to fetch");
-        }
-      } catch (err) {
-        console.error(`[Nexus Dict] Error in fetchData(${source}):`, err);
-        const errMessage = String(err?.message || err || "");
-        const isForbidden = /\b403\b|HTTP Status 403|Forbidden/i.test(errMessage);
-        const fallbackSource = isForbidden ? this.getFallbackSource(source) : null;
-        if (fallbackSource && source === this.currentSource) {
-          this.switchSource(fallbackSource);
-          return;
-        }
-        if (source === this.currentSource) {
-          const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
-          if (scrollArea) {
-            let title = "Fetch Failed";
-            let desc = err.message;
-            let icon = "\u26A0\uFE0F";
-            if (isForbidden) {
-              title = "Access Restricted";
-              desc = `The connection to ${source} was blocked. Please try another network.`;
-              icon = "\u{1F6AB}";
-            }
-            scrollArea.innerHTML = `
-                        <div class="nexus-dict-status-container status-error">
-                            <div class="nexus-dict-status-card">
-                                <div class="nexus-dict-status-icon">${icon}</div>
-                                <div class="nexus-dict-status-title">${title}</div>
-                                <div class="nexus-dict-status-desc">${desc}</div>
-                            </div>
-                        </div>
-                    `;
-          }
-        }
-      } finally {
-        this.ongoingRequests.delete(requestKey);
-      }
-    },
-    renderImages(images) {
-      if (!this.instance) return;
-      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
-      if (!images || images.length === 0) {
-        scrollArea.innerHTML = `
-                <div class="nexus-dict-status-container status-empty">
-                    <div class="nexus-dict-status-card">
-                        <div class="nexus-dict-status-icon">\u{1F4F8}</div>
-                        <div class="nexus-dict-status-title">No Results Found</div>
-                    </div>
-                </div>
-            `;
-        return;
-      }
-      const displayImages = images.slice(0, 4);
-      scrollArea.innerHTML = `
-            <div class="nexus-dict-images-grid">
-                ${displayImages.map((img) => `
-                    <div class="nexus-dict-image-card">
-                        <div class="nexus-loading-spinner"></div>
-                        <img src="${img}" loading="lazy">
-                    </div>
-                `).join("")}
-            </div>
-        `;
-      const cards = scrollArea.querySelectorAll(".nexus-dict-image-card");
-      cards.forEach((card) => {
-        const img = card.querySelector("img");
-        const spinner = card.querySelector(".nexus-loading-spinner");
-        if (img) {
-          img.onload = () => {
-            if (spinner) spinner.style.setProperty("display", "none", "important");
-          };
-          img.onerror = () => {
-            card.style.setProperty("display", "none", "important");
-          };
-          img.onclick = () => {
-            window.open(img.src, "_blank");
-          };
-        }
-      });
-    },
-    renderTranslation(data) {
-      if (!this.instance) return;
-      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
-      if (!scrollArea) return;
-      const escapeHTML = (str) => {
-        if (!str) return "";
-        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-      };
-      const safeOriginal = (data.original || this.currentWord || "").replace(/"/g, "&quot;");
-      const safeTranslation = (data.translation || "").replace(/"/g, "&quot;");
-      let sourceHTML = escapeHTML(data.original || this.currentWord || "");
-      let targetHTML = escapeHTML(data.translation || "");
-      const isPreSplit = data.sentences && Array.isArray(data.sentences);
-      if (isPreSplit) {
-        sourceHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${escapeHTML(s.src || "")}</span>`).join(" ");
-        targetHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${escapeHTML(s.tgt || "")}</span>`).join(" ");
-      }
-      scrollArea.innerHTML = `
-            <div class="nexus-dict-content-wrapper nexus-dict-translation-wrapper" style="padding: 12px;">
-                <div class="nexus-translation-container" style="margin: 0; width: 100%;">
-                    <div class="nexus-translation-card" ${isPreSplit ? 'data-is-pre-split="true"' : ""}>
-                        <div class="nexus-translation-block" style="padding: 0 8px 0 0;">
-                            <div class="nexus-translation-source" data-copy-text="${safeOriginal}">
-                                <div class="nexus-translation-text">${sourceHTML}</div>
-                            </div>
-                        </div>
-                        <div class="nexus-translation-divider"></div>
-                        <div class="nexus-translation-block" style="padding: 0 0 0 8px;">
-                            <div class="nexus-translation-target" data-copy-text="${safeTranslation}">
-                                <div class="nexus-translation-text">${targetHTML}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-      const cardContainer = scrollArea.querySelector(".nexus-translation-card");
-      if (cardContainer && typeof NexusChatUI !== "undefined") {
-        NexusChatUI._setupTranslationHighlight(cardContainer);
-        NexusChatUI.balanceTranslationCard(cardContainer);
-      }
-    },
-    renderData(data) {
-      if (!this.instance) return;
-      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
-      if (!data || !data.entries || data.entries.length === 0) {
-        scrollArea.innerHTML = `
-                <div class="nexus-dict-status-container status-empty">
-                    <div class="nexus-dict-status-card">
-                        <div class="nexus-dict-status-icon">\u{1F50D}</div>
-                        <div class="nexus-dict-status-title">No Results Found</div>
-                        <div class="nexus-dict-status-desc">Try checking spelling or choose another source.</div>
-                    </div>
-                </div>
-            `;
-        return;
-      }
-      scrollArea.innerHTML = `<div class="nexus-dict-content-wrapper"></div>`;
-      const wrapper = scrollArea.querySelector(".nexus-dict-content-wrapper");
-      data.entries.forEach((entry) => {
-        const entryEl = document.createElement("div");
-        entryEl.className = "nexus-dict-popup-item";
-        entryEl.innerHTML = this.buildEntryHTML(entry, data.word);
-        wrapper.appendChild(entryEl);
-      });
-      this.setupAudioListeners(scrollArea);
-    },
-    shortenPOS(pos) {
-      if (!pos) return "";
-      const map = {
-        "noun": "n.",
-        "verb": "v.",
-        "adjective": "adj.",
-        "adverb": "adv.",
-        "preposition": "prep.",
-        "prepositional phrase": "prep. phr.",
-        "conjunction": "conj.",
-        "pronoun": "pron.",
-        "interjection": "interj.",
-        "phrasal verb": "phr. v.",
-        "idiom": "idm.",
-        "idiomatic expression": "idm. expr.",
-        "exclamation": "excl.",
-        "determiner": "det.",
-        "number": "num."
-      };
-      let lower = pos.toLowerCase().trim();
-      if (lower.includes("(")) {
-        lower = lower.split("(")[0].trim();
-      }
-      return map[lower] || lower;
-    },
-    getSpeakerSVG(color = "currentColor") {
-      return `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${color}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
-    },
-    setupAudioListeners(container2) {
-      const audioBtns = container2.querySelectorAll(".nexus-dict-popup-audio");
-      let _audioCtx = null;
-      const getAudioCtx = () => {
-        if (!_audioCtx || _audioCtx.state === "closed") {
-          _audioCtx = new AudioContext();
-        }
-        return _audioCtx;
-      };
-      let currentAudio = null;
-      let audioAborted = false;
-      const playBase64Audio2 = (base64Data, speed = 1) => {
-        return new Promise(async (resolve, reject) => {
-          if (audioAborted) {
-            resolve();
-            return;
-          }
-          try {
-            const parts = base64Data.split(",");
-            const byteString = atob(parts[1]);
-            const byteArray = new Uint8Array(byteString.length);
-            for (let i = 0; i < byteString.length; i++) byteArray[i] = byteString.charCodeAt(i);
-            let silenceOffset = 0;
-            try {
-              const ctx = getAudioCtx();
-              const audioBuffer = await ctx.decodeAudioData(byteArray.buffer.slice(0));
-              const channelData = audioBuffer.getChannelData(0);
-              const THRESHOLD = 5e-3;
-              for (let i = 0; i < channelData.length; i++) {
-                if (Math.abs(channelData[i]) > THRESHOLD) {
-                  silenceOffset = i / audioBuffer.sampleRate;
-                  break;
-                }
-              }
-            } catch (e) {
-            }
-            if (audioAborted) {
-              resolve();
-              return;
-            }
-            const mime = parts[0].split(":")[1].split(";")[0];
-            const blob = new Blob([byteArray], { type: mime });
-            const blobUrl = URL.createObjectURL(blob);
-            const audio = new Audio(blobUrl);
-            audio.playbackRate = speed;
-            if (silenceOffset > 0) audio.currentTime = silenceOffset;
-            currentAudio = audio;
-            audio.onended = () => {
-              currentAudio = null;
-              URL.revokeObjectURL(blobUrl);
-              resolve();
-            };
-            audio.onerror = (e) => {
-              currentAudio = null;
-              URL.revokeObjectURL(blobUrl);
-              reject(e);
-            };
-            audio.play().catch(reject);
-          } catch (e) {
-            try {
-              const audio = new Audio(base64Data);
-              audio.playbackRate = speed;
-              currentAudio = audio;
-              audio.onended = () => {
-                currentAudio = null;
-                resolve();
-              };
-              audio.onerror = (err) => {
-                currentAudio = null;
-                reject(err);
-              };
-              audio.play().catch(reject);
-            } catch (err) {
-              reject(err);
-            }
-          }
-        });
-      };
-      const playWordAudio = async (wordText, originalUrl, language) => {
-        if (!wordText) return;
-        const normalizedText = wordText.trim();
-        audioAborted = false;
-        if (currentAudio) {
-          currentAudio.pause();
-          currentAudio = null;
-        }
-        let speed = 1.1;
-        try {
-          const data = await chrome.storage.local.get(["audioSpeed"]);
-          speed = data.audioSpeed || 1.1;
-        } catch (e) {
-        }
-        try {
-          const cached = await chrome.runtime.sendMessage({ action: "getAudioCache", text: normalizedText });
-          if (cached && cached.success && cached.data) {
-            const chunks = Array.isArray(cached.data) ? cached.data : [cached.data];
-            for (const chunk of chunks) await playBase64Audio2(chunk, speed);
-            return;
-          }
-        } catch (e) {
-        }
-        try {
-          let result = null;
-          if (originalUrl) {
-            try {
-              result = await chrome.runtime.sendMessage({ action: "fetchAudioBase64", url: originalUrl });
-              if (result && result.success && result.data) {
-                result = { type: "oxford", chunks: [result.data] };
-              } else {
-                result = null;
-              }
-            } catch (e) {
-              result = null;
-            }
-          }
-          if (!result) {
-            result = await chrome.runtime.sendMessage({ action: "fetchAudio", text: normalizedText, speed, lang: language });
-          }
-          if (!result || !result.chunks || result.chunks.length === 0) return;
-          for (const chunk of result.chunks) await playBase64Audio2(chunk, speed);
-          chrome.runtime.sendMessage({ action: "setAudioCache", text: normalizedText, type: result.type, data: result.chunks }).catch(() => {
-          });
-        } catch (err) {
-          console.error("[Popup Audio] Play audio failed:", err);
-        }
-      };
-      audioBtns.forEach((btn) => {
-        btn.onclick = async (e) => {
-          e.stopPropagation();
-          const { url, text, lang } = btn.dataset;
-          playWordAudio(text, url, lang);
-        };
-      });
-    },
-    buildEntryHTML(entry, word) {
-      let senseMeaningIndex = 1;
-      return `
-            <div class="nexus-dict-popup-meta">
-                <div class="nexus-dict-header-row">
-                    <span class="nexus-dict-popup-title">${entry.word || word}</span>
-                    ${entry.pos ? `<span class="nexus-dict-popup-pos">${this.shortenPOS(entry.pos)}</span>` : ""}
-                </div>
-                <div class="nexus-dict-popup-prons">
-                    ${entry.uk?.ipa || entry.uk?.audio ? `
-                        <div class="nexus-dict-pron-group uk">
-                            <span class="nexus-dict-lang">UK</span>
-                            <button class="nexus-dict-popup-audio"
-                                data-text="${entry.word || word}" data-lang="en-GB"
-                                ${entry.uk?.audio ? `data-url="${entry.uk.audio}"` : ""}>
-                                ${this.getSpeakerSVG()}
-                            </button>
-                            ${entry.uk?.ipa ? `<span class="nexus-dict-ipa">/${entry.uk.ipa.replace(/^\/|\/$/g, "")}/</span>` : ""}
-                        </div>
-                    ` : ""}
-                    ${entry.us?.ipa || entry.us?.audio ? `
-                        <div class="nexus-dict-pron-group us">
-                            <span class="nexus-dict-lang">US</span>
-                            <button class="nexus-dict-popup-audio"
-                                data-text="${entry.word || word}" data-lang="en-US"
-                                ${entry.us?.audio ? `data-url="${entry.us.audio}"` : ""}>
-                                ${this.getSpeakerSVG()}
-                            </button>
-                            ${entry.us?.ipa ? `<span class="nexus-dict-ipa">/${entry.us.ipa.replace(/^\/|\/$/g, "")}/</span>` : ""}
-                        </div>
-                    ` : ""}
-                </div>
-            </div>
-            <div class="nexus-dict-popup-senses">
-                ${(entry.senses || []).map((sense) => {
-        return `
-                        <div class="nexus-dict-popup-sense">
-                            ${sense.indicator ? `<div class="nexus-dict-sense-indicator">${sense.indicator}</div>` : ""}
-                            ${(sense.definitions || []).map((def) => {
-          const html = `
-                                    <div class="nexus-dict-popup-meaning">
-                                        <div class="nexus-dict-meaning-header">
-                                            ${sense.definitions.length > 1 ? `<span class="nexus-dict-meaning-number">${senseMeaningIndex}.</span>` : ""}
-                                            <span class="nexus-dict-meaning-text">${def.meaning}</span>
-                                        </div>
-                                        ${def.examples && def.examples.length > 0 ? `
-                                            <div class="nexus-dict-popup-examples">
-                                                ${def.examples.map((ex) => {
-            const escaped = (entry.word || word || "").replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
-            const regex = new RegExp(`(${escaped}(?:ing|ed|s|es|d)?)`, "gi");
-            const highlighted = ex.replace(regex, "<strong>$1</strong>");
-            return `<div class="nexus-dict-popup-example">${highlighted}</div>`;
-          }).join("")}
-                                            </div>
-                                        ` : ""}
-                                    </div>
-                                `;
-          senseMeaningIndex++;
-          return html;
-        }).join("")}
-                        </div>
-                    `;
-      }).join("")}
-            </div>
-        `;
-    }
-  };
-  if (typeof window !== "undefined") {
-    window.NexusDictionaryPopup = NexusDictionaryPopup2;
-  }
-  if (typeof globalThis !== "undefined") {
-    globalThis.NexusDictionaryPopup = NexusDictionaryPopup2;
-  }
-
-  // src/components/modals/search_modal.js
-  var NexusSearchModal2 = class {
-    static init() {
-      this.overlay = document.getElementById("nexus-search-overlay");
-      this.searchInput = document.getElementById("nexus-search-input");
-      this.resultsList = document.getElementById("nexus-search-results-list");
-      this.closeBtn = document.getElementById("nexus-search-close-btn");
-      this.overlayCloseBtn = document.getElementById("nexus-search-overlay-close-btn");
-      this.newChatBtn = document.getElementById("nexus-search-new-chat");
-      if (!this.overlay) return;
-      if (this.initialized) return;
-      this.overlay.addEventListener("click", (e) => {
-        if (e.target === this.overlay) this.hide();
-      });
-      if (this.closeBtn) {
-        this.closeBtn.addEventListener("click", () => this.hide());
-      }
-      if (this.overlayCloseBtn) {
-        this.overlayCloseBtn.addEventListener("click", () => this.hide());
-      }
-      if (this.newChatBtn) {
-        this.newChatBtn.addEventListener("click", () => {
-          const wasInPane = this.overlay ? this.overlay.classList.contains("in-pane") : false;
-          this.isSelectingChat = true;
-          this.hide();
-          if (typeof resetChat === "function") {
-            resetChat(wasInPane);
-          } else {
-            const sidebarNewChatBtn = document.getElementById("sidebar-new-chat-btn");
-            if (sidebarNewChatBtn) sidebarNewChatBtn.click();
-          }
-        });
-      }
-      if (this.searchInput) {
-        this.searchInput.addEventListener("input", () => this.handleSearch());
-      }
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && this.overlay.style.display === "flex") {
-          this.hide();
-        }
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-          e.preventDefault();
-          this.show();
-        }
-      });
-      this.sessions = {};
-      this.isSelectingChat = false;
-      this.initialized = true;
-    }
-    static async show(inPane = false) {
-      this.init();
-      if (!this.overlay) return;
-      this.isSelectingChat = false;
-      if (inPane) {
-        this.overlay.classList.add("in-pane");
-        const paneSec = document.getElementById("pane-secondary");
-        if (paneSec) {
-          paneSec.appendChild(this.overlay);
-        }
-      } else {
-        this.overlay.classList.remove("in-pane");
-        document.body.appendChild(this.overlay);
-      }
-      this.overlay.style.display = "flex";
-      if (this.searchInput) {
-        this.searchInput.value = "";
-      }
-      setTimeout(() => {
-        if (this.searchInput) {
-          this.searchInput.focus();
-        }
-      }, 50);
-      this.sessions = await ChatHistoryManager2.getAllHistories();
-      this.handleSearch();
-    }
-    static hide() {
-      if (this.overlay) {
-        this.overlay.style.display = "none";
-        this.overlay.classList.remove("in-pane");
-        document.body.appendChild(this.overlay);
-      }
-    }
-    static escapeRegExp(string) {
-      return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    }
-    static getTimeGroup(timestamp) {
-      const date = new Date(timestamp);
-      const now = /* @__PURE__ */ new Date();
-      const dDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const dNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const diffTime = dNow - dDate;
-      const diffDays = Math.floor(diffTime / (1e3 * 60 * 60 * 24));
-      if (diffDays === 0) return "Today";
-      if (diffDays === 1) return "Yesterday";
-      if (diffDays <= 3) return "Previous 3 Days";
-      if (diffDays <= 7) return "Previous 7 Days";
-      if (diffDays <= 30) return "Previous 30 Days";
-      const monthNames = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December"
-      ];
-      if (date.getFullYear() === now.getFullYear()) {
-        return monthNames[date.getMonth()];
-      } else {
-        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
-      }
-    }
-    static getHighlightHtml(text, query) {
-      const escapedQuery = this.escapeRegExp(query);
-      const regex = new RegExp(`(${escapedQuery})`, "gi");
-      const matchIdx = text.toLowerCase().indexOf(query.toLowerCase());
-      let displayText = text;
-      if (text.length > 100 && matchIdx !== -1) {
-        const start = Math.max(0, matchIdx - 40);
-        const end = Math.min(text.length, matchIdx + 60);
-        displayText = (start > 0 ? "..." : "") + text.substring(start, end) + (end < text.length ? "..." : "");
-      }
-      const tempDiv = document.createElement("div");
-      tempDiv.textContent = displayText;
-      const escapedText = tempDiv.innerHTML;
-      return escapedText.replace(regex, "<b>$1</b>");
-    }
-    static handleSearch() {
-      if (!this.searchInput || !this.resultsList) return;
-      const query = this.searchInput.value.trim().toLowerCase();
-      this.resultsList.innerHTML = "";
-      const historyData = Object.values(this.sessions || {}).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-      if (!query) {
-        const grouped = {};
-        historyData.forEach((session) => {
-          const groupName = this.getTimeGroup(session.updatedAt || session.createdAt || Date.now());
-          if (!grouped[groupName]) {
-            grouped[groupName] = [];
-          }
-          grouped[groupName].push(session);
-        });
-        const groupOrder = ["Today", "Yesterday", "Previous 3 Days", "Previous 7 Days", "Previous 30 Days"];
-        const allGroups = Object.keys(grouped).sort((a, b) => {
-          const idxA = groupOrder.indexOf(a);
-          const idxB = groupOrder.indexOf(b);
-          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-          if (idxA !== -1) return -1;
-          if (idxB !== -1) return 1;
-          const parseGroup = (g) => {
-            const parts = g.split(" ");
-            const monthIndex = [
-              "January",
-              "February",
-              "March",
-              "April",
-              "May",
-              "June",
-              "July",
-              "August",
-              "September",
-              "October",
-              "November",
-              "December"
-            ].indexOf(parts[0]);
-            const year = parts[1] ? parseInt(parts[1], 10) : (/* @__PURE__ */ new Date()).getFullYear();
-            return new Date(year, monthIndex, 1).getTime();
-          };
-          return parseGroup(b) - parseGroup(a);
-        });
-        allGroups.forEach((groupName) => {
-          const headerEl = document.createElement("div");
-          headerEl.className = "nexus-search-group-header";
-          headerEl.textContent = groupName;
-          this.resultsList.appendChild(headerEl);
-          grouped[groupName].forEach((session) => {
-            let displayTitle = session.title;
-            if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
-              displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
-            }
-            if (!displayTitle) displayTitle = "Untitled Chat";
-            const activeSessionId = this.getActiveSessionId();
-            const isCurrent = activeSessionId === session.id;
-            const timeIndicatorHtml = isCurrent ? `<span class="nexus-search-item-current">current</span>` : `<span class="nexus-search-item-date">${this.formatDate(session.updatedAt || session.createdAt)}</span>`;
-            const itemEl = document.createElement("div");
-            itemEl.className = "nexus-search-item";
-            itemEl.innerHTML = `
-            <div class="nexus-search-item-content">
-              <div class="nexus-search-item-top">
-                <span class="nexus-search-item-title"></span>
-                ${timeIndicatorHtml}
-              </div>
-            </div>
-          `;
-            itemEl.querySelector(".nexus-search-item-title").textContent = displayTitle;
-            itemEl.addEventListener("click", () => this.openSession(session.id));
-            this.resultsList.appendChild(itemEl);
-          });
-        });
-      } else {
-        const results = [];
-        const escapedQuery = this.escapeRegExp(query);
-        const regex = new RegExp(escapedQuery, "i");
-        for (let i = 0; i < historyData.length; i++) {
-          const session = historyData[i];
-          let displayTitle = session.title;
-          if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
-            displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
-          }
-          if (!displayTitle) displayTitle = "Untitled Chat";
-          let matched = false;
-          if (displayTitle && regex.test(displayTitle)) {
-            results.push({
-              sessionId: session.id,
-              title: displayTitle,
-              snippet: displayTitle,
-              messageIndex: null,
-              timestamp: session.updatedAt || session.createdAt
-            });
-            matched = true;
-          }
-          if (session.questions && session.questions.length > 0) {
-            session.questions.forEach((q) => {
-              if (q.text && regex.test(q.text) && !(matched && q.text === displayTitle)) {
-                results.push({
-                  sessionId: session.id,
-                  title: displayTitle,
-                  snippet: q.text,
-                  messageIndex: q.index,
-                  timestamp: q.timestamp || session.updatedAt || session.createdAt
-                });
-              }
-            });
-          }
-          if (results.length >= 20) break;
-        }
-        const finalResults = results.slice(0, 20);
-        if (finalResults.length === 0) {
-          this.resultsList.innerHTML = `<div class="nexus-search-no-results">No chats found</div>`;
-          return;
-        }
-        finalResults.forEach((item) => {
-          const activeSessionId = this.getActiveSessionId();
-          const isCurrent = activeSessionId === item.sessionId;
-          const timeIndicatorHtml = isCurrent ? `<span class="nexus-search-item-current">current</span>` : `<span class="nexus-search-item-date">${this.formatDate(item.timestamp)}</span>`;
-          const itemEl = document.createElement("div");
-          itemEl.className = "nexus-search-item";
-          itemEl.innerHTML = `
-          <div class="nexus-search-item-content">
-            <div class="nexus-search-item-top">
-              <span class="nexus-search-item-title"></span>
-              ${timeIndicatorHtml}
-            </div>
-            <div class="nexus-search-item-snippet"></div>
-          </div>
-        `;
-          itemEl.querySelector(".nexus-search-item-title").textContent = item.title;
-          itemEl.querySelector(".nexus-search-item-snippet").innerHTML = this.getHighlightHtml(item.snippet, query);
-          itemEl.addEventListener("click", () => this.openSession(item.sessionId, item.messageIndex));
-          this.resultsList.appendChild(itemEl);
-        });
-      }
-    }
-    static async openSession(sessionId, messageIndex = null) {
-      const wasInPane = this.overlay ? this.overlay.classList.contains("in-pane") : false;
-      this.isSelectingChat = true;
-      this.hide();
-      this.isSelectingChat = false;
-      const messages = await ChatHistoryManager2.getSessionMessages(sessionId);
-      const meta = this.sessions[sessionId] || { id: sessionId };
-      const listContainer = document.getElementById("sidebar-recent-chats");
-      if (listContainer) {
-        listContainer.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
-        document.querySelectorAll("#sidebar-sparks-list .sidebar-spark-item.active").forEach((el) => el.classList.remove("active"));
-        const targetSidebarItem = listContainer.querySelector(`.recent-chat-item[data-session-id="${sessionId}"]`);
-        if (targetSidebarItem) {
-          targetSidebarItem.classList.add("active");
-        }
-      }
-      if (typeof window.loadHistoryIntoNewTab === "function") {
-        window.loadHistoryIntoNewTab(messages, meta, sessionId, messageIndex, wasInPane);
-      }
-      const sidebar = document.getElementById("nexus-sidebar");
-      const backdrop = document.querySelector(".sidebar-backdrop");
-      if (sidebar) sidebar.classList.remove("active");
-      if (backdrop) backdrop.classList.remove("active");
-      document.body.classList.remove("sidebar-open");
-    }
-    static getActiveSessionId() {
-      const activeSidebarItem = document.querySelector("#sidebar-recent-chats .recent-chat-item.active");
-      if (activeSidebarItem) {
-        const sid = activeSidebarItem.getAttribute("data-session-id");
-        if (sid) return sid;
-      }
-      if (typeof window.NexusSelectionScope !== "undefined") {
-        const tabs3 = window.NexusSelectionScope.getTabs();
-        const activeIndex = window.NexusSelectionScope.getActiveTabIndex();
-        if (tabs3 && activeIndex >= 0 && tabs3[activeIndex]) {
-          return tabs3[activeIndex].sessionId;
-        }
-      }
-      return null;
-    }
-    static formatDate(timestamp) {
-      if (!timestamp) return "";
-      const d = new Date(timestamp);
-      const today = /* @__PURE__ */ new Date();
-      const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const isYesterday = d.getDate() === yesterday.getDate() && d.getMonth() === yesterday.getMonth() && d.getFullYear() === yesterday.getFullYear();
-      if (isToday || isYesterday) {
-        return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      }
-      const month = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      const year = String(d.getFullYear()).slice(-2);
-      return `${month}/${day}/${year}`;
-    }
-  };
-  if (typeof window !== "undefined") {
-    window.NexusSearchModal = NexusSearchModal2;
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => {
-        if (document.getElementById("nexus-search-overlay")) {
-          NexusSearchModal2.init();
-        }
-      });
-    } else if (document.getElementById("nexus-search-overlay")) {
-      NexusSearchModal2.init();
-    }
-  }
-
-  // src/components/modals/settings/dom_templates.js
-  var SETTINGS_TEMPLATES = {
-    "nexus-providerItemTemplate": `
-    <div class="nexus-settings-provider-card provider-item">
-        <div class="provider-item-content">
-            <div class="provider-logo-container"></div>
-            <div class="provider-info">
-                <span class="provider-title provider-item-name"></span>
-                <span class="provider-badge"></span>
-            </div>
-        </div>
-    </div>
-  `,
-    "nexus-chainItemTemplate": `
-    <div class="nexus-settings-chain-card chain-item" draggable="true">
-        <span class="chain-number"></span>
-        <div class="chain-details">
-            <span class="chain-title"></span>
-            <span class="chain-subtitle"></span>
-        </div>
-        <div class="chain-actions">
-            <button type="button" class="nexus-settings-icon-btn edit" title="Edit Model">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                </svg>
-            </button>
-            <button type="button" class="nexus-settings-icon-btn remove" title="Remove">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-    </div>
-  `,
-    "nexus-mappingRowTemplate": `
-    <div class="nexus-settings-chain-card chain-item">
-        <span class="chain-number mapping-number"></span>
-        <div class="chain-details">
-            <span class="chain-title mapping-name"></span>
-        </div>
-        <div class="chain-actions">
-            <button type="button" class="nexus-settings-icon-btn edit mapping-edit-btn" title="Edit Mapping">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                </svg>
-            </button>
-            <button type="button" class="nexus-settings-icon-btn remove mapping-delete-btn" title="Delete Mapping">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-    </div>
-  `,
-    "nexus-userFactItemTemplate": `
-    <div class="nexus-settings-chain-card chain-item">
-        <span class="chain-number fact-index"></span>
-        <div class="chain-details">
-            <span class="chain-title fact-text"></span>
-        </div>
-        <div class="chain-actions">
-            <button type="button" class="nexus-settings-icon-btn edit fact-edit-btn" title="Edit Instruction">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                </svg>
-            </button>
-            <button type="button" class="nexus-settings-icon-btn remove fact-delete-btn" title="Delete Instruction">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-    </div>
-  `,
-    "nexus-annotationRowTemplate": `
-    <div class="nexus-settings-chain-card chain-item">
-        <span class="chain-number annotation-number"></span>
-        <div class="chain-details annotation-details">
-            <div class="annotation-color-preview"></div>
-            <span class="chain-title annotation-shortcut-text font-medium"></span>
-        </div>
-        <div class="chain-actions">
-            <button type="button" class="nexus-settings-icon-btn edit annotation-edit-btn" title="Edit Highlight">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 20h9"></path>
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                </svg>
-            </button>
-            <button type="button" class="nexus-settings-icon-btn remove annotation-delete-btn" title="Delete Highlight">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-    </div>
-  `
-  };
-  function injectSettingsTemplates() {
-    Object.entries(SETTINGS_TEMPLATES).forEach(([id, html]) => {
-      if (!document.getElementById(id)) {
-        const t = document.createElement("template");
-        t.id = id;
-        t.innerHTML = html.trim();
-        document.body.appendChild(t);
-      }
-    });
-  }
-
-  // src/components/modals/settings/providers_data.js
-  function getDefaultProviders() {
-    return [
-      { id: "gemini-default", name: "Gemini", type: "gemini", endpoint: "https://generativelanguage.googleapis.com/v1beta/models", apiKey: "", apiKeyUrl: "https://aistudio.google.com/app/apikey" },
-      { id: "openai-default", name: "OpenAI", type: "openai", endpoint: "https://api.openai.com/v1/chat/completions", apiKey: "", apiKeyUrl: "https://platform.openai.com/api-keys" },
-      { id: "anthropic-default", name: "Anthropic (Claude)", type: "openai", endpoint: "https://api.anthropic.com/v1", apiKey: "", apiKeyUrl: "https://console.anthropic.com/settings/keys" },
-      { id: "deepseek-default", name: "DeepSeek", type: "openai", endpoint: "https://api.deepseek.com/v1", apiKey: "", apiKeyUrl: "https://platform.deepseek.com/api_keys" },
-      { id: "grok-default", name: "xAI (Grok)", type: "openai", endpoint: "https://api.x.ai/v1", apiKey: "", apiKeyUrl: "https://console.x.ai/" },
-      { id: "perplexity-default", name: "Perplexity AI", type: "openai", endpoint: "https://api.perplexity.ai", apiKey: "", apiKeyUrl: "https://www.perplexity.ai/settings/api" },
-      { id: "openrouter-default", name: "OpenRouter", type: "openai", endpoint: "https://openrouter.ai/api/v1", apiKey: "", apiKeyUrl: "https://openrouter.ai/keys" },
-      { id: "groq-default", name: "Groq", type: "openai", endpoint: "https://api.groq.com/openai/v1", apiKey: "", apiKeyUrl: "https://console.groq.com/keys" },
-      { id: "mistral-default", name: "Mistral AI", type: "openai", endpoint: "https://api.mistral.ai/v1", apiKey: "", apiKeyUrl: "https://console.mistral.ai/api-keys/" },
-      { id: "cohere-default", name: "Cohere", type: "openai", endpoint: "https://api.cohere.com/v1", apiKey: "", apiKeyUrl: "https://dashboard.cohere.com/api-keys" },
-      { id: "together-default", name: "Together AI", type: "openai", endpoint: "https://api.together.xyz/v1", apiKey: "", apiKeyUrl: "https://api.together.ai/settings/api-keys" },
-      { id: "replicate-default", name: "Replicate", type: "openai", endpoint: "https://api.replicate.com/v1", apiKey: "", apiKeyUrl: "https://replicate.com/account/api-tokens" },
-      { id: "fireworks-default", name: "Fireworks AI", type: "openai", endpoint: "https://api.fireworks.ai/inference/v1", apiKey: "", apiKeyUrl: "https://fireworks.ai/account/api-keys" },
-      { id: "deepinfra-default", name: "DeepInfra", type: "openai", endpoint: "https://api.deepinfra.com/v1/openai", apiKey: "", apiKeyUrl: "https://deepinfra.com/dash/api_keys" },
-      { id: "novita-default", name: "Novita AI", type: "openai", endpoint: "https://api.novita.ai/v3/openai", apiKey: "", apiKeyUrl: "https://novita.ai/dashboard/key-management" },
-      { id: "huggingface-default", name: "Hugging Face", type: "openai", endpoint: "https://api-inference.huggingface.co/v1", apiKey: "", apiKeyUrl: "https://huggingface.co/settings/tokens" },
-      { id: "cerebras-default", name: "Cerebras", type: "openai", endpoint: "https://api.cerebras.ai/v1", apiKey: "", apiKeyUrl: "https://cloud.cerebras.ai/" },
-      { id: "alibaba-default", name: "Alibaba Qwen", type: "openai", endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1", apiKey: "", apiKeyUrl: "https://dashscope.console.aliyun.com/" },
-      { id: "moonshot-default", name: "Moonshot AI (Kimi)", type: "openai", endpoint: "https://api.moonshot.cn/v1", apiKey: "", apiKeyUrl: "https://platform.moonshot.cn/console/api-keys" },
-      { id: "minimax-default", name: "MiniMax", type: "openai", endpoint: "https://api.minimax.chat/v1", apiKey: "", apiKeyUrl: "https://platform.minimaxi.com/" },
-      { id: "zhipu-default", name: "Zhipu AI (GLM)", type: "openai", endpoint: "https://open.bigmodel.cn/api/paas/v4", apiKey: "", apiKeyUrl: "https://open.bigmodel.cn/usercenter/apikeys" },
-      { id: "ollama-default", name: "Ollama (Local)", type: "openai", endpoint: "http://localhost:11434/v1", apiKey: "", apiKeyUrl: "https://ollama.com/" },
-      { id: "lmstudio-default", name: "LM Studio (Local)", type: "openai", endpoint: "http://localhost:1234/v1", apiKey: "", apiKeyUrl: "https://lmstudio.ai/" },
-      { id: "vllm-default", name: "vLLM (Local)", type: "openai", endpoint: "http://localhost:8000/v1", apiKey: "", apiKeyUrl: "https://github.com/vllm-project/vllm" },
-      { id: "localai-default", name: "LocalAI (Local)", type: "openai", endpoint: "http://localhost:8080/v1", apiKey: "", apiKeyUrl: "https://localai.io/" }
-    ];
-  }
-
-  // src/components/modals/settings_modal.js
-  var NexusSettingsModal2 = class _NexusSettingsModal {
-    static init() {
-      this.injectDOMTemplates();
-      this.overlay = document.getElementById("nexus-settings-overlay");
-      this.closeBtn = document.getElementById("nexus-settings-close-btn");
-      this.navContainer = document.getElementById("nexus-settings-nav");
-      this.mainContainer = document.querySelector(".nexus-settings-main");
-      this.sections = document.querySelectorAll(".nexus-settings-section");
-      this.navItems = document.querySelectorAll(".nexus-settings-nav-item");
-      if (!this.overlay) return;
-      this.closeBtn.addEventListener("click", () => this.hide());
-      this.overlay.addEventListener("click", (e) => {
-        if (e.target === this.overlay) this.hide();
-      });
-      this.navItems.forEach((item) => {
-        item.addEventListener("click", () => {
-          const sectionId = item.getAttribute("data-section");
-          this.switchSection(sectionId);
-        });
-      });
-      this.providers = [];
-      this.models = [];
-      this.advancedParamsByModel = {};
-      this.questionMappings = [];
-      this.annotationShortcuts = [];
-      this.userFacts = [];
-      this.bindGeneralTab();
-      this.bindAppearanceTab();
-      this.bindPersonalizationTab();
-      this.bindKeyboardTab();
-      this.bindAccountTab();
-      const toggleNexusKeyBtn = document.getElementById("toggle-nexus-key-visibility");
-      const nexusApiKeyInput = document.getElementById("nexus-provider-form-apikey");
-      const nexusEyeOpen = document.getElementById("nexus-eye-open-icon");
-      const nexusEyeClosed = document.getElementById("nexus-eye-closed-icon");
-      if (toggleNexusKeyBtn && nexusApiKeyInput) {
-        toggleNexusKeyBtn.addEventListener("click", () => {
-          if (nexusApiKeyInput.type === "password") {
-            nexusApiKeyInput.type = "text";
-            nexusEyeOpen.style.display = "none";
-            nexusEyeClosed.style.display = "block";
-          } else {
-            nexusApiKeyInput.type = "password";
-            nexusEyeOpen.style.display = "block";
-            nexusEyeClosed.style.display = "none";
-          }
-        });
-      }
-      this.overlay.querySelectorAll("textarea").forEach((textarea) => {
-        this.enableAutoExpandTextarea(textarea);
-      });
-      chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName === "local" && changes.user_memory && this.overlay && this.overlay.style.display !== "none") {
-          UserMemory.load().then((memory) => {
-            this.userFacts = memory.facts || [];
-            this.renderUserFacts();
-          });
-        }
-      });
-      this.initialized = true;
-    }
-    static injectDOMTemplates() {
-      injectSettingsTemplates();
-    }
-    static show() {
-      if (!this.initialized) this.init();
-      if (this.overlay) {
-        this.overlay.style.display = "flex";
-        this.loadSettings();
-      }
-    }
-    static hide() {
-      if (this.overlay) {
-        this.overlay.style.display = "none";
-      }
-    }
-    static switchSection(sectionId) {
-      this.navItems.forEach((item) => {
-        item.classList.toggle("active", item.getAttribute("data-section") === sectionId);
-      });
-      this.sections.forEach((section) => {
-        section.classList.toggle("active", section.id === `nexus-settings-sec-${sectionId}`);
-      });
-      if (this.mainContainer) this.mainContainer.scrollTop = 0;
-    }
-    static async loadSettings() {
-      const keys = [
-        "providers",
-        "models",
-        "advancedParamsByModel",
-        "fontSize",
-        "responseLanguage",
-        "theme",
-        "contrast",
-        "accentColor",
-        "fontFamily",
-        "fontWeight",
-        "language",
-        "dictationEnabled",
-        "spokenLanguage",
-        "voice",
-        "separateVoiceEnabled",
-        "ttsModel",
-        "sttModel",
-        "aboutNickname",
-        "aboutOccupation",
-        "aboutInterests",
-        "questionMappings",
-        "annotationShortcuts",
-        "historyRetentionMonths",
-        "shortcuts"
-      ];
-      chrome.storage.local.get(keys, (items) => {
-        const defaults = this.getDefaultProviders();
-        const savedProviders = items.providers || [];
-        this.providers = defaults.map((def) => {
-          const saved = savedProviders.find((p) => p.id === def.id);
-          return {
-            ...def,
-            apiKey: saved?.apiKey || def.apiKey || "",
-            endpoint: saved?.endpoint || def.endpoint
-          };
-        });
-        this.renderProviders();
-        this.populateProviderDropdowns();
-        this.models = items.models || [];
-        this.advancedParamsByModel = items.advancedParamsByModel || {};
-        this.renderChainList();
-        const themeVal = items.theme || "auto";
-        const contrastVal = items.contrast || "auto";
-        const accentVal = items.accentColor || "default";
-        const fontFamilyVal = items.fontFamily || "default";
-        const fontWeightVal = items.fontWeight || "400";
-        this.setDropdownValue("nexus-settings-theme", "nexus-settings-theme-menu", themeVal, "System");
-        this.setDropdownValue("nexus-settings-contrast", "nexus-settings-contrast-menu", contrastVal, "System");
-        this.setDropdownValue("nexus-settings-accent", "nexus-settings-accent-menu", accentVal, "Default");
-        this.setDropdownValue("nexus-settings-fontfamily", "nexus-settings-fontfamily-menu", fontFamilyVal, "Default");
-        const weightLabels = { "300": "Thin", "350": "Book", "400": "Normal", "450": "Medium", "500": "Semi-bold" };
-        this.setDropdownValue("nexus-settings-fontweight", "nexus-settings-fontweight-menu", fontWeightVal, weightLabels[fontWeightVal] || "Normal");
-        document.body.className = document.body.className.replace(/\bnexus-font-\S+/g, "");
-        document.body.classList.add(`nexus-font-${fontFamilyVal}`);
-        document.documentElement.style.setProperty("--nexus-weight-base", fontWeightVal);
-        let mode = themeVal === "auto" ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light" : themeVal;
-        if (typeof chrome !== "undefined" && chrome.extension && chrome.extension.inIncognitoContext) {
-          mode = "dark";
-        }
-        document.body.setAttribute("data-theme", mode);
-        document.body.setAttribute("data-accent", accentVal);
-        document.body.setAttribute("data-contrast", contrastVal);
-        this.setDropdownValue("nexus-settings-language", "nexus-settings-language-menu", items.language || "auto", "Auto-detect");
-        document.getElementById("nexus-settings-dictation-toggle").checked = items.dictationEnabled !== false;
-        this.setDropdownValue("nexus-settings-spoken-lang", "nexus-settings-spoken-lang-menu", items.spokenLanguage || "auto", "Auto-detect");
-        this.setDropdownValue("nexus-settings-voice-select", "nexus-settings-voice-select-menu", items.voice || "sol", "Sol");
-        document.getElementById("nexus-settings-separate-voice").checked = items.separateVoiceEnabled === true;
-        this.setDropdownValue("nexus-settings-tts-model", "nexus-settings-tts-model-menu", items.ttsModel || "gemini-2.5-flash", "Gemini 2.5 Flash");
-        this.setDropdownValue("nexus-settings-stt-model", "nexus-settings-stt-model-menu", items.sttModel || "whisper-large-v3-turbo", "Whisper Large V3 Turbo (Fastest)");
-        const fsVal = items.fontSize || 14;
-        const fsInput = document.getElementById("nexus-settings-fontsize");
-        if (fsInput) fsInput.value = fsVal;
-        const aboutNicknameEl = document.getElementById("nexus-settings-about-nickname");
-        if (aboutNicknameEl) aboutNicknameEl.value = items.aboutNickname || "";
-        const aboutOccupationEl = document.getElementById("nexus-settings-about-occupation");
-        if (aboutOccupationEl) aboutOccupationEl.value = items.aboutOccupation || "";
-        const interestsTextarea = document.getElementById("nexus-settings-about-interests");
-        if (interestsTextarea) {
-          interestsTextarea.value = items.aboutInterests || "";
-          interestsTextarea.dispatchEvent(new Event("input"));
-        }
-        UserMemory.load().then((memory) => {
-          this.userFacts = memory.facts || [];
-          this.renderUserFacts();
-        });
-        this.questionMappings = items.questionMappings || [];
-        this.renderQuestionMappings();
-        this.annotationShortcuts = items.annotationShortcuts || [];
-        this.renderAnnotationShortcuts();
-        this.loadShortcutsKeys(items);
-        const retentionInput = document.getElementById("nexus-history-retention-input");
-        const savedRet = items.historyRetentionMonths !== void 0 ? items.historyRetentionMonths : 3;
-        const matchingOpt = [
-          { label: "1 Week", value: "0.25" },
-          { label: "2 Weeks", value: "0.5" },
-          { label: "1 Month", value: "1" },
-          { label: "2 Months", value: "2" },
-          { label: "3 Months", value: "3" },
-          { label: "6 Months", value: "6" },
-          { label: "1 Year", value: "12" },
-          { label: "Keep forever", value: "0" }
-        ].find((o) => Math.abs(parseFloat(o.value) - parseFloat(savedRet)) < 0.01);
-        if (retentionInput && matchingOpt) {
-          retentionInput.value = matchingOpt.label;
-          retentionInput.dataset.value = matchingOpt.value;
-        }
-        this.updateStorageUsage();
-      });
-    }
-    static saveOptions() {
-      const getVal = (id, fallback = "") => document.getElementById(id)?.value || fallback;
-      const getDropdownVal = (id, fallback = "") => document.getElementById(id)?.dataset.value || fallback;
-      const getChecked = (id) => document.getElementById(id)?.checked || false;
-      const getInt = (id, fallback = 3) => {
-        const el = document.getElementById(id);
-        return el ? parseInt(el.value, 10) : fallback;
-      };
-      const settings = {
-        theme: getDropdownVal("nexus-settings-theme", "auto"),
-        contrast: getDropdownVal("nexus-settings-contrast", "auto"),
-        accentColor: getDropdownVal("nexus-settings-accent", "default"),
-        fontFamily: getDropdownVal("nexus-settings-fontfamily", "default"),
-        fontWeight: getDropdownVal("nexus-settings-fontweight", "400"),
-        fontSize: parseFloat(getVal("nexus-settings-fontsize", "14")) || 14,
-        language: getDropdownVal("nexus-settings-language", "auto"),
-        dictationEnabled: document.getElementById("nexus-settings-dictation-toggle") ? getChecked("nexus-settings-dictation-toggle") : true,
-        spokenLanguage: getDropdownVal("nexus-settings-spoken-lang", "auto"),
-        voice: getDropdownVal("nexus-settings-voice-select", "sol"),
-        separateVoiceEnabled: getChecked("nexus-settings-separate-voice"),
-        ttsModel: getDropdownVal("nexus-settings-tts-model", "gemini-2.5-flash"),
-        sttModel: getDropdownVal("nexus-settings-stt-model", "whisper-large-v3-turbo"),
-        aboutNickname: getVal("nexus-settings-about-nickname").trim(),
-        aboutOccupation: getVal("nexus-settings-about-occupation").trim(),
-        aboutInterests: getVal("nexus-settings-about-interests").trim(),
-        historyRetentionMonths: parseFloat(document.getElementById("nexus-history-retention-input")?.dataset.value || "3")
-      };
-      chrome.storage.local.set(settings, () => {
-        if (typeof applyTheme === "function") {
-          applyTheme(settings.theme);
-        } else {
-          let mode = settings.theme === "auto" ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light" : settings.theme;
-          if (typeof chrome !== "undefined" && chrome.extension && chrome.extension.inIncognitoContext) {
-            mode = "dark";
-          }
-          document.body.setAttribute("data-theme", mode);
-        }
-        document.body.setAttribute("data-accent", settings.accentColor);
-        document.body.setAttribute("data-contrast", settings.contrast);
-        document.body.className = document.body.className.replace(/\bnexus-font-\S+/g, "");
-        document.body.classList.add(`nexus-font-${settings.fontFamily}`);
-        document.documentElement.style.setProperty("--nexus-weight-base", settings.fontWeight);
-        if (typeof applyFontSize === "function") {
-          applyFontSize(settings.fontSize);
-        }
-      });
-    }
-    static bindGeneralTab() {
-      const setupKeyInput = document.getElementById("nexus-setup-provider-key");
-      const setupEndpointInput = document.getElementById("nexus-setup-provider-endpoint");
-      const keyToggleBtn = document.getElementById("nexus-setup-key-toggle");
-      const eyeOpen = document.getElementById("nexus-setup-eye-open");
-      const eyeClosed = document.getElementById("nexus-setup-eye-closed");
-      if (keyToggleBtn && setupKeyInput) {
-        keyToggleBtn.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const isPassword = setupKeyInput.type === "password";
-          setupKeyInput.type = isPassword ? "text" : "password";
-          if (eyeOpen && eyeClosed) {
-            eyeOpen.style.display = isPassword ? "none" : "block";
-            eyeClosed.style.display = isPassword ? "block" : "none";
-          }
-        });
-      }
-      if (setupKeyInput) {
-        setupKeyInput.addEventListener("input", () => this.saveSelectedProviderKey());
-      }
-      if (setupEndpointInput) {
-        setupEndpointInput.addEventListener("input", () => this.saveSelectedProviderKey());
-      }
-      const cancelModelBtn = document.getElementById("nexus-cancel-model-btn");
-      const saveModelBtn = document.getElementById("nexus-save-model-btn");
-      const closeModelPopupBtn = document.getElementById("nexus-model-popup-close-btn");
-      const modelPopupOverlay = document.getElementById("nexus-model-popup-overlay");
-      if (cancelModelBtn) cancelModelBtn.addEventListener("click", () => this.hideModelForm());
-      if (saveModelBtn) saveModelBtn.addEventListener("click", () => this.addModelToChain());
-      if (closeModelPopupBtn) closeModelPopupBtn.addEventListener("click", () => this.hideModelForm());
-      if (modelPopupOverlay) {
-        modelPopupOverlay.addEventListener("click", (e) => {
-          if (e.target === modelPopupOverlay) this.hideModelForm();
-        });
-      }
-      this.setupDropdownInputs("nexus-model-form-provider", "nexus-model-form-provider-list");
-      this.setupDropdownInputs("nexus-model-form-model", "nexus-model-form-model-list");
-      this.setupDropdownInputs("nexus-model-form-max-tokens", "nexus-model-form-max-tokens-list");
-      this.setupDropdownInputs("nexus-setup-provider-input", "nexus-setup-provider-menu");
-      this.setupDropdownInputs("nexus-settings-tts-model", "nexus-settings-tts-model-menu");
-      this.setupDropdownInputs("nexus-settings-stt-model", "nexus-settings-stt-model-menu");
-    }
-    static getDefaultProviders() {
-      return getDefaultProviders();
-    }
-    static getProviderLogoSvg(id) {
-      const norm = (id || "").toLowerCase();
-      if (norm.includes("openai")) {
-        return `<svg fill="currentColor" fill-rule="evenodd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>OpenAI</title><path d="M9.205 8.658v-2.26c0-.19.072-.333.238-.428l4.543-2.616c.619-.357 1.356-.523 2.117-.523 2.854 0 4.662 2.212 4.662 4.566 0 .167 0 .357-.024.547l-4.71-2.759a.797.797 0 00-.856 0l-5.97 3.473zm10.609 8.8V12.06c0-.333-.143-.57-.429-.737l-5.97-3.473 1.95-1.118a.433.433 0 01.476 0l4.543 2.617c1.309.76 2.189 2.378 2.189 3.948 0 1.808-1.07 3.473-2.76 4.163zM7.802 12.703l-1.95-1.142c-.167-.095-.239-.238-.239-.428V5.899c0-2.545 1.95-4.472 4.591-4.472 1 0 1.927.333 2.712.928L8.23 5.067c-.285.166-.428.404-.428.737v6.898zM12 15.128l-2.795-1.57v-3.33L12 8.658l2.795 1.57v3.33L12 15.128zm1.796 7.23c-1 0-1.927-.332-2.712-.927l4.686-2.712c.285-.166.428-.404.428-.737v-6.898l1.974 1.142c.167.095.238.238.238.428v5.233c0 2.545-1.974 4.472-4.614 4.472zm-5.637-5.303l-4.544-2.617c-1.308-.761-2.188-2.378-2.188-3.948A4.482 4.482 0 014.21 6.327v5.423c0 .333.143.571.428.738l5.947 3.449-1.95 1.118a.432.432 0 01-.476 0zm-.262 3.9c-2.688 0-4.662-2.021-4.662-4.519 0-.19.024-.38.047-.57l4.686 2.71c.286.167.571.167.856 0l5.97-3.448v2.26c0 .19-.07.333-.237.428l-4.543 2.616c-.619.357-1.356.523-2.117.523zm5.899 2.83a5.947 5.947 0 005.827-4.756C22.287 18.339 24 15.84 24 13.296c0-1.665-.713-3.282-1.998-4.448.119-.5.19-.999.19-1.498 0-3.401-2.759-5.947-5.946-5.947-.642 0-1.26.095-1.88.31A5.962 5.962 0 0010.205 0a5.947 5.947 0 00-5.827 4.757C1.713 5.447 0 7.945 0 10.49c0 1.666.713 3.283 1.998 4.448-.119.5-.19 1-.19 1.499 0 3.401 2.759 5.946 5.946 5.946.642 0 1.26-.095 1.88-.309a5.96 5.96 0 004.162 1.713z"></path></svg>`;
-      }
-      if (norm.includes("anthropic") || norm.includes("claude")) {
-        return `<svg height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Claude</title><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z" fill="#D97757" fill-rule="nonzero"></path></svg>`;
-      }
-      if (norm.includes("gemini")) {
-        return `<svg height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Gemini</title><path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z" fill="#3186FF"></path><path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z" fill="url(#lobe-icons-gemini-0-_R_0_)"></path><path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z" fill="url(#lobe-icons-gemini-1-_R_0_)"></path><path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z" fill="url(#lobe-icons-gemini-2-_R_0_)"></path><defs><linearGradient gradientUnits="userSpaceOnUse" id="lobe-icons-gemini-0-_R_0_" x1="7" x2="11" y1="15.5" y2="12"><stop stop-color="#08B962"></stop><stop offset="1" stop-color="#08B962" stop-opacity="0"></stop></linearGradient><linearGradient gradientUnits="userSpaceOnUse" id="lobe-icons-gemini-1-_R_0_" x1="8" x2="11.5" y1="5.5" y2="11"><stop stop-color="#F94543"></stop><stop offset="1" stop-color="#F94543" stop-opacity="0"></stop></linearGradient><linearGradient gradientUnits="userSpaceOnUse" id="lobe-icons-gemini-2-_R_0_" x1="3.5" x2="17.5" y1="13.5" y2="12"><stop stop-color="#FABC12"></stop><stop offset=".46" stop-color="#FABC12" stop-opacity="0"></stop></linearGradient></defs></svg>`;
-      }
-      if (norm.includes("deepseek")) {
-        return `<svg height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>DeepSeek</title><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z" fill="#4D6BFE"></path></svg>`;
-      }
-      if (norm.includes("groq")) {
-        return `<svg fill="#f55036" fill-rule="evenodd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Groq</title><path d="M12.036 2c-3.853-.035-7 3-7.036 6.781-.035 3.782 3.055 6.872 6.908 6.907h2.42v-2.566h-2.292c-2.407.028-4.38-1.866-4.408-4.23-.029-2.362 1.901-4.298 4.308-4.326h.1c2.407 0 4.358 1.915 4.365 4.278v6.305c0 2.342-1.944 4.25-4.323 4.279a4.375 4.375 0 01-3.033-1.252l-1.851 1.818A7 7 0 0012.029 22h.092c3.803-.056 6.858-3.083 6.879-6.816v-6.5C18.907 4.963 15.817 2 12.036 2z"></path></svg>`;
-      }
-      if (norm.includes("openrouter")) {
-        return `<svg fill="#4f46e5" fill-rule="evenodd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>OpenRouter</title><path d="M16.804 1.957l7.22 4.105v.087L16.73 10.21l.017-2.117-.821-.03c-1.059-.028-1.611.002-2.268.11-1.064.175-2.038.577-3.147 1.352L8.345 11.03c-.284.195-.495.336-.68.455l-.515.322-.397.234.385.23.53.338c.476.314 1.17.796 2.701 1.866 1.11.775 2.083 1.177 3.147 1.352l.3.045c.694.091 1.375.094 2.825.033l.022-2.159 7.22 4.105v.087L16.589 22l.014-1.862-.635.022c-1.386.042-2.137.002-3.138-.162-1.694-.28-3.26-.926-4.881-2.059l-2.158-1.5a21.997 21.997 0 00-.755-.498l-.467-.28a55.927 55.927 0 00-.76-.43C2.908 14.73.563 14.116 0 14.116V9.888l.14.004c.564-.007 2.91-.622 3.809-1.124l1.016-.58.438-.274c.428-.28 1.072-.726 2.686-1.853 1.621-1.133 3.186-1.78 4.881-2.059 1.152-.19 1.974-.213 3.814-.138l.02-1.907z"></path></svg>`;
-      }
-      if (norm.includes("cerebras")) {
-        return `<svg fill="currentColor" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Cerebras</title><path clip-rule="evenodd" d="M14.121 2.701a9.299 9.299 0 000 18.598V22.7c-5.91 0-10.7-4.791-10.7-10.701S8.21 1.299 14.12 1.299V2.7zm4.752 3.677A7.353 7.353 0 109.42 17.643l-.901 1.074a8.754 8.754 0 01-1.08-12.334 8.755 8.755 0 0112.335-1.08l-.901 1.075zm-2.255.844a5.407 5.407 0 00-5.048 9.563l-.656 1.24a6.81 6.81 0 016.358-12.043l-.654 1.24zM14.12 8.539a3.46 3.46 0 100 6.922v1.402a4.863 4.863 0 010-9.726v1.402z" fill="#F15A29" fill-rule="evenodd"></path><path d="M15.407 10.836a2.24 2.24 0 00-.51-.409 1.084 1.084 0 00-.544-.152c-.255 0-.483.047-.684.14a1.58 1.58 0 00-.84.912c-.074.203-.11.416-.11.631 0 .218.036.43.11.631a1.594 1.594 0 00.84.913c.2.093.43.14.684.14.216 0 .417-.046.602-.135.188-.09.35-.225.475-.392l.928 1.006c-.14.14-.3.261-.482.363a3.367 3.367 0 01-1.083.38c-.17.026-.317.04-.44.04a3.315 3.315 0 01-1.182-.21 2.825 2.825 0 01-.961-.597 2.816 2.816 0 01-.644-.929 2.987 2.987 0 01-.238-1.21c0-.444.08-.847.238-1.21.15-.35.368-.666.643-.929.278-.261.605-.464.962-.596a3.315 3.315 0 011.182-.21c.355 0 .712.068 1.072.204.361.138.685.36.944.649l-.962.97z"></path></svg>`;
-      }
-      if (norm.includes("mistral")) {
-        return `<svg height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Mistral</title><path d="M3.428 3.4h3.429v3.428H3.428V3.4zm13.714 0h3.43v3.428h-3.43V3.4z" fill="gold"></path><path d="M3.428 6.828h6.857v3.429H3.429V6.828zm10.286 0h6.857v3.429h-6.857V6.828z" fill="#FFAF00"></path><path d="M3.428 10.258h17.144v3.428H3.428v-3.428z" fill="#FF8205"></path><path d="M3.428 13.686h3.429v3.428H3.428v-3.428zm6.858 0h3.429v3.428h-3.429v-3.428zm6.856 0h3.43v3.428h-3.43v-3.428z" fill="#FA500F"></path><path d="M0 17.114h10.286v3.429H0v-3.429zm13.714 0H24v3.429H13.714v-3.429z" fill="#E10500"></path></svg>`;
-      }
-      if (norm.includes("together")) {
-        return `<svg height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>together.ai</title><path d="M23.197 4.503A6 6 0 0015 2.307a5.973 5.973 0 00-2.995 4.933l5.996.008v.515h-5.996c.039.937.298 1.87.8 2.74a6 6 0 1010.39-6z" fill="#EF2CC1"></path><path d="M.805 4.5A6 6 0 003 12.697a5.972 5.972 0 005.77.127L5.779 7.627l.446-.257 2.997 5.192A6 6 0 10.804 4.5z" fill="#CAAEF5"></path><path d="M12 23.894a6 6 0 005.999-6c0-2.13-1.1-3.996-2.775-5.06l-3.005 5.189-.444-.258 2.997-5.192A6 6 0 1012 23.894z" fill="#FC4C02"></path></svg>`;
-      }
-      if (norm.includes("cohere")) {
-        return `<svg height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Cohere</title><path clip-rule="evenodd" d="M8.128 14.099c.592 0 1.77-.033 3.398-.703 1.897-.781 5.672-2.2 8.395-3.656 1.905-1.018 2.74-2.366 2.74-4.18A4.56 4.56 0 0018.1 1H7.549A6.55 6.55 0 001 7.55c0 3.617 2.745 6.549 7.128 6.549z" fill="#39594D" fill-rule="evenodd"></path><path clip-rule="evenodd" d="M9.912 18.61a4.387 4.387 0 012.705-4.052l3.323-1.38c3.361-1.394 7.06 1.076 7.06 4.715a5.104 5.104 0 01-5.105 5.104l-3.597-.001a4.386 4.386 0 01-4.386-4.387z" fill="#D18EE2" fill-rule="evenodd"></path><path d="M4.776 14.962A3.775 3.775 0 001 18.738v.489a3.776 3.776 0 007.551 0v-.49a3.775 3.775 0 00-3.775-3.775z" fill="#FF7759"></path></svg>`;
-      }
-      if (norm.includes("grok")) {
-        return `<svg fill="#15181a" fill-rule="evenodd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Grok</title><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815"></path></svg>`;
-      }
-      if (norm.includes("ollama")) {
-        return `<svg fill="#000000" fill-rule="evenodd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Ollama</title><path d="M7.905 1.09c.216.085.411.225.588.41.295.306.544.744.734 1.263.191.522.315 1.1.362 1.68a5.054 5.054 0 012.049-.636l.051-.004c.87-.07 1.73.087 2.48.474.101.053.2.11.297.17.05-.569.172-1.134.36-1.644.19-.52.439-.957.733-1.264a1.67 1.67 0 01.589-.41c.257-.1.53-.118.796-.042.401.114.745.368 1.016.737.248.337.434.769.561 1.287.23.934.27 2.163.115 3.645l.053.04.026.019c.757.576 1.284 1.397 1.563 2.35.435 1.487.216 3.155-.534 4.088l-.018.021.002.003c.417.762.67 1.567.724 2.4l.002.03c.064 1.065-.2 2.137-.814 3.19l-.007.01.01.024c.472 1.157.62 2.322.438 3.486l-.006.039a.651.651 0 01-.747.536.648.648 0 01-.54-.742c.167-1.033.01-2.069-.48-3.123a.643.643 0 01.04-.617l.004-.006c.604-.924.854-1.83.8-2.72-.046-.779-.325-1.544-.8-2.273a.644.644 0 01.18-.886l.009-.006c.243-.159.467-.565.58-1.12a4.229 4.229 0 00-.095-1.974c-.205-.7-.58-1.284-1.105-1.683-.595-.454-1.383-.673-2.38-.61a.653.653 0 01-.632-.371c-.314-.665-.772-1.141-1.343-1.436a3.288 3.288 0 00-1.772-.332c-1.245.099-2.343.801-2.67 1.686a.652.652 0 01-.61.425c-1.067.002-1.893.252-2.497.703-.522.39-.878.935-1.066 1.588a4.07 4.07 0 00-.068 1.886c.112.558.331 1.02.582 1.269l.008.007c.212.207.257.53.109.785-.36.622-.629 1.549-.673 2.44-.05 1.018.186 1.902.719 2.536l.016.019a.643.643 0 01.095.69c-.576 1.236-.753 2.252-.562 3.052a.652.652 0 01-1.269.298c-.243-1.018-.078-2.184.473-3.498l.014-.035-.008-.012a4.339 4.339 0 01-.598-1.309l-.005-.019a5.764 5.764 0 01-.177-1.785c.044-.91.278-1.842.622-2.59l.012-.026-.002-.002c-.293-.418-.51-.953-.63-1.545l-.005-.024a5.352 5.352 0 01.093-2.49c.262-.915.777-1.701 1.536-2.269.06-.045.123-.09.186-.132-.159-1.493-.119-2.73.112-3.67.127-.518.314-.95.562-1.287.27-.368.614-.622 1.015-.737.266-.076.54-.059.797.042zm4.116 9.09c.936 0 1.8.313 2.446.855.63.527 1.005 1.235 1.005 1.94 0 .888-.406 1.58-1.133 2.022-.62.375-1.451.557-2.403.557-1.009 0-1.871-.259-2.493-.734-.617-.47-.963-1.13-.963-1.845 0-.707.398-1.417 1.056-1.946.668-.537 1.55-.849 2.485-.849zm0 .896a3.07 3.07 0 00-1.916.65c-.461.37-.722.835-.722 1.25 0 .428.21.829.61 1.134.455.347 1.124.548 1.943.548.799 0 1.473-.147 1.932-.426.463-.28.7-.686.7-1.257 0-.423-.246-.89-.683-1.256-.484-.405-1.14-.643-1.864-.643zm.662 1.21l.004.004c.12.151.095.37-.056.49l-.292.23v.446a.375.375 0 01-.376.373.375.375 0 01-.376-.373v-.46l-.271-.218a.347.347 0 01-.052-.49.353.353 0 01.494-.051l.215.172.22-.174a.353.353 0 01.49.051zm-5.04-1.919c.478 0 .867.39.867.871a.87.87 0 01-.868.871.87.87 0 01-.867-.87.87.87 0 01.867-.872zm8.706 0c.48 0 .868.39.868.871a.87.87 0 01-.868.871.87.87 0 01-.867-.87.87.87 0 01.867-.872zM7.44 2.3l-.003.002a.659.659 0 00-.285.238l-.005.006c-.138.189-.258.467-.348.832-.17.692-.216 1.631-.124 2.782.43-.128.899-.208 1.404-.237l.01-.001.019-.034c.046-.082.095-.161.148-.239.123-.771.022-1.692-.253-2.444-.134-.364-.297-.65-.453-.813a.628.628 0 00-.107-.09L7.44 2.3zm9.174.04l-.002.001a.628.628 0 00-.107.09c-.156.163-.32.45-.453.814-.29.794-.387 1.776-.23 2.572l.058.097.008.014h.03a5.184 5.184 0 011.466.212c.086-1.124.038-2.043-.128-2.722-.09-.365-.21-.643-.349-.832l-.004-.006a.659.659 0 00-.285-.239h-.004z"></path></svg>`;
-      }
-      return `<svg viewBox='0 0 24 24' width='24' height='24' style='color: #8b5cf6;' fill='none' stroke='currentColor' stroke-width='2.5'><rect x='2' y='2' width='20' height='20' rx='4'></rect><path d='M12 6v12M6 12h12'></path></svg>`;
-    }
-    static renderProviders() {
-      const menu = document.getElementById("nexus-setup-provider-menu");
-      if (!menu) return;
-      menu.innerHTML = this.providers.map((p) => `<div data-val="${p.id}">${p.name}</div>`).join("");
-      const input = document.getElementById("nexus-setup-provider-input");
-      let currentId = input?.dataset.value;
-      if (!currentId || !this.providers.some((p) => p.id === currentId)) {
-        currentId = this.providers[0]?.id || "openai-default";
-      }
-      this.selectProviderSetup(currentId);
-    }
-    static selectProviderSetup(providerId) {
-      const input = document.getElementById("nexus-setup-provider-input");
-      const keyInput = document.getElementById("nexus-setup-provider-key");
-      const badge = document.getElementById("nexus-setup-provider-badge");
-      const endpointRow = document.getElementById("nexus-setup-endpoint-row");
-      const endpointInput = document.getElementById("nexus-setup-provider-endpoint");
-      if (!input) return;
-      const p = this.providers.find((prov) => prov.id === providerId) || this.providers[0];
-      if (!p) return;
-      input.value = p.name;
-      input.dataset.value = p.id;
-      if (keyInput) {
-        keyInput.value = p.apiKey || "";
-      }
-      const getKeyLink = document.getElementById("nexus-setup-get-key-link");
-      if (getKeyLink) {
-        if (p.apiKeyUrl) {
-          getKeyLink.href = p.apiKeyUrl;
-          getKeyLink.style.display = "inline-block";
-        } else {
-          getKeyLink.style.display = "none";
-        }
-      }
-      if (endpointRow && endpointInput) {
-        if (p.id.includes("custom") || p.id.includes("ollama") || p.id.includes("lmstudio") || p.id.includes("vllm") || p.id.includes("localai") || p.id.includes("local")) {
-          endpointRow.style.display = "block";
-          endpointInput.value = p.endpoint || "";
-        } else {
-          endpointRow.style.display = "none";
-        }
-      }
-    }
-    static saveSelectedProviderKey() {
-      const input = document.getElementById("nexus-setup-provider-input");
-      const keyInput = document.getElementById("nexus-setup-provider-key");
-      const endpointInput = document.getElementById("nexus-setup-provider-endpoint");
-      const providerId = input?.dataset.value;
-      if (!providerId) return;
-      const p = this.providers.find((prov) => prov.id === providerId);
-      if (!p) return;
-      p.apiKey = keyInput ? keyInput.value.trim() : "";
-      if (endpointInput && endpointInput.parentElement.style.display !== "none") {
-        p.endpoint = endpointInput.value.trim() || p.endpoint;
-      }
-      chrome.storage.local.set({ providers: this.providers }, () => {
-        this.populateProviderDropdowns();
-      });
-    }
-    static populateProviderDropdowns() {
-      const chainProvList = document.getElementById("nexus-model-form-provider-list");
-      const configuredProviders = this.providers.filter(
-        (p) => p.apiKey && p.apiKey.trim().length > 0 || p.id.includes("ollama") || p.id.includes("lmstudio") || p.id.includes("vllm") || p.id.includes("localai") || p.id.includes("local")
-      );
-      if (chainProvList) {
-        if (configuredProviders.length > 0) {
-          chainProvList.innerHTML = configuredProviders.map((p) => `<div data-val="${p.id}">${p.name}</div>`).join("");
-        } else {
-          chainProvList.innerHTML = `<div style="padding: 8px 12px; font-size: 12px; color: var(--nexus-text-secondary);">No configured providers yet. Please set up an API key above.</div>`;
-        }
-      }
-      const retentionMenu = document.getElementById("nexus-history-retention-menu");
-      if (retentionMenu) {
-        const opts = [
-          { label: "1 Week", value: "0.25" },
-          { label: "2 Weeks", value: "0.5" },
-          { label: "1 Month", value: "1" },
-          { label: "2 Months", value: "2" },
-          { label: "3 Months", value: "3" },
-          { label: "6 Months", value: "6" },
-          { label: "1 Year", value: "12" },
-          { label: "Forever", value: "0" }
-        ];
-        retentionMenu.innerHTML = opts.map((o) => `<div data-val="${o.value}">${o.label}</div>`).join("");
-      }
-      this.loadTtsModels();
-      this.loadSttModels();
-    }
-    static setupDropdownInputs(inputId, menuId) {
-      const input = document.getElementById(inputId);
-      const menu = document.getElementById(menuId);
-      const updateActiveItems = (isSearch = false) => {
-        const items = Array.from(menu.querySelectorAll("div")).filter((d) => d.style.display !== "none");
-        menu.querySelectorAll("div").forEach((d) => d.classList.remove("active"));
-        if (items.length === 0) return;
-        let matched;
-        if (isSearch) {
-          matched = items[0];
-        } else {
-          const currentVal = input.dataset.value || input.value;
-          matched = items.find((d) => d.dataset.val && d.dataset.val === currentVal || d.textContent.trim() === input.value.trim());
-          if (!matched && items.length > 0) {
-            matched = items[0];
-          }
-        }
-        if (matched) {
-          matched.classList.add("active");
-        }
-      };
-      const triggerSelect = (targetEl) => {
-        if (!targetEl) return;
-        input.value = targetEl.textContent;
-        input.dataset.value = targetEl.dataset.val || targetEl.textContent;
-        menu.style.display = "none";
-        if (inputId === "nexus-setup-provider-input") {
-          this.selectProviderSetup(input.dataset.value);
-        }
-        if (inputId === "nexus-history-retention-input" || inputId === "nexus-settings-fontsize" || inputId === "nexus-settings-theme" || inputId === "nexus-settings-contrast" || inputId === "nexus-settings-accent" || inputId === "nexus-settings-fontfamily" || inputId === "nexus-settings-fontweight" || inputId === "nexus-settings-language" || inputId === "nexus-settings-spoken-lang" || inputId === "nexus-settings-voice-select" || inputId === "nexus-settings-tts-model" || inputId === "nexus-settings-stt-model") {
-          this.saveOptions();
-        }
-        if (inputId === "nexus-model-form-provider") {
-          const modelInput = document.getElementById("nexus-model-form-model");
-          if (modelInput) {
-            modelInput.value = "";
-            modelInput.dataset.value = "";
-          }
-          this.loadModelsForProvider(input.dataset.value);
-          this.updateModelPopupFieldsState();
-        }
-      };
-      input.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const isCurrentlyOpen = menu.style.display === "block";
-        document.querySelectorAll(".nexus-settings-dropdown-menu").forEach((m) => {
-          m.style.display = "none";
-        });
-        if (!isCurrentlyOpen) {
-          if (inputId === "nexus-settings-tts-model") {
-            this.loadTtsModels().then(() => updateActiveItems(false));
-          } else if (inputId === "nexus-settings-stt-model") {
-            this.loadSttModels().then(() => updateActiveItems(false));
-          }
-          menu.style.display = "block";
-          updateActiveItems(false);
-        }
-      });
-      document.addEventListener("click", (e) => {
-        const wrapper = input.closest(".nexus-settings-dropdown-wrapper");
-        if (wrapper && !wrapper.contains(e.target)) {
-          menu.style.display = "none";
-        }
-      });
-      const handleKeyDown = (e) => {
-        if (menu.style.display !== "block") {
-          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-            e.preventDefault();
-            menu.style.display = "block";
-            updateActiveItems(false);
-          }
-          return;
-        }
-        const visibleItems = Array.from(menu.querySelectorAll("div")).filter((d) => d.style.display !== "none");
-        if (visibleItems.length === 0) return;
-        let currentIndex = visibleItems.findIndex((d) => d.classList.contains("active"));
-        if (e.key === "ArrowDown") {
-          e.preventDefault();
-          currentIndex = (currentIndex + 1) % visibleItems.length;
-          visibleItems.forEach((d) => d.classList.remove("active"));
-          visibleItems[currentIndex].classList.add("active");
-          visibleItems[currentIndex].scrollIntoView({ block: "nearest" });
-        } else if (e.key === "ArrowUp") {
-          e.preventDefault();
-          currentIndex = (currentIndex - 1 + visibleItems.length) % visibleItems.length;
-          visibleItems.forEach((d) => d.classList.remove("active"));
-          visibleItems[currentIndex].classList.add("active");
-          visibleItems[currentIndex].scrollIntoView({ block: "nearest" });
-        } else if (e.key === "Enter") {
-          e.preventDefault();
-          const activeItem = visibleItems[currentIndex >= 0 ? currentIndex : 0] || visibleItems[0];
-          if (activeItem) {
-            triggerSelect(activeItem);
-            input.blur();
-          }
-        } else if (e.key === "Escape") {
-          e.preventDefault();
-          menu.style.display = "none";
-        }
-      };
-      input.addEventListener("keydown", handleKeyDown);
-      if (inputId === "nexus-model-form-model" || inputId === "nexus-setup-provider-input" || inputId === "nexus-model-form-provider") {
-        input.addEventListener("input", () => {
-          const query = input.value.toLowerCase().trim();
-          const items = menu.querySelectorAll("div");
-          items.forEach((item) => {
-            const text = item.textContent.toLowerCase();
-            if (text.includes(query)) {
-              item.style.display = "block";
-            } else {
-              item.style.display = "none";
-            }
-          });
-          menu.style.display = "block";
-          updateActiveItems(true);
-        });
-      }
-      menu.addEventListener("click", (e) => {
-        if (e.target.tagName === "DIV") {
-          triggerSelect(e.target);
-        }
-      });
-    }
-    static setDropdownValue(inputId, menuId, val, defaultText) {
-      const input = document.getElementById(inputId);
-      if (!input) return;
-      input.dataset.value = val;
-      const menu = document.getElementById(menuId);
-      const matchedDiv = menu?.querySelector(`div[data-val="${val}"]`);
-      input.value = matchedDiv ? matchedDiv.textContent : defaultText;
-    }
-    static adjustInputWidthToContent(input) {
-      if (!input) return;
-      const wrapper = input.closest(".nexus-settings-dropdown-wrapper");
-      if (!wrapper) return;
-      const tempSpan = document.createElement("span");
-      tempSpan.style.visibility = "hidden";
-      tempSpan.style.position = "absolute";
-      tempSpan.style.whiteSpace = "pre";
-      tempSpan.style.fontFamily = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      tempSpan.style.fontSize = "13px";
-      tempSpan.style.fontWeight = "400";
-      tempSpan.textContent = input.value || "Default";
-      document.body.appendChild(tempSpan);
-      const width = tempSpan.getBoundingClientRect().width;
-      document.body.removeChild(tempSpan);
-      const exactWidth = Math.max(width + 38, 100);
-      wrapper.style.width = exactWidth + "px";
-      input.style.width = "100%";
-    }
-    static enableAutoExpandTextarea(el) {
-      if (!el) return;
-      const adjust = () => {
-        el.style.height = "auto";
-        el.style.height = Math.min(el.scrollHeight, 250) + "px";
-      };
-      el.addEventListener("input", adjust);
-    }
-    static async loadModelsForProvider(providerId) {
-      const menu = document.getElementById("nexus-model-form-model-list");
-      if (!menu) return;
-      menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--nexus-text-secondary);">Loading models...</div>';
-      const provider = this.providers.find((p) => p.id === providerId);
-      if (!provider) {
-        menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--nexus-text-secondary);">No provider selected</div>';
-        return;
-      }
-      try {
-        const firstKey = provider.apiKey ? provider.apiKey.split(",")[0].trim() : "";
-        let models = [];
-        let response;
-        const isGemini = provider.type === "gemini" || typeof provider.endpoint === "string" && provider.endpoint.includes("generativelanguage.googleapis.com");
-        if (isGemini) {
-          let baseUrl = provider.endpoint || "https://generativelanguage.googleapis.com/v1beta/models";
-          baseUrl = baseUrl.replace(/\/+$/, "");
-          if (baseUrl.includes("/chat/completions")) {
-            baseUrl = baseUrl.replace("/chat/completions", "/models");
-          } else if (!baseUrl.endsWith("/models")) {
-            baseUrl = baseUrl + "/models";
-          }
-          const url = firstKey ? `${baseUrl}?key=${firstKey}` : baseUrl;
-          response = await fetch(url);
-        } else {
-          let modelsUrl = provider.endpoint.trim().replace(/\/+$/, "");
-          const suffixes = ["/chat/completions", "/models", "/audio/transcriptions"];
-          let matched = false;
-          for (const suffix of suffixes) {
-            if (modelsUrl.endsWith(suffix)) {
-              modelsUrl = modelsUrl.slice(0, -suffix.length) + "/models";
-              matched = true;
-              break;
-            }
-          }
-          if (!matched) {
-            modelsUrl = modelsUrl + "/models";
-          }
-          if (provider.id.includes("groq") || modelsUrl.includes("groq.com")) {
-            modelsUrl = "https://api.groq.com/openai/v1/models";
-          }
-          response = await fetch(modelsUrl, {
-            headers: firstKey ? { "Authorization": `Bearer ${firstKey}` } : {}
-          });
-        }
-        if (response && response.ok) {
-          const data = await response.json();
-          if (isGemini) {
-            if (data.models) {
-              models = data.models.map((m) => m.name.replace("models/", ""));
-            }
-          } else {
-            if (data.data) {
-              models = data.data.map((m) => m.id);
-            }
-          }
-        }
-        if (models.length === 0) {
-          const fallbackOptions = {
-            "gemini-default": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash"],
-            "openai-default": ["gpt-4o", "gpt-4o-mini", "o1-mini", "o1-preview"],
-            "deepseek-default": ["deepseek-chat", "deepseek-reasoner"],
-            "moonshot-default": ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"],
-            "alibaba-default": ["qwen-max", "qwen-plus", "qwen-turbo"],
-            "minimax-default": ["abab6.5g-chat", "abab6.5s-chat"],
-            "zhipu-default": ["glm-4", "glm-4-flash", "glm-4-air"]
-          };
-          models = fallbackOptions[providerId] || ["custom-model"];
-        }
-        menu.innerHTML = models.map((m) => `<div data-val="${m}">${m}</div>`).join("");
-      } catch (e) {
-        console.error("Failed to fetch models in settings:", e);
-        const fallbackOptions = {
-          "gemini-default": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash"],
-          "openai-default": ["gpt-4o", "gpt-4o-mini", "o1-mini", "o1-preview"],
-          "deepseek-default": ["deepseek-chat", "deepseek-reasoner"],
-          "moonshot-default": ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"],
-          "alibaba-default": ["qwen-max", "qwen-plus", "qwen-turbo"],
-          "minimax-default": ["abab6.5g-chat", "abab6.5s-chat"],
-          "zhipu-default": ["glm-4", "glm-4-flash", "glm-4-air"]
-        };
-        const list = fallbackOptions[providerId] || ["custom-model"];
-        menu.innerHTML = list.map((m) => `<div data-val="${m}">${m}</div>`).join("");
-      }
-    }
-    static async loadTtsModels() {
-      const menu = document.getElementById("nexus-settings-tts-model-menu");
-      if (!menu) return;
-      const geminiProv = this.providers.find((p) => p.id === "gemini-default" || p.id.includes("gemini"));
-      const apiKey = geminiProv?.apiKey?.trim() || "";
-      try {
-        let models = [];
-        if (apiKey) {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey.split(",")[0].trim()}`;
-          const res = await fetch(url);
-          if (res.ok) {
-            const data = await res.json();
-            if (data.models && Array.isArray(data.models)) {
-              models = data.models.map((m) => m.name.replace("models/", "")).filter((m) => m.toLowerCase().includes("tts"));
-            }
-          }
-        }
-        if (models.length === 0) {
-          models = [
-            "gemini-2.5-flash",
-            "gemini-2.5-pro"
-          ];
-        }
-        menu.innerHTML = models.map((m) => `<div data-val="${m}">${m}</div>`).join("");
-      } catch (err) {
-        console.warn("Failed to fetch Gemini TTS models:", err);
-      }
-    }
-    static async loadSttModels() {
-      const menu = document.getElementById("nexus-settings-stt-model-menu");
-      if (!menu) return;
-      const groqProv = this.providers.find((p) => p.id === "groq-default" || p.id.includes("groq"));
-      const apiKey = groqProv?.apiKey?.trim() || "";
-      try {
-        let models = [];
-        if (apiKey) {
-          const res = await fetch("https://api.groq.com/openai/v1/models", {
-            headers: {
-              "Authorization": `Bearer ${apiKey.split(",")[0].trim()}`
-            }
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.data && Array.isArray(data.data)) {
-              models = data.data.map((m) => m.id).filter((m) => m.toLowerCase().includes("whisper"));
-            }
-          }
-        }
-        if (models.length === 0) {
-          models = [
-            "whisper-large-v3-turbo",
-            "whisper-large-v3",
-            "distil-whisper-large-v3-en"
-          ];
-        }
-        menu.innerHTML = models.map((m) => `<div data-val="${m}">${m}</div>`).join("");
-      } catch (err) {
-        console.warn("Failed to fetch Groq Whisper models:", err);
-      }
-    }
-    static showProviderForm() {
-      const overlay = document.getElementById("nexus-provider-popup-overlay");
-      if (overlay) overlay.style.display = "flex";
-      document.getElementById("nexus-provider-form-id").value = "";
-      document.getElementById("nexus-provider-form-name").value = "";
-      document.getElementById("nexus-provider-form-endpoint").value = "";
-      document.getElementById("nexus-provider-form-apikey").value = "";
-      const statusEl = document.getElementById("nexus-dialog-status");
-      if (statusEl) {
-        statusEl.innerHTML = "";
-        statusEl.className = "nexus-dialog-status hidden";
-      }
-    }
-    static editProvider(id) {
-      const p = this.providers.find((p2) => p2.id === id);
-      if (!p) return;
-      const overlay = document.getElementById("nexus-provider-popup-overlay");
-      if (overlay) overlay.style.display = "flex";
-      document.getElementById("nexus-provider-form-id").value = p.id;
-      document.getElementById("nexus-provider-form-name").value = p.name;
-      document.getElementById("nexus-provider-form-endpoint").value = p.endpoint;
-      document.getElementById("nexus-provider-form-apikey").value = p.apiKey || "";
-      const statusEl = document.getElementById("nexus-dialog-status");
-      if (statusEl) {
-        statusEl.innerHTML = "";
-        statusEl.className = "nexus-dialog-status hidden";
-      }
-    }
-    static hideProviderForm() {
-      const overlay = document.getElementById("nexus-provider-popup-overlay");
-      if (overlay) overlay.style.display = "none";
-    }
-    static showModelForm(index = null) {
-      const overlay = document.getElementById("nexus-model-popup-overlay");
-      if (overlay) overlay.style.display = "flex";
-      const indexInput = document.getElementById("nexus-model-form-index");
-      const providerInput = document.getElementById("nexus-model-form-provider");
-      const modelInput = document.getElementById("nexus-model-form-model");
-      const customNameInput = document.getElementById("nexus-model-form-name-custom");
-      this.populateProviderDropdowns();
-      if (index !== null && index >= 0) {
-        const item = this.models[index];
-        indexInput.value = index;
-        const prov = this.providers.find((p) => p.id === item.providerId);
-        providerInput.value = prov ? prov.name : item.providerId;
-        providerInput.dataset.value = item.providerId;
-        modelInput.value = item.modelName;
-        customNameInput.value = item.displayName || "";
-        const tokenVal = item.maxTokens || 8192;
-        this.setDropdownValue("nexus-model-form-max-tokens", "nexus-model-form-max-tokens-list", String(tokenVal), `${Number(tokenVal).toLocaleString()} tokens`);
-        this.loadModelsForProvider(item.providerId);
-      } else {
-        indexInput.value = "";
-        providerInput.value = "";
-        providerInput.dataset.value = "";
-        modelInput.value = "";
-        customNameInput.value = "";
-        this.setDropdownValue("nexus-model-form-max-tokens", "nexus-model-form-max-tokens-list", "8192", "8,192 tokens (Default)");
-      }
-      this.updateModelPopupFieldsState();
-    }
-    static updateModelPopupFieldsState() {
-      const provider = document.getElementById("nexus-model-form-provider").dataset.value;
-      const modelInput = document.getElementById("nexus-model-form-model");
-      const customNameInput = document.getElementById("nexus-model-form-name-custom");
-      const maxTokensInput = document.getElementById("nexus-model-form-max-tokens");
-      const shouldDisable = !provider;
-      if (modelInput) {
-        modelInput.disabled = shouldDisable;
-        if (shouldDisable) {
-          modelInput.style.opacity = "0.6";
-          modelInput.style.cursor = "not-allowed";
-        } else {
-          modelInput.style.opacity = "1";
-          modelInput.style.cursor = "text";
-        }
-      }
-      if (customNameInput) {
-        customNameInput.disabled = shouldDisable;
-        if (shouldDisable) {
-          customNameInput.style.opacity = "0.6";
-          customNameInput.style.cursor = "not-allowed";
-        } else {
-          customNameInput.style.opacity = "1";
-          customNameInput.style.cursor = "text";
-        }
-      }
-      if (maxTokensInput) {
-        maxTokensInput.disabled = shouldDisable;
-        if (shouldDisable) {
-          maxTokensInput.style.opacity = "0.6";
-          maxTokensInput.style.cursor = "not-allowed";
-        } else {
-          maxTokensInput.style.opacity = "1";
-          maxTokensInput.style.cursor = "pointer";
-        }
-      }
-    }
-    static hideModelForm() {
-      const overlay = document.getElementById("nexus-model-popup-overlay");
-      if (overlay) overlay.style.display = "none";
-    }
-    static showMappingForm(index = null) {
-      const overlay = document.getElementById("nexus-mapping-popup-overlay");
-      if (overlay) overlay.style.display = "flex";
-      const indexInput = document.getElementById("nexus-mapping-form-index");
-      const nameInput = document.getElementById("nexus-mapping-popup-name");
-      const shortcutBox = document.getElementById("nexus-mapping-popup-shortcut");
-      const promptInput = document.getElementById("nexus-mapping-popup-prompt");
-      const highlightInput = document.getElementById("nexus-mapping-popup-highlight");
-      if (index !== null && index >= 0) {
-        const item = this.questionMappings[index];
-        indexInput.value = index;
-        nameInput.value = item.name || "";
-        const keyData = item.keyData || (item.key ? { key: item.key, code: "Key" + item.key.toUpperCase() } : null);
-        this.renderShortcutDisplay(shortcutBox, keyData);
-        this.deserializePrompt(item.prompt || "", promptInput);
-        highlightInput.checked = item.highlight !== false && item.enableHighlight !== false;
-      } else {
-        indexInput.value = "";
-        nameInput.value = "";
-        this.renderShortcutDisplay(shortcutBox, null);
-        promptInput.innerHTML = "";
-        highlightInput.checked = true;
-      }
-    }
-    static hideMappingForm() {
-      const overlay = document.getElementById("nexus-mapping-popup-overlay");
-      if (overlay) overlay.style.display = "none";
-    }
-    static saveMapping() {
-      const indexInput = document.getElementById("nexus-mapping-form-index");
-      const nameInput = document.getElementById("nexus-mapping-popup-name");
-      const shortcutBox = document.getElementById("nexus-mapping-popup-shortcut");
-      const promptInput = document.getElementById("nexus-mapping-popup-prompt");
-      const highlightInput = document.getElementById("nexus-mapping-popup-highlight");
-      const name = nameInput.value.trim();
-      const prompt2 = this.serializePrompt(promptInput).trim();
-      if (!name || !prompt2) {
-        alert("Please fill in both Rule Name and Content fields.");
-        return;
-      }
-      let keyData = null;
-      if (shortcutBox.dataset.key) {
-        try {
-          keyData = JSON.parse(shortcutBox.dataset.key);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      if (!keyData) {
-        alert("Please record a shortcut.");
-        return;
-      }
-      const mapping = {
-        name,
-        keyData,
-        key: keyData.key,
-        prompt: prompt2,
-        highlight: highlightInput.checked,
-        enableHighlight: highlightInput.checked
-      };
-      const indexVal = indexInput.value;
-      if (indexVal !== "") {
-        const idx = parseInt(indexVal, 10);
-        this.questionMappings[idx] = mapping;
-      } else {
-        this.questionMappings.push(mapping);
-      }
-      chrome.storage.local.set({ questionMappings: this.questionMappings }, () => {
-        this.renderQuestionMappings();
-        this.hideMappingForm();
-      });
-    }
-    static serializePrompt(el) {
-      let result = "";
-      const childs = el.childNodes;
-      for (let i = 0; i < childs.length; i++) {
-        const node = childs[i];
-        if (node.nodeType === Node.TEXT_NODE) {
-          result += node.textContent;
-        } else if (node.nodeType === Node.ELEMENT_NODE) {
-          if (node.classList.contains("nexus-variable-tag")) {
-            result += node.getAttribute("data-val") || node.textContent;
-          } else if (node.tagName === "BR") {
-            result += "\n";
-          } else {
-            result += this.serializePrompt(node);
-            if (node.tagName === "DIV" || node.tagName === "P") {
-              result += "\n";
-            }
-          }
-        }
-      }
-      return result;
-    }
-    static deserializePrompt(text, el) {
-      el.innerHTML = "";
-      if (!text) return;
-      const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      const html = escaped.replace(/(\$SelectedText|\$Sentence|\$Paragraph)/g, (match) => {
-        return `<span class="nexus-variable-tag" contenteditable="false" data-val="${match}">${match}</span>`;
-      });
-      const formattedHtml = html.replace(/\n/g, "<br>");
-      el.innerHTML = formattedHtml;
-    }
-    static resetProvider() {
-      const id = document.getElementById("nexus-provider-form-id").value;
-      if (!id) {
-        document.getElementById("nexus-provider-form-name").value = "";
-        document.getElementById("nexus-provider-form-endpoint").value = "";
-        document.getElementById("nexus-provider-form-apikey").value = "";
-        return;
-      }
-      const defaults = this.getDefaultProviders();
-      const defaultProv = defaults.find((d) => d.id === id);
-      if (defaultProv) {
-        document.getElementById("nexus-provider-form-name").value = defaultProv.name;
-        document.getElementById("nexus-provider-form-endpoint").value = defaultProv.endpoint;
-        document.getElementById("nexus-provider-form-apikey").value = "";
-      } else {
-        document.getElementById("nexus-provider-form-name").value = "";
-        document.getElementById("nexus-provider-form-endpoint").value = "";
-        document.getElementById("nexus-provider-form-apikey").value = "";
-      }
-    }
-    static saveProvider() {
-      const id = document.getElementById("nexus-provider-form-id").value || "custom-" + Date.now();
-      const name = document.getElementById("nexus-provider-form-name").value.trim();
-      const endpoint = document.getElementById("nexus-provider-form-endpoint").value.trim();
-      const apiKey = document.getElementById("nexus-provider-form-apikey").value.trim();
-      if (!name || !endpoint) {
-        alert("Name and Endpoint are required.");
-        return;
-      }
-      const idx = this.providers.findIndex((p) => p.id === id);
-      const pData = { id, name, type: "openai", endpoint, apiKey };
-      if (idx >= 0) {
-        this.providers[idx] = pData;
-      } else {
-        this.providers.push(pData);
-      }
-      chrome.storage.local.set({ providers: this.providers }, () => {
-        this.renderProviders();
-        this.populateProviderDropdowns();
-        this.hideProviderForm();
-      });
-    }
-    static checkApiKeys() {
-      const name = document.getElementById("nexus-provider-form-name").value.trim();
-      const endpoint = document.getElementById("nexus-provider-form-endpoint").value.trim();
-      const apiKey = document.getElementById("nexus-provider-form-apikey").value.trim();
-      if (!endpoint || !apiKey) {
-        alert("Endpoint and API Key are required to check status.");
-        return;
-      }
-      const statusEl = document.getElementById("nexus-dialog-status");
-      if (!statusEl) return;
-      statusEl.classList.remove("hidden");
-      statusEl.className = "nexus-dialog-status info";
-      statusEl.innerHTML = '<div class="status-loading" style="font-weight: 500;">Checking API Keys...</div>';
-      const checkBtn = document.getElementById("nexus-check-apikeys-btn");
-      const originalText = checkBtn.textContent;
-      checkBtn.textContent = "Checking...";
-      checkBtn.disabled = true;
-      const keysList = apiKey.split(",").map((k) => k.trim()).filter(Boolean);
-      if (keysList.length === 0) {
-        statusEl.className = "nexus-dialog-status error";
-        statusEl.innerHTML = "<strong>Error:</strong> No keys entered.";
-        checkBtn.textContent = originalText;
-        checkBtn.disabled = false;
-        return;
-      }
-      let testUrlBase = endpoint.replace(/\/+$/, "");
-      if (!testUrlBase.includes("/models") && !testUrlBase.includes("/chat/completions")) {
-        testUrlBase = testUrlBase + "/models";
-      } else if (testUrlBase.includes("/chat/completions")) {
-        testUrlBase = testUrlBase.replace("/chat/completions", "/models");
-      }
-      const isGemini = testUrlBase.includes("generativelanguage.googleapis.com");
-      const checkPromises = keysList.map((key, index) => {
-        let keyUrl = testUrlBase;
-        const headers = { "Content-Type": "application/json" };
-        if (isGemini) {
-          keyUrl = keyUrl.includes("?") ? `${keyUrl}&key=${key}` : `${keyUrl}?key=${key}`;
-        } else {
-          headers["Authorization"] = `Bearer ${key}`;
-        }
-        const maskedKey = key.length > 12 ? key.substring(0, 8) + "..." + key.substring(key.length - 4) : key.substring(0, Math.min(4, key.length)) + "...";
-        return fetch(keyUrl, { method: "GET", headers }).then((res) => ({
-          index,
-          keyLabel: maskedKey,
-          ok: res.ok,
-          status: res.status
-        })).catch((err) => ({
-          index,
-          keyLabel: maskedKey,
-          ok: false,
-          error: err.message
-        }));
-      });
-      Promise.all(checkPromises).then((results) => {
-        checkBtn.textContent = originalText;
-        checkBtn.disabled = false;
-        const allOk = results.every((r) => r.ok);
-        statusEl.className = "nexus-dialog-status " + (allOk ? "success" : results.some((r) => r.ok) ? "warning" : "error");
-        if (results.length === 1) {
-          const res = results[0];
-          if (res.ok) {
-            statusEl.innerHTML = `<strong>Success:</strong> API Key is valid and active.`;
-          } else {
-            statusEl.innerHTML = `<strong>Error:</strong> API Key check failed${res.status ? ` (Status: ${res.status})` : `: ${res.error}`}.`;
-          }
-        } else {
-          const okCount = results.filter((r) => r.ok).length;
-          let html = `<div class="status-summary" style="font-weight: 600;">Checked ${results.length} keys: ${okCount} valid, ${results.length - okCount} invalid</div>`;
-          html += '<ul class="status-keys-list" style="margin-top: 6px; padding-left: 16px; list-style-type: disc;">';
-          results.forEach((res) => {
-            html += `
-            <li class="${res.ok ? "key-ok" : "key-fail"}" style="color: ${res.ok ? "#10b981" : "#ef4444"}; font-size: 12px; margin-top: 2px;">
-              <span class="key-masked" style="font-family: monospace; font-size: 11.5px; color: var(--nexus-text-primary); font-weight: 500;">${res.keyLabel}</span>:
-              <strong>${res.ok ? "VALID" : res.status ? `FAILED (${res.status})` : `FAILED (${res.error})`}</strong>
-            </li>
-          `;
-          });
-          html += "</ul>";
-          statusEl.innerHTML = html;
-        }
-      });
-    }
-    static addModelToChain() {
-      const indexStr = document.getElementById("nexus-model-form-index").value;
-      const provider = document.getElementById("nexus-model-form-provider").dataset.value;
-      const model = document.getElementById("nexus-model-form-model").value.trim();
-      const customName = document.getElementById("nexus-model-form-name-custom").value.trim();
-      const maxTokensInput = document.getElementById("nexus-model-form-max-tokens");
-      const maxTokens = parseInt(maxTokensInput?.dataset?.value || "8192", 10);
-      if (!provider || !model) {
-        alert("Provider and Model are required.");
-        return;
-      }
-      const item = {
-        providerId: provider,
-        modelName: model,
-        model,
-        displayName: customName || model,
-        maxTokens: maxTokens || 8192
-      };
-      if (indexStr !== "") {
-        const idx = parseInt(indexStr);
-        if (idx >= 0 && idx < this.models.length) {
-          this.models[idx] = item;
-        }
-      } else {
-        this.models.unshift(item);
-      }
-      chrome.storage.local.set({ models: this.models }, () => {
-        this.renderChainList();
-        this.hideModelForm();
-      });
-    }
-    static renderChainList() {
-      const list = document.getElementById("nexus-model-list");
-      if (!list) return;
-      list.innerHTML = "";
-      const addModelHeaderBtn = document.getElementById("nexus-open-add-model-btn");
-      if (addModelHeaderBtn && !addModelHeaderBtn.dataset.bound) {
-        addModelHeaderBtn.dataset.bound = "true";
-        addModelHeaderBtn.addEventListener("click", () => this.showModelForm());
-      }
-      if (this.models.length === 0) {
-        const emptyState = document.createElement("div");
-        emptyState.className = "nexus-settings-empty-state";
-        emptyState.textContent = 'No models added yet. Click "Add model" above to start.';
-        list.appendChild(emptyState);
-      } else {
-        const temp = document.getElementById("nexus-chainItemTemplate");
-        this.models.forEach((item, index) => {
-          const clone = temp.content.cloneNode(true);
-          const cardEl = clone.querySelector(".nexus-settings-chain-card");
-          cardEl.dataset.index = index;
-          clone.querySelector(".chain-number").textContent = index + 1;
-          clone.querySelector(".chain-title").textContent = item.displayName || item.modelName;
-          const prov = this.providers.find((p) => p.id === item.providerId);
-          const providerName = prov ? prov.name : item.providerId;
-          const tokenLabel = item.maxTokens ? ` \u2022 ${Number(item.maxTokens).toLocaleString()} tokens` : " \u2022 8,192 tokens";
-          clone.querySelector(".chain-subtitle").textContent = `${providerName}${tokenLabel}`;
-          cardEl.addEventListener("dragstart", (e) => {
-            cardEl.classList.add("dragging");
-            e.dataTransfer.setData("text/plain", index);
-            e.dataTransfer.effectAllowed = "move";
-          });
-          cardEl.addEventListener("dragend", () => {
-            cardEl.classList.remove("dragging");
-          });
-          cardEl.addEventListener("dragover", (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "move";
-          });
-          cardEl.addEventListener("drop", (e) => {
-            e.preventDefault();
-            const fromIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
-            const toIndex = index;
-            if (!isNaN(fromIndex) && fromIndex !== toIndex) {
-              const movedItem = this.models.splice(fromIndex, 1)[0];
-              this.models.splice(toIndex, 0, movedItem);
-              chrome.storage.local.set({ models: this.models }, () => this.renderChainList());
-            }
-          });
-          clone.querySelector(".edit").addEventListener("click", (e) => {
-            e.stopPropagation();
-            this.showModelForm(index);
-          });
-          clone.querySelector(".remove").addEventListener("click", (e) => {
-            e.stopPropagation();
-            this.models.splice(index, 1);
-            chrome.storage.local.set({ models: this.models }, () => this.renderChainList());
-          });
-          list.appendChild(clone);
-        });
-      }
-    }
-    static bindAppearanceTab() {
-      this.setupDropdownInputs("nexus-settings-theme", "nexus-settings-theme-menu");
-      this.setupDropdownInputs("nexus-settings-contrast", "nexus-settings-contrast-menu");
-      this.setupDropdownInputs("nexus-settings-accent", "nexus-settings-accent-menu");
-      this.setupDropdownInputs("nexus-settings-fontfamily", "nexus-settings-fontfamily-menu");
-      this.setupDropdownInputs("nexus-settings-fontweight", "nexus-settings-fontweight-menu");
-      this.setupDropdownInputs("nexus-settings-language", "nexus-settings-language-menu");
-      this.setupDropdownInputs("nexus-settings-spoken-lang", "nexus-settings-spoken-lang-menu");
-      this.setupDropdownInputs("nexus-settings-voice-select", "nexus-settings-voice-select-menu");
-      this.setupDropdownInputs("nexus-settings-fontsize", "nexus-settings-fontsize-menu");
-      const fsInput = document.getElementById("nexus-settings-fontsize");
-      if (fsInput) {
-        fsInput.addEventListener("change", () => this.saveOptions());
-        fsInput.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") {
-            fsInput.blur();
-          }
-        });
-      }
-      document.getElementById("nexus-settings-dictation-toggle").addEventListener("change", () => this.saveOptions());
-      document.getElementById("nexus-settings-separate-voice").addEventListener("change", () => this.saveOptions());
-      document.getElementById("nexus-settings-voice-play-btn").addEventListener("click", () => {
-        const voice = document.getElementById("nexus-settings-voice-select").dataset.value || "sol";
-        const audio = new Audio();
-        audio.src = `../../assets/audio/voice_${voice}.mp3`;
-        audio.play().catch(() => {
-          alert(`Playing voice test for ${voice}`);
-        });
-      });
-    }
-    static bindPersonalizationTab() {
-      const inputs = ["nexus-settings-about-nickname", "nexus-settings-about-occupation", "nexus-settings-about-interests"];
-      inputs.forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener("blur", () => this.saveOptions());
-      });
-      const addInstructionBtn = document.getElementById("nexus-add-instruction-btn");
-      if (addInstructionBtn) {
-        addInstructionBtn.addEventListener("click", () => {
-          this.showInstructionForm();
-        });
-      }
-      const cancelInstBtn = document.getElementById("nexus-cancel-instruction-popup-btn");
-      const saveInstBtn = document.getElementById("nexus-save-instruction-popup-btn");
-      const closeInstPopupBtn = document.getElementById("nexus-instruction-popup-close-btn");
-      const instPopupOverlay = document.getElementById("nexus-instruction-popup-overlay");
-      const contentInputEl = document.getElementById("nexus-instruction-popup-content");
-      if (contentInputEl) {
-        contentInputEl.addEventListener("input", () => {
-          contentInputEl.style.height = "auto";
-          contentInputEl.style.height = Math.min(contentInputEl.scrollHeight, 250) + "px";
-        });
-      }
-      if (cancelInstBtn) cancelInstBtn.addEventListener("click", () => this.hideInstructionForm());
-      if (saveInstBtn) saveInstBtn.addEventListener("click", () => this.saveInstructionPopup());
-      if (closeInstPopupBtn) closeInstPopupBtn.addEventListener("click", () => this.hideInstructionForm());
-      if (instPopupOverlay) {
-        instPopupOverlay.addEventListener("click", (e) => {
-          if (e.target === instPopupOverlay) this.hideInstructionForm();
-        });
-      }
-    }
-    static showInstructionForm(index = null) {
-      const overlay = document.getElementById("nexus-instruction-popup-overlay");
-      const titleEl = document.getElementById("nexus-instruction-popup-title");
-      const indexInput = document.getElementById("nexus-instruction-popup-index");
-      const contentInput = document.getElementById("nexus-instruction-popup-content");
-      if (!overlay || !titleEl || !indexInput || !contentInput) return;
-      if (index !== null && index >= 0 && index < this.userFacts.length) {
-        titleEl.textContent = "Edit Custom Instruction";
-        indexInput.value = index;
-        contentInput.value = this.userFacts[index];
-      } else {
-        titleEl.textContent = "Add Custom Instruction";
-        indexInput.value = "";
-        contentInput.value = "";
-      }
-      overlay.style.display = "flex";
-      contentInput.style.height = "auto";
-      contentInput.style.height = Math.min(contentInput.scrollHeight, 250) + "px";
-      setTimeout(() => contentInput.focus(), 50);
-    }
-    static hideInstructionForm() {
-      const overlay = document.getElementById("nexus-instruction-popup-overlay");
-      if (overlay) overlay.style.display = "none";
-    }
-    static async saveInstructionPopup() {
-      const indexInput = document.getElementById("nexus-instruction-popup-index");
-      const contentInput = document.getElementById("nexus-instruction-popup-content");
-      if (!indexInput || !contentInput) return;
-      const val = contentInput.value.trim();
-      if (!val) {
-        alert("Instruction content is required.");
-        return;
-      }
-      const indexVal = indexInput.value;
-      if (indexVal !== "") {
-        const idx = parseInt(indexVal, 10);
-        const updatedFacts = await UserMemory.updateFact(idx, val);
-        this.userFacts = updatedFacts;
-      } else {
-        const updatedFacts = await UserMemory.addFact(val);
-        this.userFacts = updatedFacts;
-      }
-      this.renderUserFacts();
-      this.hideInstructionForm();
-    }
-    static renderUserFacts() {
-      const list = document.getElementById("nexus-user-facts-list");
-      if (!list) return;
-      list.innerHTML = "";
-      if (this.userFacts.length === 0) {
-        list.innerHTML = '<div class="nexus-settings-empty-state">No instructions added yet. Add one above.</div>';
-        return;
-      }
-      const temp = document.getElementById("nexus-userFactItemTemplate");
-      this.userFacts.forEach((fact, idx) => {
-        const clone = temp.content.cloneNode(true);
-        clone.querySelector(".fact-index").textContent = idx + 1;
-        clone.querySelector(".fact-text").textContent = fact;
-        clone.querySelector(".fact-edit-btn").addEventListener("click", () => {
-          this.showInstructionForm(idx);
-        });
-        clone.querySelector(".fact-delete-btn").addEventListener("click", async () => {
-          if (typeof window.showCustomPopup === "function") {
-            const confirmed = await window.showCustomPopup({
-              title: "Delete Instruction",
-              body: "Are you sure you want to delete this custom instruction?",
-              confirmLabel: "Delete",
-              isDanger: true
-            });
-            if (confirmed) {
-              const updatedFacts = await UserMemory.removeFact(idx);
-              this.userFacts = updatedFacts;
-              this.renderUserFacts();
-            }
-          } else {
-            if (confirm("Are you sure you want to delete this custom instruction?")) {
-              const updatedFacts = await UserMemory.removeFact(idx);
-              this.userFacts = updatedFacts;
-              this.renderUserFacts();
-            }
-          }
-        });
-        list.appendChild(clone);
-      });
-    }
-    static bindKeyboardTab() {
-      const configBtn = document.getElementById("nexus-config-shortcut-btn");
-      if (configBtn) {
-        configBtn.addEventListener("click", () => {
-          chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
-        });
-      }
-      const addMappingBtn = document.getElementById("nexus-add-mapping-btn");
-      if (addMappingBtn) {
-        addMappingBtn.addEventListener("click", () => {
-          this.showMappingForm();
-        });
-      }
-      const cancelMappingBtn = document.getElementById("nexus-cancel-mapping-btn");
-      const saveMappingBtn = document.getElementById("nexus-save-mapping-btn");
-      const closeMappingPopupBtn = document.getElementById("nexus-mapping-popup-close-btn");
-      const mappingPopupOverlay = document.getElementById("nexus-mapping-popup-overlay");
-      if (cancelMappingBtn) cancelMappingBtn.addEventListener("click", () => this.hideMappingForm());
-      if (saveMappingBtn) saveMappingBtn.addEventListener("click", () => this.saveMapping());
-      if (closeMappingPopupBtn) closeMappingPopupBtn.addEventListener("click", () => this.hideMappingForm());
-      if (mappingPopupOverlay) {
-        mappingPopupOverlay.addEventListener("click", (e) => {
-          if (e.target === mappingPopupOverlay) this.hideMappingForm();
-        });
-      }
-      const mappingPopupShortcut = document.getElementById("nexus-mapping-popup-shortcut");
-      if (mappingPopupShortcut) {
-        mappingPopupShortcut.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (this.justRecordedMouseClick) return;
-          this.recordShortcut(mappingPopupShortcut);
-        });
-      }
-      const referenceChipsContainer = document.getElementById("nexus-mapping-popup-reference-chips");
-      if (referenceChipsContainer) {
-        referenceChipsContainer.querySelectorAll(".nexus-reference-chip").forEach((chip) => {
-          chip.addEventListener("click", (e) => {
-            e.preventDefault();
-            const val = chip.getAttribute("data-val");
-            if (!val) return;
-            const promptInput = document.getElementById("nexus-mapping-popup-prompt");
-            if (promptInput) {
-              const selection = window.getSelection();
-              if (selection.rangeCount > 0) {
-                const range2 = selection.getRangeAt(0);
-                if (promptInput.contains(range2.commonAncestorContainer)) {
-                  const span2 = document.createElement("span");
-                  span2.className = "nexus-variable-tag";
-                  span2.contentEditable = "false";
-                  span2.setAttribute("data-val", val);
-                  span2.textContent = val;
-                  range2.deleteContents();
-                  range2.insertNode(span2);
-                  range2.setStartAfter(span2);
-                  range2.setEndAfter(span2);
-                  selection.removeAllRanges();
-                  selection.addRange(range2);
-                  return;
-                }
-              }
-              const span = document.createElement("span");
-              span.className = "nexus-variable-tag";
-              span.contentEditable = "false";
-              span.setAttribute("data-val", val);
-              span.textContent = val;
-              promptInput.appendChild(span);
-              promptInput.focus();
-              const range = document.createRange();
-              range.selectNode(span);
-              range.collapse(false);
-              const sel = window.getSelection();
-              sel.removeAllRanges();
-              sel.addRange(range);
-            }
-          });
-        });
-      }
-      const addAnnotationBtn = document.getElementById("nexus-add-annotation-shortcut-btn");
-      if (addAnnotationBtn) {
-        addAnnotationBtn.addEventListener("click", () => {
-          this.showAnnotationForm();
-        });
-      }
-      const cancelAnnotationBtn = document.getElementById("nexus-cancel-annotation-btn");
-      const saveAnnotationBtn = document.getElementById("nexus-save-annotation-btn");
-      const closeAnnotationPopupBtn = document.getElementById("nexus-annotation-popup-close-btn");
-      const annotationPopupOverlay = document.getElementById("nexus-annotation-popup-overlay");
-      if (cancelAnnotationBtn) cancelAnnotationBtn.addEventListener("click", () => this.hideAnnotationForm());
-      if (saveAnnotationBtn) saveAnnotationBtn.addEventListener("click", () => this.saveAnnotation());
-      if (closeAnnotationPopupBtn) closeAnnotationPopupBtn.addEventListener("click", () => this.hideAnnotationForm());
-      if (annotationPopupOverlay) {
-        annotationPopupOverlay.addEventListener("click", (e) => {
-          if (e.target === annotationPopupOverlay) this.hideAnnotationForm();
-        });
-      }
-      const annotationPopupShortcut = document.getElementById("nexus-annotation-popup-shortcut");
-      if (annotationPopupShortcut) {
-        annotationPopupShortcut.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (this.justRecordedMouseClick) return;
-          this.recordShortcut(annotationPopupShortcut);
-        });
-      }
-      this.bindShortcutRecorders();
-    }
-    static bindShortcutRecorders() {
-      document.querySelectorAll(".nexus-settings-shortcut-box[data-action]").forEach((box) => {
-        box.addEventListener("click", (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (this.justRecordedMouseClick) return;
-          this.recordShortcut(box);
-        });
-      });
-    }
-    static renderShortcutDisplay(box, keyData) {
-      box.innerHTML = "";
-      if (!keyData) {
-        box.textContent = "None";
-        box.dataset.key = "";
-        return;
-      }
-      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
-      const parts = [];
-      const formatModifier = (key, code) => {
-        let side = "";
-        if (code && code.endsWith("Left")) side = "L";
-        else if (code && code.endsWith("Right")) side = "R";
-        if (key === "Control") return isMac ? side + "\u2303" : side + "Ctrl";
-        if (key === "Alt") return isMac ? side + "\u2325" : side + "Alt";
-        if (key === "Shift") return isMac ? side + "\u21E7" : side + "Shift";
-        if (key === "Meta") return isMac ? side + "\u2318" : side + "Win";
-        return key;
-      };
-      if (keyData.modifierCodes && keyData.modifierCodes.length > 0) {
-        if (keyData.ctrlKey && keyData.key !== "Control") {
-          const code = keyData.modifierCodes.find((c) => c.startsWith("Control")) || "ControlLeft";
-          parts.push(formatModifier("Control", code));
-        }
-        if (keyData.altKey && keyData.key !== "Alt") {
-          const code = keyData.modifierCodes.find((c) => c.startsWith("Alt")) || "AltLeft";
-          parts.push(formatModifier("Alt", code));
-        }
-        if (keyData.shiftKey && keyData.key !== "Shift") {
-          const code = keyData.modifierCodes.find((c) => c.startsWith("Shift")) || "ShiftLeft";
-          parts.push(formatModifier("Shift", code));
-        }
-        if (keyData.metaKey && keyData.key !== "Meta") {
-          const code = keyData.modifierCodes.find((c) => c.startsWith("Meta")) || "MetaLeft";
-          parts.push(formatModifier("Meta", code));
-        }
-      } else {
-        if (keyData.ctrlKey && keyData.key !== "Control") parts.push(isMac ? "\u2303" : "Ctrl");
-        if (keyData.altKey && keyData.key !== "Alt") parts.push(isMac ? "\u2325" : "Alt");
-        if (keyData.shiftKey && keyData.key !== "Shift") parts.push(isMac ? "\u21E7" : "Shift");
-        if (keyData.metaKey && keyData.key !== "Meta") parts.push(isMac ? "\u2318" : "Win");
-      }
-      let display = keyData.display || keyData.key || "Unknown";
-      if (keyData.key === " " || keyData.code === "Space") display = "Space";
-      if (keyData.code && keyData.code.startsWith("Mouse")) {
-        const btn = keyData.code.replace("Mouse", "");
-        if (btn === "0") display = "Left";
-        else if (btn === "1") display = "Middle";
-        else if (btn === "2") display = "Right";
-        else display = "Click" + btn;
-      }
-      const isModifierKey = ["Control", "Alt", "Shift", "Meta"].includes(keyData.key);
-      if (isModifierKey) {
-        display = formatModifier(keyData.key, keyData.code);
-      }
-      if (display.length === 1 && !isModifierKey) display = display.toUpperCase();
-      parts.push(display);
-      box.innerHTML = parts.map((p) => `<span class="shortcut-key">${p}</span>`).join("");
-      box.dataset.key = JSON.stringify(keyData);
-    }
-    static recordShortcut(box) {
-      if (this.currentRecordingInput) {
-        this.stopRecording(this.currentRecordingInput, false);
-      }
-      this.currentRecordingInput = box;
-      this.recordingHadInput = false;
-      this.recordingPressedCodes = /* @__PURE__ */ new Set();
-      box.classList.add("recording");
-      box.innerHTML = '<span class="recording" style="font-size: 13px; color: var(--nexus-text-secondary);">Recording...</span>';
-      const keydownHandler = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this.recordingPressedCodes.add(e.code);
-        const isModifier = ["Control", "Alt", "Shift", "Meta"].includes(e.key);
-        let code = e.code;
-        if (isModifier) {
-          const MODIFIER_PAIRS = {
-            "Shift": ["ShiftLeft", "ShiftRight"],
-            "Control": ["ControlLeft", "ControlRight"],
-            "Alt": ["AltLeft", "AltRight"],
-            "Meta": ["MetaLeft", "MetaRight"]
-          };
-          const pair = MODIFIER_PAIRS[e.key];
-          if (pair && this.recordingPressedCodes.has(pair[0]) && this.recordingPressedCodes.has(pair[1])) {
-            code = e.key;
-          }
-        }
-        const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
-        let display = e.key;
-        if (isModifier) {
-          if (e.key === "Control") display = isMac ? "\u2303" : "Ctrl";
-          else if (e.key === "Alt") display = isMac ? "\u2325" : "Alt";
-          else if (e.key === "Shift") display = isMac ? "\u21E7" : "Shift";
-          else if (e.key === "Meta") display = isMac ? "\u2318" : "Win";
-        }
-        const modifierCodes = [];
-        if (e.ctrlKey) {
-          if (this.recordingPressedCodes.has("ControlLeft")) modifierCodes.push("ControlLeft");
-          if (this.recordingPressedCodes.has("ControlRight")) modifierCodes.push("ControlRight");
-          if (modifierCodes.length === 0) modifierCodes.push("ControlLeft");
-        }
-        if (e.altKey) {
-          if (this.recordingPressedCodes.has("AltLeft")) modifierCodes.push("AltLeft");
-          if (this.recordingPressedCodes.has("AltRight")) modifierCodes.push("AltRight");
-          if (modifierCodes.length === 0) modifierCodes.push("AltLeft");
-        }
-        if (e.shiftKey) {
-          if (this.recordingPressedCodes.has("ShiftLeft")) modifierCodes.push("ShiftLeft");
-          if (this.recordingPressedCodes.has("ShiftRight")) modifierCodes.push("ShiftRight");
-          if (modifierCodes.length === 0) modifierCodes.push("ShiftLeft");
-        }
-        if (e.metaKey) {
-          if (this.recordingPressedCodes.has("MetaLeft")) modifierCodes.push("MetaLeft");
-          if (this.recordingPressedCodes.has("MetaRight")) modifierCodes.push("MetaRight");
-          if (modifierCodes.length === 0) modifierCodes.push("MetaLeft");
-        }
-        const keyData = {
-          code,
-          key: e.key,
-          display,
-          ctrlKey: e.ctrlKey,
-          altKey: e.altKey,
-          shiftKey: e.shiftKey,
-          metaKey: e.metaKey,
-          modifierCodes
-        };
-        if (isModifier) {
-          this.renderShortcutDisplay(box, keyData);
-        } else {
-          this.renderShortcutDisplay(box, keyData);
-          this.recordingHadInput = true;
-          this.stopRecording(box, false);
-          if (box.dataset.action) {
-            this.saveCapturedShortcut(box.dataset.action, keyData);
-          }
-        }
-      };
-      const keyupHandler = (e) => {
-        if (this.currentRecordingInput !== box) {
-          this.recordingPressedCodes.delete(e.code);
-          return;
-        }
-        const isModifier = ["Control", "Alt", "Shift", "Meta"].includes(e.key);
-        if (isModifier) {
-          this.recordingHadInput = true;
-          const MODIFIER_PAIRS = {
-            "Shift": ["ShiftLeft", "ShiftRight"],
-            "Control": ["ControlLeft", "ControlRight"],
-            "Alt": ["AltLeft", "AltRight"],
-            "Meta": ["MetaLeft", "MetaRight"]
-          };
-          const pair = MODIFIER_PAIRS[e.key];
-          let code = e.code;
-          if (pair && this.recordingPressedCodes.has(pair[0]) && this.recordingPressedCodes.has(pair[1])) {
-            code = e.key;
-          }
-          this.recordingPressedCodes.delete(e.code);
-          this.stopRecording(box, false);
-          const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
-          let display = e.key;
-          if (e.key === "Control") display = isMac ? "\u2303" : "Ctrl";
-          else if (e.key === "Alt") display = isMac ? "\u2325" : "Alt";
-          else if (e.key === "Shift") display = isMac ? "\u21E7" : "Shift";
-          else if (e.key === "Meta") display = isMac ? "\u2318" : "Win";
-          const modifierCodes = [];
-          const wasControl = e.ctrlKey || e.code.startsWith("Control");
-          const wasAlt = e.altKey || e.code.startsWith("Alt");
-          const wasShift = e.shiftKey || e.code.startsWith("Shift");
-          const wasMeta = e.metaKey || e.code.startsWith("Meta");
-          const ctrlIndex = modifierCodes.length;
-          if (wasControl) {
-            if (e.code.startsWith("Control")) modifierCodes.push(e.code);
-            if (this.recordingPressedCodes.has("ControlLeft") && e.code !== "ControlLeft") modifierCodes.push("ControlLeft");
-            if (this.recordingPressedCodes.has("ControlRight") && e.code !== "ControlRight") modifierCodes.push("ControlRight");
-            if (modifierCodes.length === ctrlIndex) modifierCodes.push("ControlLeft");
-          }
-          const altIndex = modifierCodes.length;
-          if (wasAlt) {
-            if (e.code.startsWith("Alt")) modifierCodes.push(e.code);
-            if (this.recordingPressedCodes.has("AltLeft") && e.code !== "AltLeft") modifierCodes.push("AltLeft");
-            if (this.recordingPressedCodes.has("AltRight") && e.code !== "AltRight") modifierCodes.push("AltRight");
-            if (modifierCodes.length === altIndex) modifierCodes.push("AltLeft");
-          }
-          const shiftIndex = modifierCodes.length;
-          if (wasShift) {
-            if (e.code.startsWith("Shift")) modifierCodes.push(e.code);
-            if (this.recordingPressedCodes.has("ShiftLeft") && e.code !== "ShiftLeft") modifierCodes.push("ShiftLeft");
-            if (this.recordingPressedCodes.has("ShiftRight") && e.code !== "ShiftRight") modifierCodes.push("ShiftRight");
-            if (modifierCodes.length === shiftIndex) modifierCodes.push("ShiftLeft");
-          }
-          const metaIndex = modifierCodes.length;
-          if (wasMeta) {
-            if (e.code.startsWith("Meta")) modifierCodes.push(e.code);
-            if (this.recordingPressedCodes.has("MetaLeft") && e.code !== "MetaLeft") modifierCodes.push("MetaLeft");
-            if (this.recordingPressedCodes.has("MetaRight") && e.code !== "MetaRight") modifierCodes.push("MetaRight");
-            if (modifierCodes.length === metaIndex) modifierCodes.push("MetaLeft");
-          }
-          const keyData = {
-            code,
-            key: e.key,
-            display,
-            ctrlKey: wasControl,
-            altKey: wasAlt,
-            shiftKey: wasShift,
-            metaKey: wasMeta,
-            modifierCodes
-          };
-          this.renderShortcutDisplay(box, keyData);
-          if (box.dataset.action) {
-            this.saveCapturedShortcut(box.dataset.action, keyData);
-          }
-        } else {
-          this.recordingPressedCodes.delete(e.code);
-        }
-      };
-      const mousedownHandler = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const shortcutTarget = e.target.closest(".nexus-settings-shortcut-box");
-        if (shortcutTarget !== box) {
-          box.removeAttribute("data-key");
-          delete box.dataset.key;
-          this.renderShortcutDisplay(box, null);
-          this.stopRecording(box, false);
-          if (box.dataset.action) {
-            this.saveCapturedShortcut(box.dataset.action, null);
-          }
-          return;
-        }
-        const code = "Mouse" + e.button;
-        let display = "Click";
-        if (e.button === 0) display = "LClick";
-        else if (e.button === 1) display = "MClick";
-        else if (e.button === 2) display = "RClick";
-        const modifierCodes = [];
-        if (e.ctrlKey) {
-          if (this.recordingPressedCodes.has("ControlLeft")) modifierCodes.push("ControlLeft");
-          if (this.recordingPressedCodes.has("ControlRight")) modifierCodes.push("ControlRight");
-          if (modifierCodes.length === 0) modifierCodes.push("ControlLeft");
-        }
-        if (e.altKey) {
-          if (this.recordingPressedCodes.has("AltLeft")) modifierCodes.push("AltLeft");
-          if (this.recordingPressedCodes.has("AltRight")) modifierCodes.push("AltRight");
-          if (modifierCodes.length === 0) modifierCodes.push("AltLeft");
-        }
-        if (e.shiftKey) {
-          if (this.recordingPressedCodes.has("ShiftLeft")) modifierCodes.push("ShiftLeft");
-          if (this.recordingPressedCodes.has("ShiftRight")) modifierCodes.push("ShiftRight");
-          if (modifierCodes.length === 0) modifierCodes.push("ShiftLeft");
-        }
-        if (e.metaKey) {
-          if (this.recordingPressedCodes.has("MetaLeft")) modifierCodes.push("MetaLeft");
-          if (this.recordingPressedCodes.has("MetaRight")) modifierCodes.push("MetaRight");
-          if (modifierCodes.length === 0) modifierCodes.push("MetaLeft");
-        }
-        const keyData = {
-          code,
-          key: code,
-          display,
-          ctrlKey: e.ctrlKey,
-          altKey: e.altKey,
-          shiftKey: e.shiftKey,
-          metaKey: e.metaKey,
-          modifierCodes
-        };
-        this.renderShortcutDisplay(box, keyData);
-        this.recordingHadInput = true;
-        this.justRecordedMouseClick = true;
-        setTimeout(() => {
-          this.justRecordedMouseClick = false;
-        }, 100);
-        this.stopRecording(box, false);
-        if (box.dataset.action) {
-          this.saveCapturedShortcut(box.dataset.action, keyData);
-        }
-      };
-      const contextmenuHandler = (e) => {
-        e.preventDefault();
-      };
-      this.keydownHandlerRef = keydownHandler;
-      this.keyupHandlerRef = keyupHandler;
-      this.mousedownHandlerRef = mousedownHandler;
-      this.contextmenuHandlerRef = contextmenuHandler;
-      document.addEventListener("keydown", keydownHandler, true);
-      document.addEventListener("keyup", keyupHandler, true);
-      document.addEventListener("mousedown", mousedownHandler, true);
-      document.addEventListener("contextmenu", contextmenuHandler, true);
-    }
-    static stopRecording(box, restoreOriginal = true) {
-      box.classList.remove("recording");
-      if (restoreOriginal) {
-        if (box.dataset.key) {
-          try {
-            const keyData = JSON.parse(box.dataset.key);
-            this.renderShortcutDisplay(box, keyData);
-          } catch (e) {
-            this.renderShortcutDisplay(box, null);
-          }
-        } else {
-          this.renderShortcutDisplay(box, null);
-        }
-      }
-      if (this.keydownHandlerRef) {
-        document.removeEventListener("keydown", this.keydownHandlerRef, true);
-        this.keydownHandlerRef = null;
-      }
-      if (this.keyupHandlerRef) {
-        document.removeEventListener("keyup", this.keyupHandlerRef, true);
-        this.keyupHandlerRef = null;
-      }
-      if (this.mousedownHandlerRef) {
-        document.removeEventListener("mousedown", this.mousedownHandlerRef, true);
-        this.mousedownHandlerRef = null;
-      }
-      if (this.contextmenuHandlerRef) {
-        document.removeEventListener("contextmenu", this.contextmenuHandlerRef, true);
-        this.contextmenuHandlerRef = null;
-      }
-      if (this.currentRecordingInput === box) {
-        this.currentRecordingInput = null;
-      }
-    }
-    static saveCapturedShortcut(action, keyData) {
-      chrome.storage.local.get(["shortcuts"], (items) => {
-        const list = items.shortcuts || {};
-        list[action] = keyData;
-        chrome.storage.local.set({ shortcuts: list });
-      });
-    }
-    static loadShortcutsKeys(items) {
-      const list = items.shortcuts || {};
-      document.querySelectorAll(".nexus-settings-shortcut-box[data-action]").forEach((box) => {
-        const action = box.dataset.action;
-        const val = list[action];
-        if (val && typeof val === "object") {
-          this.renderShortcutDisplay(box, val);
-        } else if (typeof val === "string" && val !== "None") {
-          box.textContent = val;
-        } else {
-          this.renderShortcutDisplay(box, null);
-        }
-      });
-    }
-    static renderQuestionMappings() {
-      const list = document.getElementById("nexus-question-mappings-list");
-      if (!list) return;
-      list.innerHTML = "";
-      if (this.questionMappings.length === 0) {
-        const emptyState = document.createElement("div");
-        emptyState.className = "nexus-settings-empty-state";
-        emptyState.textContent = "No custom mappings added yet.";
-        list.appendChild(emptyState);
-        return;
-      }
-      const temp = document.getElementById("nexus-mappingRowTemplate");
-      this.questionMappings.forEach((mapping, idx) => {
-        const clone = temp.content.cloneNode(true);
-        const displayKey = mapping.keyData ? (mapping.keyData.metaKey ? "\u2318" : "") + (mapping.keyData.ctrlKey ? "Ctrl+" : "") + (mapping.keyData.altKey ? "Alt+" : "") + (mapping.keyData.shiftKey ? "Shift+" : "") + mapping.keyData.key.toUpperCase() : mapping.key ? mapping.key.toUpperCase() : "None";
-        clone.querySelector(".mapping-number").textContent = displayKey;
-        clone.querySelector(".mapping-name").textContent = mapping.name || `Mapping ${idx + 1}`;
-        clone.querySelector(".mapping-edit-btn").addEventListener("click", () => {
-          this.showMappingForm(idx);
-        });
-        clone.querySelector(".mapping-delete-btn").addEventListener("click", () => {
-          this.questionMappings.splice(idx, 1);
-          chrome.storage.local.set({ questionMappings: this.questionMappings }, () => this.renderQuestionMappings());
-        });
-        list.appendChild(clone);
-      });
-    }
-    static recordShortcutForMapping(box, idx, storageKey) {
-      box.classList.add("recording");
-      box.innerHTML = '<span class="recording">Press key...</span>';
-      const keydownHandler = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const key = e.key.toUpperCase();
-        box.classList.remove("recording");
-        box.textContent = key;
-        if (storageKey === "questionMappings") {
-          this.questionMappings[idx].key = key;
-          chrome.storage.local.set({ questionMappings: this.questionMappings });
-        } else {
-          this.annotationShortcuts[idx].key = key;
-          chrome.storage.local.set({ annotationShortcuts: this.annotationShortcuts });
-        }
-        document.removeEventListener("keydown", keydownHandler, true);
-      };
-      document.addEventListener("keydown", keydownHandler, true);
-    }
-    static showAnnotationForm(index = null) {
-      const overlay = document.getElementById("nexus-annotation-popup-overlay");
-      if (overlay) overlay.style.display = "flex";
-      const indexInput = document.getElementById("nexus-annotation-form-index");
-      const shortcutBox = document.getElementById("nexus-annotation-popup-shortcut");
-      const palette = document.getElementById("nexus-annotation-popup-color-palette");
-      const colors = [
-        "#FFFB78",
-        "#ffcc80",
-        "#ef9a9a",
-        "#f48fb1",
-        "#ce93d8",
-        "#b39ddb",
-        "#90caf9",
-        "#80deea",
-        "#80cbc4",
-        "#a5d6a7",
-        "#e6ee9c",
-        "#ffab91"
-      ];
-      let selectedColor = colors[0];
-      const renderPalette = (activeColor) => {
-        palette.innerHTML = colors.map((c) => `
-        <div class="swatch ${activeColor === c ? "active" : ""}" style="background: ${c};" data-color="${c}"></div>
-      `).join("");
-      };
-      palette.addEventListener("click", (e) => {
-        const swatch = e.target.closest(".swatch");
-        if (swatch) {
-          selectedColor = swatch.dataset.color;
-          palette.dataset.color = selectedColor;
-          renderPalette(selectedColor);
-        }
-      });
-      if (index !== null && index >= 0) {
-        const item = this.annotationShortcuts[index];
-        indexInput.value = index;
-        selectedColor = item.color || colors[0];
-        palette.dataset.color = selectedColor;
-        renderPalette(selectedColor);
-        const keyData = item.keyData || (item.key ? { key: item.key, code: "Key" + item.key.toUpperCase() } : null);
-        this.renderShortcutDisplay(shortcutBox, keyData);
-      } else {
-        indexInput.value = "";
-        selectedColor = colors[0];
-        palette.dataset.color = selectedColor;
-        renderPalette(selectedColor);
-        this.renderShortcutDisplay(shortcutBox, null);
-      }
-    }
-    static hideAnnotationForm() {
-      const overlay = document.getElementById("nexus-annotation-popup-overlay");
-      if (overlay) overlay.style.display = "none";
-    }
-    static saveAnnotation() {
-      const indexInput = document.getElementById("nexus-annotation-form-index");
-      const shortcutBox = document.getElementById("nexus-annotation-popup-shortcut");
-      const palette = document.getElementById("nexus-annotation-popup-color-palette");
-      let keyData = null;
-      if (shortcutBox.dataset.key) {
-        try {
-          keyData = JSON.parse(shortcutBox.dataset.key);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      if (!keyData) {
-        alert("Please record a shortcut.");
-        return;
-      }
-      const color = palette.dataset.color || "#ffeb3b";
-      const shortcutObj = {
-        key: keyData.key,
-        keyData,
-        color,
-        enabled: true
-      };
-      const indexVal = indexInput.value;
-      if (indexVal !== "") {
-        const idx = parseInt(indexVal, 10);
-        this.annotationShortcuts[idx] = shortcutObj;
-      } else {
-        this.annotationShortcuts.push(shortcutObj);
-      }
-      chrome.storage.local.set({ annotationShortcuts: this.annotationShortcuts }, () => {
-        this.renderAnnotationShortcuts();
-        this.hideAnnotationForm();
-      });
-    }
-    static renderAnnotationShortcuts() {
-      const list = document.getElementById("nexus-annotation-shortcuts-list");
-      if (!list) return;
-      list.innerHTML = "";
-      if (this.annotationShortcuts.length === 0) {
-        const emptyState = document.createElement("div");
-        emptyState.className = "nexus-settings-empty-state";
-        emptyState.textContent = "No annotation shortcuts added yet.";
-        list.appendChild(emptyState);
-        return;
-      }
-      const temp = document.getElementById("nexus-annotationRowTemplate");
-      this.annotationShortcuts.forEach((shortcut, idx) => {
-        const clone = temp.content.cloneNode(true);
-        const displayKey = shortcut.keyData ? (shortcut.keyData.metaKey ? "\u2318" : "") + (shortcut.keyData.ctrlKey ? "Ctrl+" : "") + (shortcut.keyData.altKey ? "Alt+" : "") + (shortcut.keyData.shiftKey ? "Shift+" : "") + shortcut.keyData.key.toUpperCase() : shortcut.key ? shortcut.key.toUpperCase() : "None";
-        clone.querySelector(".annotation-number").textContent = displayKey;
-        const preview = clone.querySelector(".annotation-color-preview");
-        if (preview) preview.style.backgroundColor = shortcut.color;
-        clone.querySelector(".annotation-shortcut-text").textContent = "Highlight";
-        clone.querySelector(".annotation-edit-btn").addEventListener("click", () => {
-          this.showAnnotationForm(idx);
-        });
-        clone.querySelector(".annotation-delete-btn").addEventListener("click", () => {
-          this.annotationShortcuts.splice(idx, 1);
-          chrome.storage.local.set({ annotationShortcuts: this.annotationShortcuts }, () => this.renderAnnotationShortcuts());
-        });
-        list.appendChild(clone);
-      });
-    }
-    static bindAccountTab() {
-      const googleLoginBtn = document.getElementById("nexus-google-login-btn");
-      if (googleLoginBtn) {
-        googleLoginBtn.addEventListener("click", async () => {
-          try {
-            googleLoginBtn.disabled = true;
-            const originalHTML = googleLoginBtn.innerHTML;
-            googleLoginBtn.innerHTML = "Signing In...";
-            if (typeof NexusAuth !== "undefined") {
-              await NexusAuth.login();
-              if (typeof NexusSync !== "undefined") {
-                try {
-                  await NexusSync.syncData();
-                } catch (syncErr) {
-                  console.error("Initial sync failed:", syncErr);
-                }
-              }
-            }
-            googleLoginBtn.innerHTML = originalHTML;
-          } catch (e) {
-            console.error(e);
-            alert("Sign in failed: " + e.message);
-            googleLoginBtn.innerHTML = "Sign In";
-          } finally {
-            googleLoginBtn.disabled = false;
-          }
-        });
-      }
-      const googleLogoutBtn = document.getElementById("nexus-google-logout-btn");
-      if (googleLogoutBtn) {
-        googleLogoutBtn.addEventListener("click", async () => {
-          if (typeof NexusAuth !== "undefined") {
-            await NexusAuth.logout();
-          }
-        });
-      }
-      const syncBtn = document.getElementById("nexus-sync-btn");
-      if (syncBtn) {
-        syncBtn.addEventListener("click", async () => {
-          syncBtn.disabled = true;
-          const originalHTML = syncBtn.innerHTML;
-          syncBtn.innerHTML = "Syncing...";
-          try {
-            if (typeof NexusSync !== "undefined") {
-              await NexusSync.syncUp();
-              _NexusSettingsModal.updateStorageUsage();
-            }
-          } catch (e) {
-            alert("Sync failed: " + e.message);
-          } finally {
-            syncBtn.innerHTML = originalHTML;
-            syncBtn.disabled = false;
-          }
-        });
-      }
-      const authLoggedOut = document.getElementById("nexus-auth-logged-out");
-      const authLoggedIn = document.getElementById("nexus-auth-logged-in");
-      const userAvatar = document.getElementById("nexus-user-avatar");
-      const userName = document.getElementById("nexus-user-name");
-      const userEmail = document.getElementById("nexus-user-email");
-      const syncStatus = document.getElementById("nexus-sync-status");
-      function updateAuthUI(isAuthenticated, user) {
-        if (isAuthenticated && user) {
-          if (authLoggedOut) authLoggedOut.classList.add("hidden");
-          if (authLoggedIn) authLoggedIn.classList.remove("hidden");
-          if (userAvatar) userAvatar.src = user.picture || "../../assets/icons/avatar.png";
-          if (userName) userName.textContent = user.name || "User Profile";
-          if (userEmail) userEmail.textContent = user.email || "";
-        } else {
-          if (authLoggedOut) authLoggedOut.classList.remove("hidden");
-          if (authLoggedIn) authLoggedIn.classList.add("hidden");
-        }
-        _NexusSettingsModal.updateCloudSyncDashboard();
-      }
-      if (typeof NexusAuth !== "undefined") {
-        NexusAuth.addListener(updateAuthUI);
-        if (NexusAuth.isAuthenticated) {
-          updateAuthUI(true, NexusAuth.user);
-        }
-      }
-      if (typeof NexusSync !== "undefined") {
-        NexusSync.addListener((status, timestamp) => {
-          if (syncStatus && status) {
-            if (timestamp) {
-              const timeStr = new Date(timestamp).toLocaleString();
-              syncStatus.textContent = `Last synced: ${timeStr}`;
-            } else {
-              syncStatus.textContent = status;
-            }
-          }
-          _NexusSettingsModal.updateCloudSyncDashboard();
-        });
-        if (typeof NexusAuth !== "undefined" && NexusAuth.isAuthenticated) {
-          NexusSync.getLastSyncTime().then((time) => {
-            if (syncStatus && time !== "Never") {
-              syncStatus.textContent = `Last synced: ${time}`;
-            }
-          });
-        }
-      }
-      document.getElementById("nexus-export-settings-btn").addEventListener("click", async () => {
-        try {
-          let exportData;
-          if (typeof NexusSync !== "undefined" && typeof NexusSync.gatherLocalData === "function") {
-            exportData = await NexusSync.gatherLocalData();
-          } else {
-            exportData = await new Promise((resolve) => chrome.storage.local.get(null, resolve));
-          }
-          const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `nexus_backup_${Date.now()}.json`;
-          a.click();
-          URL.revokeObjectURL(url);
-        } catch (err) {
-          console.error("Export failed:", err);
-          alert("Failed to export data.");
-        }
-      });
-      const fileInput2 = document.getElementById("nexus-import-settings-file");
-      document.getElementById("nexus-import-settings-btn").addEventListener("click", () => fileInput2.click());
-      fileInput2.addEventListener("change", (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async (evt) => {
-          try {
-            const data = JSON.parse(evt.target.result);
-            if (!data || typeof data !== "object") throw new Error("Invalid format");
-            if (typeof NexusSync !== "undefined" && typeof NexusSync.persistMergedData === "function") {
-              const sessionsObj = data.nexus_chat_sessions || {};
-              await NexusSync.persistMergedData(data, sessionsObj, []);
-            } else {
-              await new Promise((resolve) => {
-                chrome.storage.local.clear(() => {
-                  chrome.storage.local.set(data, resolve);
-                });
-              });
-            }
-            alert("Backup data successfully imported!");
-            this.loadSettings();
-            _NexusSettingsModal.updateStorageUsage();
-            const scope = window.NexusSelectionScope;
-            if (scope) {
-              scope.renderRecentChatsSidebar();
-            }
-          } catch (err) {
-            console.error("Import failed:", err);
-            alert("Invalid JSON backup file.");
-          } finally {
-            fileInput2.value = "";
-          }
-        };
-        reader.readAsText(file);
-      });
-      document.getElementById("nexus-delete-all-btn").addEventListener("click", async () => {
-        if (typeof window.showCustomPopup === "function") {
-          const confirmed = await window.showCustomPopup({
-            title: "Delete All History",
-            body: "Are you sure you want to delete your entire chat history? This action cannot be reversed.",
-            confirmLabel: "Delete",
-            isDanger: true
-          });
-          if (confirmed) {
-            if (typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.clearAllHistory) {
-              await ChatHistoryManager.clearAllHistory();
-              _NexusSettingsModal.updateStorageUsage();
-              const scope = window.NexusSelectionScope;
-              if (scope) {
-                scope.renderRecentChatsSidebar();
-                scope.resetChat(false);
-                scope.resetChat(true);
-              }
-            }
-          }
-        } else {
-          if (confirm("Are you sure you want to delete your entire chat history? This action cannot be reversed.")) {
-            if (typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.clearAllHistory) {
-              await ChatHistoryManager.clearAllHistory();
-              _NexusSettingsModal.updateStorageUsage();
-              const scope = window.NexusSelectionScope;
-              if (scope) {
-                scope.renderRecentChatsSidebar();
-                scope.resetChat(false);
-                scope.resetChat(true);
-              }
-            }
-          }
-        }
-      });
-      this.setupDropdownInputs("nexus-history-retention-input", "nexus-history-retention-menu");
-    }
-    static updateStorageUsage() {
-      const textEl = document.getElementById("nexus-storage-usage-text");
-      if (!textEl) return;
-      chrome.storage.local.get(null, async (items) => {
-        const now = Date.now();
-        const expiredImgKeys = [];
-        Object.keys(items).forEach((key) => {
-          if (key.startsWith("nexus_img_cache_") || key.startsWith("nexus_img_query_")) {
-            const item = items[key];
-            if (item && item.timestamp && now - item.timestamp > 1 * 24 * 60 * 60 * 1e3) {
-              expiredImgKeys.push(key);
-              delete items[key];
-            }
-          }
-        });
-        let audioChanged = false;
-        const audioCache = items["audio_cache"];
-        if (audioCache && audioCache.entries) {
-          const AUDIO_EXPIRATION = 1 * 24 * 60 * 60 * 1e3;
-          Object.keys(audioCache.entries).forEach((key) => {
-            const entry = audioCache.entries[key];
-            const entryTimestamp = entry.timestamp || audioCache.lastUpdate;
-            if (entryTimestamp && now - entryTimestamp > AUDIO_EXPIRATION) {
-              delete audioCache.entries[key];
-              audioChanged = true;
-            }
-          });
-          if (audioChanged) {
-            chrome.storage.local.set({ audio_cache: audioCache });
-          }
-        }
-        if (expiredImgKeys.length > 0) {
-          chrome.storage.local.remove(expiredImgKeys);
-        }
-        let dbSize = await NexusChatDB.getStorageUsage();
-        let configSize = 0;
-        let cacheSize = 0;
-        Object.keys(items).forEach((key) => {
-          if (key === "attachments") {
-            chrome.storage.local.remove("attachments");
-            return;
-          }
-          const isAnkiKey = key.startsWith("rot_") || [
-            "nexusTemplatesV3",
-            "nexusBatchHistoryV3",
-            "lastUsedGenAIModel",
-            "lastUsedBatchSize",
-            "lastUsedDeck",
-            "lastUsedTemplateId",
-            "ankiQuickNoteContent"
-          ].includes(key);
-          if (isAnkiKey) return;
-          const valueStr = JSON.stringify(items[key]);
-          const sizeBytes = valueStr ? valueStr.length : 0;
-          if (key === "nexus_chat_sessions" || key.startsWith("nexus_session_") || key.startsWith("nexus_history_")) {
-            return;
-          } else if (key.startsWith("spotlight_history_") || key === "audio_cache" || key.startsWith("nexus_img_cache_") || key.startsWith("nexus_img_query_") || key.startsWith("yt_transcript_")) {
-            cacheSize += sizeBytes;
-          } else {
-            configSize += sizeBytes;
-          }
-        });
-        chrome.runtime.sendMessage({ action: "get_stored_files" }, async (response) => {
-          let filesSize = 0;
-          let audioDbSize = 0;
-          let imageDbSize = 0;
-          if (response && response.success) {
-            if (Array.isArray(response.files)) {
-              filesSize = response.files.reduce((acc, f) => acc + (f.size || 0), 0);
-            }
-            audioDbSize = response.audioDbSize || 0;
-            imageDbSize = response.imageDbSize || 0;
-          }
-          const totalCacheSize = cacheSize + audioDbSize + imageDbSize;
-          const totalBytes = dbSize + filesSize + configSize + totalCacheSize;
-          const fmt = (bytes) => {
-            if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-            if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-            return `${bytes} B`;
-          };
-          textEl.textContent = fmt(totalBytes);
-          const dbSizeEl = document.getElementById("nexus-storage-db-size");
-          const configSizeEl = document.getElementById("nexus-storage-config-size");
-          const cacheSizeEl = document.getElementById("nexus-storage-cache-size");
-          if (dbSizeEl) dbSizeEl.textContent = fmt(dbSize + filesSize);
-          if (configSizeEl) configSizeEl.textContent = fmt(configSize);
-          if (cacheSizeEl) cacheSizeEl.textContent = fmt(totalCacheSize);
-          if (totalBytes > 0) {
-            const dbPct = ((dbSize + filesSize) / totalBytes * 100).toFixed(2);
-            const configPct = (configSize / totalBytes * 100).toFixed(2);
-            const cachePct = (totalCacheSize / totalBytes * 100).toFixed(2);
-            const barDb = document.getElementById("nexus-storage-bar-db");
-            const barConfig = document.getElementById("nexus-storage-bar-config");
-            const barCache = document.getElementById("nexus-storage-bar-cache");
-            requestAnimationFrame(() => {
-              if (barDb) barDb.style.width = `${dbPct}%`;
-              if (barConfig) barConfig.style.width = `${configPct}%`;
-              if (barCache) barCache.style.width = `${cachePct}%`;
-            });
-          }
-          const sessionsListEl = document.getElementById("nexus-storage-sessions-list");
-          if (sessionsListEl) {
-            const sessionsMetadata = await NexusChatDB.getAllSessions();
-            const sessionList = [];
-            for (const sessionId of Object.keys(sessionsMetadata)) {
-              const meta = sessionsMetadata[sessionId];
-              if (!meta) continue;
-              const sessionMessages = await NexusChatDB.getMessages(sessionId);
-              const messagesStr = sessionMessages ? JSON.stringify(sessionMessages) : "";
-              const metaStr = JSON.stringify(meta);
-              const messagesKeyStr = JSON.stringify(sessionId + "_messages");
-              const metaKeyStr = JSON.stringify(sessionId);
-              const dbBytes = (messagesKeyStr.length + messagesStr.length + metaKeyStr.length + metaStr.length) * 2;
-              let sessionFilesSize = 0;
-              if (response && response.success && Array.isArray(response.files)) {
-                sessionFilesSize = response.files.filter((f) => f.sessionId === sessionId).reduce((acc, f) => acc + (f.size || 0), 0);
-              }
-              const totalSessionBytes = dbBytes + sessionFilesSize;
-              sessionList.push({
-                id: sessionId,
-                title: meta.title || "Untitled Chat",
-                timestamp: meta.updatedAt || meta.createdAt || meta.timestamp || Date.now(),
-                size: totalSessionBytes
-              });
-            }
-            sessionList.sort((a, b) => b.size - a.size);
-            const top10 = sessionList.slice(0, 10);
-            if (top10.length === 0) {
-              sessionsListEl.innerHTML = '<p class="desc-small italic" style="padding: 12px; text-align: center; color: var(--nexus-text-muted);">No chat sessions found.</p>';
-            } else {
-              sessionsListEl.innerHTML = "";
-              top10.forEach((session) => {
-                const itemEl = document.createElement("div");
-                itemEl.className = "nexus-storage-session-item";
-                itemEl.dataset.sessionId = session.id;
-                const formattedDate = new Date(session.timestamp).toLocaleDateString(void 0, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit"
-                });
-                const formattedSize = fmt(session.size);
-                itemEl.innerHTML = `
-                <div class="nexus-storage-session-info">
-                  <span class="nexus-storage-session-title" title="${session.title}">${session.title}</span>
-                  <span class="nexus-storage-session-date">${formattedDate}</span>
-                </div>
-                <div class="nexus-storage-session-right">
-                  <span class="nexus-storage-session-size">${formattedSize}</span>
-                  <button type="button" class="nexus-storage-session-delete" title="Delete Chat Thread">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      <line x1="10" y1="11" x2="10" y2="17"></line>
-                      <line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
-                  </button>
-                </div>
-              `;
-                const deleteBtn = itemEl.querySelector(".nexus-storage-session-delete");
-                if (deleteBtn) {
-                  deleteBtn.addEventListener("click", async (e) => {
-                    e.stopPropagation();
-                    if (typeof window.showCustomPopup === "function") {
-                      const confirmed = await window.showCustomPopup({
-                        title: "Delete Chat",
-                        body: `Are you sure you want to delete the chat thread "${session.title}"?`,
-                        confirmLabel: "Delete",
-                        isDanger: true
-                      });
-                      if (confirmed) {
-                        if (typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.deleteChat) {
-                          await ChatHistoryManager.deleteChat(session.id);
-                          _NexusSettingsModal.updateStorageUsage();
-                          const scope = window.NexusSelectionScope;
-                          if (scope) {
-                            scope.renderRecentChatsSidebar();
-                            const tabsList = scope.getTabs();
-                            const activeIdx = scope.getActiveTabIndex();
-                            if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
-                              scope.resetChat();
-                            }
-                          }
-                        }
-                      }
-                    } else {
-                      if (confirm(`Are you sure you want to delete the chat thread "${session.title}"?`)) {
-                        if (typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.deleteChat) {
-                          await ChatHistoryManager.deleteChat(session.id);
-                          _NexusSettingsModal.updateStorageUsage();
-                          const scope = window.NexusSelectionScope;
-                          if (scope) {
-                            scope.renderRecentChatsSidebar();
-                            const tabsList = scope.getTabs();
-                            const activeIdx = scope.getActiveTabIndex();
-                            if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
-                              scope.resetChat();
-                            }
-                          }
-                        }
-                      }
-                    }
-                  });
-                }
-                itemEl.addEventListener("click", async () => {
-                  const sid = session.id;
-                  _NexusSettingsModal.hide();
-                  if (window.NexusViewManager) {
-                    window.NexusViewManager.switchView("chat", { sid });
-                  }
-                  const messages = typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.getSessionMessages ? await ChatHistoryManager.getSessionMessages(sid) : await NexusChatDB.getMessages(sid);
-                  const allSessions = typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.getAllHistories ? await ChatHistoryManager.getAllHistories() : await NexusChatDB.getAllSessions();
-                  const meta = allSessions[sid] || { id: sid, title: session.title };
-                  const listContainer = document.getElementById("sidebar-recent-chats");
-                  if (listContainer) {
-                    listContainer.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
-                    document.querySelectorAll("#sidebar-sparks-list .sidebar-spark-item.active").forEach((el) => el.classList.remove("active"));
-                    const targetSidebarItem = listContainer.querySelector(`.recent-chat-item[data-session-id="${sid}"]`);
-                    if (targetSidebarItem) {
-                      targetSidebarItem.classList.add("active");
-                    }
-                  }
-                  if (typeof window.loadHistoryIntoNewTab === "function") {
-                    window.loadHistoryIntoNewTab(messages, meta, sid);
-                  }
-                  const sidebar = document.getElementById("nexus-sidebar");
-                  const backdrop = document.querySelector(".sidebar-backdrop");
-                  if (sidebar) sidebar.classList.remove("active");
-                  if (backdrop) backdrop.classList.remove("active");
-                  document.body.classList.remove("sidebar-open");
-                });
-                sessionsListEl.appendChild(itemEl);
-              });
-            }
-          }
-        });
-      });
-      this.updateCloudSyncDashboard();
-    }
-    static updateCloudSyncDashboard() {
-      const sizeEl = document.getElementById("nexus-cloud-stat-size");
-      const md5El = document.getElementById("nexus-cloud-stat-md5");
-      const timeEl = document.getElementById("nexus-cloud-stat-time");
-      const relativeEl = document.getElementById("nexus-cloud-stat-relative");
-      const itemsEl = document.getElementById("nexus-cloud-stat-items");
-      const breakdownEl = document.getElementById("nexus-cloud-stat-breakdown");
-      const mediaEl = document.getElementById("nexus-cloud-stat-media");
-      const mediaSubEl = document.getElementById("nexus-cloud-stat-media-sub");
-      if (!sizeEl) return;
-      if (typeof NexusAuth !== "undefined" && !NexusAuth.isAuthenticated) {
-        sizeEl.textContent = "\u2014";
-        if (md5El) md5El.textContent = "Not connected";
-        timeEl.textContent = "Not signed in";
-        if (relativeEl) relativeEl.textContent = "Sign in to sync";
-        if (itemsEl) itemsEl.textContent = "\u2014";
-        if (breakdownEl) breakdownEl.textContent = "\u2014";
-        if (mediaEl) mediaEl.textContent = "\u2014";
-        if (mediaSubEl) mediaSubEl.textContent = "\u2014";
-        return;
-      }
-      chrome.storage.local.get(["last_sync_time", "last_sync_size", "last_sync_md5", "last_cloud_stats", "nexus_highlights", "drive_uploaded_blobs"], async (res) => {
-        if (res.last_sync_size) {
-          const bytes = parseInt(res.last_sync_size, 10);
-          if (!isNaN(bytes)) {
-            if (bytes < 1024) sizeEl.textContent = `${bytes} B`;
-            else if (bytes < 1024 * 1024) sizeEl.textContent = `${(bytes / 1024).toFixed(1)} KB`;
-            else sizeEl.textContent = `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-          } else {
-            sizeEl.textContent = "\u2014";
-          }
-        } else {
-          sizeEl.textContent = "0 KB";
-        }
-        if (md5El) {
-          if (res.last_sync_md5) {
-            md5El.textContent = `MD5: ${res.last_sync_md5.slice(0, 8)}...`;
-            md5El.title = `Full Checksum: ${res.last_sync_md5}`;
-          } else {
-            md5El.textContent = "Gzip Compressed";
-          }
-        }
-        if (res.last_sync_time) {
-          const date = new Date(res.last_sync_time);
-          timeEl.textContent = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-          if (relativeEl) {
-            const diffMin = Math.floor((Date.now() - res.last_sync_time) / 6e4);
-            let relText = "Just now";
-            if (diffMin >= 1 && diffMin < 60) relText = `${diffMin}m ago`;
-            else if (diffMin >= 60 && diffMin < 1440) relText = `${Math.floor(diffMin / 60)}h ago`;
-            else if (diffMin >= 1440) relText = date.toLocaleDateString();
-            relativeEl.textContent = `${relText} \xB7 In sync`;
-          }
-        } else {
-          timeEl.textContent = "Never";
-          if (relativeEl) relativeEl.textContent = "No backup yet";
-        }
-        try {
-          const cloudStats = res.last_cloud_stats || null;
-          let sessionCount = 0;
-          let noteCount = 0;
-          let highlightCount = 0;
-          if (cloudStats) {
-            sessionCount = cloudStats.chatsCount || 0;
-            noteCount = cloudStats.notesCount || 0;
-            highlightCount = cloudStats.highlightsCount || 0;
-          } else if (res.last_sync_time) {
-            if (typeof NexusChatDB !== "undefined") {
-              const sessions = await NexusChatDB.getAllSessions().catch(() => ({}));
-              sessionCount = Object.keys(sessions || {}).length;
-            }
-            if (typeof NotesManager !== "undefined") {
-              const notes = await NotesManager.getNotes().catch(() => []);
-              noteCount = notes.length;
-            }
-            if (Array.isArray(res.nexus_highlights)) {
-              highlightCount = res.nexus_highlights.length;
-            }
-          }
-          if (itemsEl) {
-            itemsEl.textContent = `${sessionCount} ${sessionCount === 1 ? "chat" : "chats"}`;
-          }
-          if (breakdownEl) {
-            if (highlightCount > 0) {
-              breakdownEl.textContent = `${noteCount} notes \xB7 ${highlightCount} hl`;
-            } else {
-              breakdownEl.textContent = `${noteCount} ${noteCount === 1 ? "note" : "notes"}`;
-            }
-          }
-        } catch (e) {
-          if (itemsEl) itemsEl.textContent = "Active";
-        }
-        try {
-          const cloudStats = res.last_cloud_stats || null;
-          let ttsCount = 0;
-          let attCount = 0;
-          if (cloudStats) {
-            ttsCount = cloudStats.ttsCount || 0;
-            attCount = cloudStats.attachmentsCount || 0;
-          } else {
-            const uploadedBlobs = res.drive_uploaded_blobs || [];
-            attCount = uploadedBlobs.filter((n) => n.startsWith("att_") || n.startsWith("blob_att_")).length;
-            ttsCount = uploadedBlobs.filter((n) => n.startsWith("tts_")).length;
-          }
-          if (mediaEl) {
-            mediaEl.textContent = `${ttsCount} TTS ${ttsCount === 1 ? "audio" : "audios"}`;
-          }
-          if (mediaSubEl) {
-            mediaSubEl.textContent = `${attCount} ${attCount === 1 ? "attachment" : "attachments"}`;
-          }
-        } catch (e) {
-        }
-      });
-    }
-  };
-  document.addEventListener("DOMContentLoaded", () => {
-    NexusSettingsModal2.init();
-  });
-  if (typeof globalThis !== "undefined") {
-    globalThis.NexusSettingsModal = NexusSettingsModal2;
-  }
-
-  // src/components/sparks/default_sparks.js
-  var DEFAULT_SPARKS = {
-    "spark_ielts_writing_task1": {
-      name: "IELTS Writing Task 1 Tutor",
-      description: "Friendly tutor for IELTS Writing Task 1. Practice reports, vocabulary, and grammar.",
-      instructions: `You are a highly supportive, expert IELTS Writing Task 1 Tutor, operating with the analytical precision of an official IELTS Examiner to guide the user toward a perfect Band 9.0 score.
-Your role is to help the user learn and improve in a completely natural, conversational, and direct manner. You can converse in the user's preferred language (e.g., Vietnamese or English) naturally when providing feedback or explanations. Avoid using any fixed templates, rigid assessment headers, or pre-defined response categories (such as grading grids, score estimates, or structured lists of corrections) unless the user explicitly requests a formal evaluation. Converse like a seasoned, friendly teacher, pointing out errors naturally and injecting professional expertise seamlessly into your feedback.
-CLASSIFICATION REQUIREMENT:
-When the user shares a task 1 topic, prompt, or chart, you must automatically classify it and print a short tag line at the very beginning of your response:
-Task Type: [Chart | Process | Map] | Topic: [Energy & Environment | Employment & Labor | Economy & Spending | Demographics & Population | Education & Leisure | Industrial Manufacturing | Natural Life Cycles | Town & Island Development | Building & Facility Layout | Other]
-To push the user toward the maximum band score, you must meticulously audit their writing against the official core grading criteria within your natural conversation:
-1. TASK ACHIEVEMENT (TA):
-- Immediately check for a clear, high-level Overview. If an overview is missing or poorly written (e.g., merely listing data points without capturing general trends, main changes, or key stages), flag it immediately, as TA will be capped at Band 5.
-- Ensure the user systematically selects and reports the "key features" rather than trying to describe every single data point, which signals a lack of data-filtering skills (Band 6 mistake).
-- Remind them never to include personal opinions, explanations, or external causes for the data (e.g., explaining WHY a line dropped).
-2. COHERENCE & COHESION (CC):
-- Audit paragraph organization. Ensure the response logically sequences information into a clean 4-paragraph structure (Introduction -> Overview -> Body 1 -> Body 2) or integrates the overview into the intro.
-- Look out for "mechanical cohesive devices" (e.g., overusing 'Firstly', 'Moreover', 'In addition' at the start of every sentence). Guide the user to use natural, integrated linkers, complex sentence structures, or referential pronouns ('this trend', 'the former', 'which') to achieve a Band 8+ smooth flow.
-- Ensure logical comparison groups (e.g., grouping by similar trends, highest/lowest fields, or distinct time periods) instead of a chaotic, unstructured stream of numbers.
-3. LEXICAL RESOURCE (LR):
-- Check for precise paraphrasing of the prompt in the Introduction. Ban repetitive copying of words directly from the prompt.
-- Assess trend and data vocabulary accuracy. Provide sophisticated alternatives to generic words (e.g., upgrade "went up rapidly" to "experienced a sharp incline" or "surged"). Ensure correct usage of specialized map/process terminology if applicable.
-4. GRAMMATICAL RANGE & ACCURACY (GRA):
-- Closely audit tense consistency based on the chart's timeline (Past, Present, or Future projections).
-- Catch subtle grammar traps that destroy accuracy scores: incorrect prepositions for data tracking ("stood at", "increased by", "dropped to", "remained steady at"), subject-verb agreement, and pluralization errors.
-- Actively prompt the user to mix simple and complex sentence forms naturally without sacrificing clarity.
-FEEDBACK PROTOCOL:
-- Read the user's input.
-- Praise strong points briefly to maintain motivation.
-- Correct errors inline or through clear contextual examples.
-- Offer "Before vs. After" transformations directly inside your dialogue to demonstrate how a Band 6.5 sentence can be elevated to a Band 9.0 level.`
-    },
-    "spark_ielts_writing_task2": {
-      name: "IELTS Writing Task 2 Tutor",
-      description: "Academic Essay Tutor focused on Task Response (TR), bulletproof logic, preemptive examiner defense, and natural English.",
-      instructions: `You are a highly supportive, expert Writing Tutor specializing in IELTS Writing Task 2 and Academic essays. Your mission is to teach, guide, brainstorm, and evaluate essays focusing strictly on Task Response (TR), Bulletproof Logic (Flaw Anticipation & Preemptive Defense), deep structural elaboration, and simple, natural, accessible English (Band 8.0 to 8.5 Examiner Standards).
----
-### I. CORE PHILOSOPHY: PLAIN, NATURAL ENGLISH & PERSUASIVE REASONING
-High IELTS band scores come from ironclad logical explanations, preempting examiner counter-arguments, and relatable real-world mechanisms, NOT from memorizing difficult GRE or SAT vocabulary.
-- Prioritize clarity, natural everyday collocations, and persuasive, airtight reasoning.
-- THE DEVIL'S ADVOCATE FILTER (EXAMINER SCRUTINY): Every argument must anticipate and block obvious counter-questions or extreme misinterpretations (for example, if arguing for free time, explicitly clarify that free time means self-directed, healthy play rather than passive screen addiction; if arguing for art classes, clarify that creative classes prioritize personal enjoyment over stressful formal test scores).
-- STRICT BAN ON PRETENTIOUS JARGON: NEVER use heavy, convoluted, or unnatural buzzwords.
-  * Avoid: escalating deficit, bureaucratic inertia, plague public-sector projects, administrative bottlenecks, private capital infusions, transit-oriented suburban developments, agility.
-  * Prefer natural alternatives: housing shortage, slow government procedures, tight municipal budgets, private investment, apartments near bus and train lines, speed and efficiency, solving the housing crisis.
----
-### II. ESSAY ARCHITECTURE & LOGICAL RIGOR
-#### 1. Introduction (Strictly 2 sentences: Short, Ultra-Generic, ZERO Body Spoilers):
-- Sentence 1 (Concise Paraphrase): Clean, natural paraphrase of the prompt in one brief sentence.
-- Sentence 2 (Zero-Spoiler Thesis): State the overall stance clearly in purely structural terms. NEVER include topic-specific adjectives or category previews (such as financial, logistical, academic, psychological, or physical).
-  * Incorrect (Mild spoiler / reveals body categories): While programs offer skills, I believe making them mandatory creates financial and practical problems that outweigh advantages.
-  * Correct (Zero-Spoiler & Ultra-Generic): People hold differing views regarding whether all students should complete overseas study or work experience. While these programs offer certain benefits, I believe that making them mandatory produces far more drawbacks than advantages.
-#### 2. Body Paragraphs (Deep, Substantial & Fully Elaborated):
-Body paragraphs must never be brief, rushed, or superficial. Develop each supporting point thoroughly with depth, contrast, and real-world mechanisms:
-- Topic Sentence: Clear, direct overarching claim of the paragraph.
-- Dual-Element Topic Symmetry: When a prompt contains two elements (for example, studying abroad OR doing a work placement), address and balance both components symmetrically across body paragraphs.
-- Supporting Points (Develop each point fully through the 4-Step Airtight Engine):
-  1. Core Mechanism & Characterization: Explain the fundamental nature, operational traits, or contrast with conventional settings (for instance, creative subjects rely on self-expression and open-ended imagination rather than rigid theoretical rules and standardized grading).
-  2. Preemptive Defense & Scope Limiting: Block examiner counter-arguments by clarifying intent or ruling out negative extremes (for instance, because these classes prioritize personal enjoyment over formal test scores, children can experiment with new ideas without fear of failure; or this does not mean allowing unrestricted screen time on digital devices, but rather offering the space for self-directed outdoor play and reading).
-  3. Relatable Real-World Scenario & Comparison: Ground the point in specific target groups and contrasting situations (especially students who struggle with abstract theory like math or science; or instead of turning after-school hours into another demanding obligation).
-  4. Chained Impact & Cumulative Outcome: Trace the direct result into lasting personal, emotional, or social growth (this allows them to uncover latent strengths, which in turn rebuilds authentic self-worth and emotional resilience).
-- The Outweigh Weighing Mechanism (For Outweigh/Direct Stance Essays): When arguing that one side trumps the other, include a clear comparative clause showing why the chosen side takes precedence (for instance: Because forcing heavy expenses or poor-quality placements cancels out any real skill growth, the disadvantages are far more significant).
-#### 3. Conclusion (1 to 2 sentences):
-Crisp, elegant reaffirmation of the overarching stance without introducing new facts or repeating entire lists of arguments.
-- NO TECHNICAL AUDIT OR WORD COUNT METRICS: NEVER output word counts, section breakdowns, or mechanical grading grids in your responses unless the user explicitly requests them.
----
-### III. IDEA GENERATION & PREEMPTIVE DEFENSE TOOLKIT
-#### 1. Characterization (Answering HOW and WHY deeply):
-Break down the subject (Person, Object, Action, or Trend) by its intrinsic traits and operational requirements:
-- Linking Verbs for Inherent Nature: require, demand, offer, contain, rely heavily on, characterized by.
-- Scope Limiting (Target Group Precision): Replace vague words like "people" or "users" with targeted subgroups:
-  * Pattern: especially [subgroup] who [specific trait]
-  * Examples: especially young professionals who face intense career competition; particularly low-income households that have limited savings; especially teenagers who lack self-control and emotional maturity.
-#### 2. Absolute Qualifier & Discipline Asymmetry Tool:
-When a prompt contains absolute universal terms (such as "all", "every", "only", "must", or "mandatory"):
-- Highlight the flaw of one-size-fits-all enforcement by contrasting applied fields against theoretical fields.
-- Contrast disciplines where the policy fits (for example, applied fields like business, engineering, and marketing) against disciplines where universal enforcement is unnecessary or disruptive (for example, theoretical physics, pure mathematics, and classical literature).
-#### 3. Preemptive Defense Sentence Stems (Fortifying Arguments):
-Weave these simple, natural defensive patterns into body paragraphs to make them impossible for examiners to fault:
-- Distinction of Priority or Setting: Because these activities prioritize [personal enjoyment/creative expression] over [formal test scores/rigid metrics], [group] can [action] without [fear of failure/excessive pressure].
-- Exclusion of Negative Extremes: This does not mean [allowing harmful/passive habit, e.g., excessive screen time], but rather [giving them the space/autonomy to pursue self-directed, healthy activities].
-- Mitigation of Burden: Rather than turning [leisure hours] into another burdensome obligation, [unstructured time] grants [individuals] the autonomy to recover mentally at their own pace.
-- Direct Outweigh Comparison: Because [core drawback/harm] fundamentally undermines any [expected benefit], the disadvantages take clear precedence over the advantages.
-- Contextual Qualification: While critics may argue that [counter-argument], this risk is minimized when [condition or proper guidance].
-#### 4. Macro A-B-C Root Framework (Diverse Angles for Any Topic):
-- Macro A: Universal Root Causes (Why problems happen):
-  * Poverty & Inequality: Low disposable income, financial vulnerability, lack of safety nets.
-  * Modern Lifestyle Pressures: Hectic work schedules, long commuting times, intense academic competition, heavy coursework.
-  * Human Psychology & Consumerism: Craving for instant gratification, social comparison (peer pressure/vanity), fear of missing out (FOMO).
-  * Public vs. Private Tradeoffs: Limited municipal budgets and slow bureaucracy vs. private profit-driven incentives.
-  * Technological Acceleration: Addictive algorithms, convenience displacing physical effort.
-- Macro B: Multi-tiered Impacts (Tracer of Consequences):
-  * Individual Level: Physical health (sedentary habits, obesity), mental health (burnout, loneliness, anxiety, emotional recovery, autonomy), soft skills (empathy, active listening, teamwork, patience).
-  * Community & Family Level: Weaker family bonding, office productivity, workplace morale, social isolation.
-  * Macro / Societal Level: Public healthcare costs, government debt burdens, environmental damage, talent retention.
-- Macro C: Actionable Power Levers (How to solve problems):
-  * Legal & Regulatory Lever: Enforce zoning laws, mandate safety standards, impose fines, set quotas.
-  * Financial & Incentive Lever: Subsidies, tax discounts, low-interest loans, targeted funding for public transit and infrastructure.
-  * Educational & Collaborative Lever: Public-Private Partnerships (PPP), school curriculum integration, community volunteering programs.
-#### 5. Relatable, Concrete Noun Triads (Specification):
-Substantiate abstract ideas with 2 to 3 everyday concrete details:
-- Avoid abstract "basic amenities" -> Prefer concrete "grocery stores, local schools, and bus stops"
-- Avoid abstract "academic pressure" -> Prefer concrete "heavy coursework, regular mock tests, and university entrance exams"
-- Avoid abstract "digital communication tools" -> Prefer concrete "instant messaging apps, video calls, and social media updates"
----
-### IV. TUTORING & AUDITING PROTOCOL
-When interacting with the user (brainstorming, evaluating outlines, or refining essays):
-1. Direct Assessment First: Acknowledge and validate the user's ideas, highlighting their strong points in Task Response and Characterization.
-2. Examiner Trap & Preemptive Defense:
-   - Proactively identify 1 to 2 potential counter-arguments or edge cases that an examiner might question.
-   - Provide concrete preemptive defense sentences in simple, plain English to block those logical gaps completely.
-3. Full Fortified Model: Present the complete outline or essay integrating both the core mechanisms and the defensive sentences seamlessly. Ensure the Introduction is short and ultra-generic (zero point spoilers), while the Body paragraphs are deep, substantial, and thoroughly developed.
-4. Clear & Accessible Language: Keep all English models and collocations natural, plain, and easy to understand (accessible Band 8.0 to 8.5 standard).
-5. Language Protocol: Match the user's communication language (such as Vietnamese or English) for explanations, critiques, and feedback; generate all sample sentences, outlines, and essays in clear, authentic academic English.`
-    },
-    "spark_qa_assistant": {
-      name: "QA Assistant",
-      description: "Global E-Commerce & Omnichannel Expert, BA & QA Lead.",
-      instructions: '# Global E-Commerce & Omnichannel Expert AI\n**Tone/Format**: Efficient (Concise and plain). Answer directly and as briefly as possible with minimal text. Avoid verbose formatting, unnecessary bold headings, or decorative lists/tables unless absolutely required to answer the query. No greetings, introductions, or conversational fillers; start answering the question immediately. Match the user\'s language (Vietnamese/English).\n\n# 1. Architecture\n- **Layers**: Adobe Experience Manager (AEM) for frontend CMS & DAM via JCR (CRXDE Lite); SAP Commerce Cloud (Hybris) for catalog/OMS via OCC REST APIs; SAP S/4HANA (N-ERP) for financials (FI Documents) and billing.\n- **Integration**: Day CQ Commerce Factory for Hybris via OSGi services (com.adobe.cq.commerce.hybris.impl.HybrisServiceFactory), adapting resources (`Resource.adaptTo()`) using `cq:commerceProvider=hybris`.\n\n# 2. Business Domains & Rules\n- **CMS/PDP**: Unified GNB/SSO. Split Buy/Split Feature PDP (carrier, trade-in, tiered config); Marketing PDP (campaigns, continuous scroll); Standard PDP (Mass/Mainstream SKUs).\n- **Stores**: B2C eStore (Guest/registered); EPP (corporate tiers); F&F (friends/family); B2B SME (domain-matching configurations like `@testsupermarket.com` audited in Hybris Backoffice); EA (Endless Aisle via O2O Cockpit).\n- **PCM**: Staged vs. Online Catalog Versions. Variant Product (`TokoVariant`, variant/SKU) vs. Base Product (`TokoProduct`, parent). Sync types: Full, Incremental, Super. References: `AVAILABLE_SERVICE`, `CONSISTS_OF` (F-Codes), `SELECTION_OF_GIFT`.\n- **Pricing & Promotions**: Tier Price (`modelCode`, `Price`, `Minqtd`, `Price type` = `SPECIAL`). Promotion Splitting: `Item Discount = (Total Promotion Discount / Total Cart Value) * Original Item Price`. Rule Execution: use `Rule Executed` on lower rule targeting higher rule as block. BOGO/FOC selection: `Cheapest` / `Most Expensive` inside `productPromotionRuleGroup`.\n\n# 3. Order Flow & ERP Integration\n- **Journey**: Cart -> SSO/Guest Checkout -> Delivery Address -> Vertex/Cybersource -> Confirmation.\n- **WAIT_FOR_CHECK_EXTERNAL**: Order held awaiting external validation (Fraud, Trade-In, SME approvals, insurance). Released manually via Backoffice Fraud Reports, or bypassed in sandbox via simulated API callbacks (Postman) to proceed to `Waiting For Send Financial`.\n- **N-ERP**: Advances to `Waiting For Transfer` -> S/4HANA. fulfillment via T-codes: `VA03` (Order verification), DO/GI creation, `ZLEZ59040` (capture Serial/IMEI). Hybris sync via `bulkFetchConsignmentUpdateJob` / interface SD10304.\n- **Returns**: RSO allows partial unit reduction via quantity dropdowns. Final `Refund Amount` dynamically deducts vouchers and base store configs like `Refund delivery cost`.\n\n# 4. Smart Ring Journey\n- **Sizing Kit**: AEM order with "Don\'t know size" splits order: drops Ring to pending, ships zero-cost kit (types `YF01`/`YFT1`, item `YF0K` where `Y500 = 0`). Size submission in "My Account" releases stock and ships hardware.\n- **Returns**: Cancellation before size confirmation does not require kit return. Full return after ring delivery requires ring return (subject to `Restocking Fee`), kit remains with user.\n\n# 5. Testing & Environment\n- **BVT**: Pipeline check validating: Home (200 OK) -> SSO -> Solr Search -> PDP -> Cart -> Checkout -> Confirmation. Failure triggers automatic rollback.\n- **Environments**: SIT (OCC, AEM adapter, S/4HANA middleware contracts) and Regression. Production strictly off-limits. Validate on staging instances.\n- **Consultation Mindset**: Use general knowledge of headless microservices, robust async integration, dispatcher/CDN caching, and automation when queries exceed these specs.'
-    },
-    "spark_ielts_reading_assistant": {
-      name: "IELTS Reading Assistant",
-      description: "Translate, explain vocabulary/grammar, and pinpoint exactly where answers are located in IELTS Reading.",
-      instructions: `You are a highly supportive, expert IELTS Reading Assistant. Your mission is to help the user master IELTS Reading.
-**Strict Tone/Format (CRITICAL)**: 
-- Answer directly, naturally, and precisely. Keep responses clear, focused, and plain without unnecessary fluff or conversational fillers.
-- Avoid greetings/introductions; start answering immediately.
-- Respond in Vietnamese, keeping original English quotes and key terms intact.
-- **Formatting & Phonetics Rule**: 
-  * Always use **exact British English (UK) IPA** based strictly on Oxford/Cambridge dictionaries (e.g., post-apocalyptic: /\u02CCp\u0259\u028Ast.\u0259\u02CCp\u0252k.\u0259\u02C8l\u026Ap.t\u026Ak/, totalitarian: /t\u0259\u028A\u02CCt\xE6l\u0259\u02C8te\u0259ri\u0259n/). Pay strict attention to accurate vowel qualities (e.g. /\u0252/, /\u0251\u02D0/, /e\u0259/) and do not reduce stressed/secondary vowels to weak schwa (/\u0259/).
-  * Never wrap pronunciation keys or IPA (e.g. /.../) in backticks (\`) or code blocks (<code>). Keep them as plain text.
----
-### CORE CAPABILITIES
-1. TRANSLATION & PARAGRAPH ANALYSIS
-- When asked to translate/explain a sentence or summarize/explain paragraphs:
-  * Do NOT use bullet points, bold lists of "N\u1ED9i dung ch\xEDnh" / "T\u1EEB kh\xF3a n\u1ED5i b\u1EADt", or brief bulleted summaries.
-  * Write a full, smooth, cohesive narrative paragraph for each section/paragraph.
-  * Start each paragraph by connecting it with the previous content (e.g., "\u0110o\u1EA1n \u0111\u1EA7u gi\u1EDBi thi\u1EC7u...", "Sau khi m\xF4 t\u1EA3..., \u0111o\u1EA1n n\xE0y gi\u1EA3i th\xEDch...", "Sau khi tr\xECnh b\xE0y..., \u0111o\u1EA1n n\xE0y ph\xE2n t\xEDch...").
-  * Explain in detail what the paragraph is about, including background context, key events, mechanisms, examples, and the progression of ideas in natural, continuous prose.
-  * Adapt naturally: Provide natural Vietnamese translation and structural breakdown when specific sentences are requested.
-2. VOCABULARY & COLLOCATIONS
-- When user asks about a word or phrase:
-  * Provide British (UK) IPA pronunciation, word class, Vietnamese meaning, and relevant synonyms/collocations.
-  * Adapt naturally: If reading passage context is provided in the prompt/conversation, explain its specific meaning in that passage. If only isolated words are given without a passage, explain its general definition and typical usage context without forcing a fixed template.
-3. ANSWER CHECKING & EVIDENCE LOCATION
-- When checking answers:
-  * Confirm/identify the correct choice directly.
-  * Quote the exact English evidence sentence and pinpoint its location if available.
-  * Briefly show keyword mapping and explain other choices only if necessary.`
-    }
-  };
-
-  // src/components/sparks/sparks.js
-  var SPARKS_KEY = "nexus_sparks";
-  async function sparksLoad() {
-    const res = await chrome.storage.local.get([SPARKS_KEY, "sparks", "lumina_sparks"]);
-    let sparks = res[SPARKS_KEY] || res["sparks"] || res["lumina_sparks"];
-    if (!sparks) {
-      sparks = {};
-      for (const [id, defSpark] of Object.entries(DEFAULT_SPARKS)) {
-        sparks[id] = {
-          id,
-          name: defSpark.name,
-          description: defSpark.description || "",
-          instructions: defSpark.instructions,
-          avatar: null,
-          knowledgeFiles: [],
-          createdAt: Date.now(),
-          updatedAt: Date.now()
-        };
-      }
-      await sparksSave(sparks);
-    } else if (!res[SPARKS_KEY]) {
-      await sparksSave(sparks);
-    }
-    return sparks;
-  }
-  async function sparksSave(sparks) {
-    await chrome.storage.local.set({ [SPARKS_KEY]: sparks });
-    if (typeof sidebarSparksRenderList2 === "function") {
-      sidebarSparksRenderList2();
-    }
-  }
-  async function sparksSaveOrder(orderedIds) {
-    const sparks = await sparksLoad();
-    orderedIds.forEach((id, index) => {
-      if (sparks[id]) {
-        sparks[id].order = index;
-        sparks[id].updatedAt = Date.now();
-      }
-    });
-    await chrome.storage.local.set({ [SPARKS_KEY]: sparks });
-  }
-  async function sparksDelete(id) {
-    const sparks = await sparksLoad();
-    if (sparks[id]) {
-      delete sparks[id];
-      await sparksSave(sparks);
-    }
-  }
-  function sparksNewId() {
-    return "spark_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
-  }
-  function sparksOpenPage() {
-    if (typeof window.NexusViewManager !== "undefined") {
-      window.NexusViewManager.switchView("sparks");
-    }
-    sparksRenderList2();
-    document.getElementById("sidebar-sparks-btn")?.classList.add("active");
-    document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
-  }
-  function sparksClosePage2() {
-    if (typeof window.NexusViewManager !== "undefined") {
-      window.NexusViewManager.switchView("chat");
-    }
-    document.getElementById("sidebar-sparks-btn")?.classList.remove("active");
-    document.getElementById("sparks-editor-overlay")?.remove();
-  }
-  async function sparksRenderList2() {
-    const body = document.getElementById("sparks-page-body");
-    const sparks = await sparksLoad();
-    const list = Object.values(sparks).filter((s) => s && !s.isDeleted).sort((a, b) => {
-      const orderA = a.order !== void 0 ? a.order : 99999;
-      const orderB = b.order !== void 0 ? b.order : 99999;
-      if (orderA !== orderB) return orderA - orderB;
-      return (b.createdAt || 0) - (a.createdAt || 0);
-    });
-    if (list.length === 0) {
-      body.innerHTML = `
-            <div class="sparks-empty">
-                <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="4" y="6" width="6" height="4" rx="2"/>
-                    <rect x="14" y="6" width="6" height="8" rx="3"/>
-                    <rect x="4" y="14" width="6" height="6" rx="3"/>
-                    <rect x="14" y="18" width="6" height="4" rx="2"/>
-                </svg>
-                <p>No sparks yet</p>
-                <span>Create a custom AI with a name, instructions, and knowledge files.</span>
-            </div>`;
-      return;
-    }
-    body.innerHTML = list.map((spark) => {
-      const avatarHTML = spark.avatar ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />` : (spark.name || "?")[0].toUpperCase();
-      const bgStyle = spark.avatar ? "background: transparent;" : spark.name ? `background: ${getSparkColor(spark.name)};` : "";
-      return `
-            <div class="spark-card" data-spark-id="${spark.id}">
-                <div class="spark-card__avatar" style="${bgStyle}">${avatarHTML}</div>
-                <div class="spark-card__info">
-                    <div class="spark-card__name">${escapeHtml(spark.name || "Untitled Spark")}</div>
-                    <div class="spark-card__preview">${escapeHtml((spark.instructions || "").slice(0, 80))}${(spark.instructions || "").length > 80 ? "\u2026" : ""}</div>
-                </div>
-                <div class="spark-card__actions">
-                    <button class="spark-card__btn spark-edit-btn" title="Edit" data-spark-id="${spark.id}">
-                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>
-                    <button class="spark-card__btn spark-delete-btn" title="Delete" data-spark-id="${spark.id}">
-                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                    </button>
-                </div>
-            </div>
-        `;
-    }).join("");
-    body.querySelectorAll(".spark-edit-btn").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        sparksOpenEditor(btn.dataset.sparkId);
-      });
-    });
-    body.querySelectorAll(".spark-delete-btn").forEach((btn) => {
-      btn.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        if (confirm("Delete this spark?")) {
-          await sparksDelete(btn.dataset.sparkId);
-          sparksRenderList2();
-        }
-      });
-    });
-    body.querySelectorAll(".spark-card").forEach((card) => {
-      card.addEventListener("click", () => {
-        sparksOpenEditor(card.dataset.sparkId);
-      });
-    });
-  }
-  async function sparksOpenEditor(sparkId = null) {
-    const sparks = await sparksLoad();
-    const spark = sparkId ? sparks[sparkId] || null : null;
-    document.getElementById("sparks-editor-overlay")?.remove();
-    const overlay = document.createElement("div");
-    overlay.id = "sparks-editor-overlay";
-    overlay.className = "sparks-editor-overlay";
-    const knowledgeFiles = spark?.knowledgeFiles || [];
-    const neutralBg = "linear-gradient(135deg, #64748b, #475569)";
-    const color = spark?.name ? getSparkColor(spark.name) : neutralBg;
-    const welcomeAvatarHTML = spark?.avatar ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />` : (spark?.name || "?")[0].toUpperCase();
-    const welcomeBgStyle = spark?.avatar ? "background: transparent;" : `background: ${color}`;
-    const previewAvatarBg = spark?.avatar ? "background: transparent;" : `background: ${color}`;
-    overlay.innerHTML = `
-        <div class="sparks-editor">
-            <div class="sparks-editor-form">
-                <div class="sparks-editor-topbar">
-                    <button class="sparks-editor-back" id="sparks-editor-back">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-                    </button>
-                    <div class="sparks-editor-title-row">
-                        <span>${spark ? escapeHtml(spark.name || "Untitled Spark") : "New Spark"}</span>
-                    </div>
-                    <button class="sparks-editor-save" id="sparks-editor-save">Save</button>
-                </div>
-                <div class="sparks-editor-fields">
-                    <div class="spark-avatar-editor">
-                        <div class="spark-avatar-preview" id="spark-avatar-preview" style="${previewAvatarBg}">
-                            ${spark?.avatar ? `<img src="${spark.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<span class="spark-avatar-letter">${(spark?.name || "?")[0].toUpperCase()}</span>`}
-                            <div class="spark-avatar-overlay">
-                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                            </div>
-                        </div>
-                        <input type="file" id="spark-avatar-file" accept="image/*" style="display:none">
-                    </div>
-                    <div class="sparks-field">
-                        <label class="sparks-label">Name</label>
-                        <input type="text" id="spark-name-input" class="sparks-input" placeholder="Give your Spark a name" value="${escapeHtml(spark?.name || "")}" maxlength="60">
-                    </div>
-                    <div class="sparks-field">
-                        <label class="sparks-label">Description</label>
-                        <input type="text" id="spark-description-input" class="sparks-input" placeholder="A short description of what this Spark does" value="${escapeHtml(spark?.description || "")}" maxlength="160">
-                    </div>
-                    <div class="sparks-field">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <label class="sparks-label">Instructions</label>
-                            ${sparkId && DEFAULT_SPARKS[sparkId] ? `<button type="button" id="spark-reset-default-btn" class="sparks-reset-btn" style="background: none; border: none; color: var(--nexus-sidebar-text-muted, #8e8e93); font-size: 0.82em; cursor: pointer; text-decoration: underline; padding: 0;">Reset to default</button>` : ""}
-                        </div>
-                        <div class="nexus-input-container sparks-instructions-container">
-                            <div class="nexus-input-bar">
-                                <textarea id="spark-instructions-input" class="nexus-chat-input sparks-instructions-input" placeholder="Example: You are a helpful writing tutor. Help users improve their writing with concise, constructive feedback. Be encouraging and specific.">${escapeHtml(spark?.instructions || "")}</textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="sparks-field">
-                        <label class="sparks-label">
-                            Knowledge
-                            <span class="sparks-label-hint">\u2014 add files for your Spark to reference</span>
-                        </label>
-                        <div class="sparks-knowledge-area" id="sparks-knowledge-area">
-                            <div class="sparks-knowledge-files" id="sparks-knowledge-files">
-                                ${knowledgeFiles.map((f, i) => `
-                                    <div class="sparks-file-chip" data-file-index="${i}">
-                                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                        <span>${escapeHtml(f.name)}</span>
-                                        <button class="sparks-file-remove" data-file-index="${i}">\xD7</button>
-                                    </div>
-                                `).join("")}
-                            </div>
-                            <button class="sparks-add-file-btn" id="sparks-add-file-btn">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                Add files
-                            </button>
-                            <input type="file" id="sparks-file-input" multiple accept="*/*" style="display:none">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="sparks-editor-preview">
-                <div class="sparks-editor-resizer" id="sparks-editor-resizer">
-                    <div class="sparks-editor-resizer-handle"></div>
-                </div>
-                <div class="sparks-preview-header">
-                    <div class="nexus-model-selector" id="sparks-preview-model-selector">
-                        <button class="nexus-model-btn" id="sparks-preview-model-btn">
-                            <span class="nexus-current-model" id="sparks-preview-model-label">Loading...</span>
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M6 9l6 6 6-6"/>
-                            </svg>
-                        </button>
-                        <div class="nexus-model-dropdown" id="sparks-preview-model-dropdown"></div>
-                    </div>
-                </div>
-                <div class="sparks-preview-chat" id="sparks-preview-chat">
-                    <div class="sparks-preview-empty" id="sparks-preview-empty">
-                        <div class="spark-welcome">
-                            <div class="spark-welcome__avatar" id="sparks-preview-welcome-avatar" style="${welcomeBgStyle}">${welcomeAvatarHTML}</div>
-                            <h1 class="spark-welcome__title" id="sparks-preview-welcome-title">${escapeHtml(spark?.name || "New Spark")}</h1>
-                            <p class="spark-welcome__description" id="sparks-preview-welcome-description" style="color: var(--nexus-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45; display: ${spark?.description ? "block" : "none"};">${escapeHtml(spark?.description || "")}</p>
-                        </div>
-                    </div>
-                    <div class="nexus-chat-history sparks-preview-messages" id="sparks-preview-messages"></div>
-                </div>
-                <div class="nexus-chat-input-wrapper sparks-preview-input-area">
-                    <div class="nexus-input-container">
-                        <div class="nexus-input-bar">
-                            <div class="nexus-left-actions">
-                                 <button class="nexus-upload-btn" id="sparks-preview-upload" title="Upload File" disabled style="cursor: not-allowed; opacity: 0.5;">
-                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                 </button>
-                            </div>
-                            <textarea class="nexus-chat-input sparks-preview-input" id="sparks-preview-input" placeholder="Test your Spark\u2026" rows="1" disabled></textarea>
-                            <div class="nexus-trailing-group">
-                                <button class="nexus-mic-btn" id="sparks-preview-mic" title="Voice Input" disabled style="cursor: not-allowed; opacity: 0.5;">
-                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="6" height="10" rx="3"></rect><path d="M5 12a7 7 0 0 0 14 0"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-                                </button>
-                                <button class="nexus-action-btn sparks-preview-send" id="sparks-preview-send" disabled title="Send Message">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    const mainContent = document.querySelector(".nexus-main-content");
-    if (mainContent) {
-      mainContent.appendChild(overlay);
-    } else {
-      document.body.appendChild(overlay);
-    }
-    const sparksResizer = overlay.querySelector("#sparks-editor-resizer");
-    const formPane = overlay.querySelector(".sparks-editor-form");
-    const previewPane = overlay.querySelector(".sparks-editor-preview");
-    const editorContainer = overlay.querySelector(".sparks-editor");
-    if (sparksResizer && formPane && previewPane && editorContainer) {
-      let isDragging = false;
-      let animationFrameId = null;
-      sparksResizer.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        isDragging = true;
-        sparksResizer.classList.add("dragging");
-        editorContainer.classList.add("dragging");
-        document.body.style.cursor = "col-resize";
-      });
-      document.addEventListener("mousemove", (e) => {
-        if (!isDragging) return;
-        if (animationFrameId) {
-          cancelAnimationFrame(animationFrameId);
-        }
-        animationFrameId = requestAnimationFrame(() => {
-          const containerRect = editorContainer.getBoundingClientRect();
-          const paddingLeft = parseFloat(window.getComputedStyle(editorContainer).paddingLeft) || 0;
-          const paddingRight = parseFloat(window.getComputedStyle(editorContainer).paddingRight) || 0;
-          const relativeX = e.clientX - containerRect.left - paddingLeft;
-          const availableWidth = containerRect.width - paddingLeft - paddingRight - sparksResizer.offsetWidth;
-          if (availableWidth <= 0) return;
-          let percentage = relativeX / availableWidth * 100;
-          if (percentage < 25) percentage = 25;
-          if (percentage > 75) percentage = 75;
-          if (percentage >= 47.5 && percentage <= 52.5) {
-            percentage = 50;
-          }
-          formPane.style.flex = `${percentage}`;
-          previewPane.style.flex = `${100 - percentage}`;
-        });
-      });
-      document.addEventListener("mouseup", () => {
-        if (isDragging) {
-          isDragging = false;
-          sparksResizer.classList.remove("dragging");
-          editorContainer.classList.remove("dragging");
-          document.body.style.cursor = "";
-          if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-            animationFrameId = null;
-          }
-        }
-      });
-    }
-    let currentFiles = [...knowledgeFiles];
-    let currentAvatar = spark?.avatar || null;
-    let previewHistory = [];
-    let previewStreaming = false;
-    const initialName = spark?.name || "";
-    const initialDescription = spark?.description || "";
-    const initialInstructions = spark?.instructions || "";
-    const initialAvatar = spark?.avatar || null;
-    const getFilesSig = (files) => JSON.stringify((files || []).map((f) => ({ name: f.name, size: f.size })));
-    const initialFilesSig = getFilesSig(spark?.knowledgeFiles || []);
-    const saveBtn = overlay.querySelector("#sparks-editor-save");
-    const nameInput = overlay.querySelector("#spark-name-input");
-    const descriptionInput = overlay.querySelector("#spark-description-input");
-    const instructionsInput = overlay.querySelector("#spark-instructions-input");
-    const updateSaveButtonState = () => {
-      if (!saveBtn) return;
-      const currentName = nameInput ? nameInput.value.trim() : "";
-      const currentDesc = descriptionInput ? descriptionInput.value.trim() : "";
-      const currentInst = instructionsInput ? instructionsInput.value : "";
-      const currentFilesSig = getFilesSig(currentFiles);
-      const hasName = currentName.length > 0;
-      const isNameChanged = currentName !== initialName.trim();
-      const isDescChanged = currentDesc !== initialDescription.trim();
-      const isInstChanged = currentInst !== initialInstructions;
-      const isAvatarChanged = currentAvatar !== initialAvatar;
-      const isFilesChanged = currentFilesSig !== initialFilesSig;
-      const hasChanges = isNameChanged || isDescChanged || isInstChanged || isAvatarChanged || isFilesChanged;
-      saveBtn.disabled = !(hasName && hasChanges);
-    };
-    const avatarPreview = overlay.querySelector("#spark-avatar-preview");
-    const avatarInput = overlay.querySelector("#spark-avatar-file");
-    avatarPreview.addEventListener("click", () => avatarInput.click());
-    avatarInput.addEventListener("change", () => {
-      const file = avatarInput.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          openAvatarCropper(e.target.result, (croppedDataUrl) => {
-            currentAvatar = croppedDataUrl;
-            avatarPreview.innerHTML = `<img src="${currentAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" /><div class="spark-avatar-overlay"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`;
-            const welcomeAvatar2 = overlay.querySelector("#sparks-preview-welcome-avatar");
-            if (welcomeAvatar2) {
-              welcomeAvatar2.style.background = "transparent";
-              welcomeAvatar2.innerHTML = `<img src="${currentAvatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`;
-            }
-            updateSaveButtonState();
-          });
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-    overlay.querySelector("#sparks-editor-back").addEventListener("click", () => {
-      overlay.remove();
-    });
-    const titleLabel = overlay.querySelector(".sparks-editor-title-row span");
-    const previewEmpty = overlay.querySelector("#sparks-preview-empty");
-    const previewInput = overlay.querySelector("#sparks-preview-input");
-    const previewSend = overlay.querySelector("#sparks-preview-send");
-    const updatePreviewState = () => {
-      const hasName = nameInput.value.trim().length > 0;
-      previewInput.disabled = !hasName;
-      previewSend.disabled = !hasName;
-      const uploadBtn = overlay.querySelector("#sparks-preview-upload");
-      const micBtn = overlay.querySelector("#sparks-preview-mic");
-      if (uploadBtn) {
-        uploadBtn.disabled = !hasName;
-        uploadBtn.style.opacity = hasName ? "1" : "0.5";
-        uploadBtn.style.cursor = hasName ? "pointer" : "not-allowed";
-      }
-      if (micBtn) {
-        micBtn.disabled = !hasName;
-        micBtn.style.opacity = hasName ? "0.6" : "0.5";
-        micBtn.style.cursor = hasName ? "pointer" : "not-allowed";
-      }
-      if (previewHistory.length > 0) {
-        previewEmpty.style.display = "none";
-      } else {
-        previewEmpty.style.display = "flex";
-      }
-    };
-    const welcomeTitle = overlay.querySelector("#sparks-preview-welcome-title");
-    const welcomeAvatar = overlay.querySelector("#sparks-preview-welcome-avatar");
-    function updateWelcomeAvatarLetter(nameVal) {
-      const firstLetter = (nameVal || "?")[0].toUpperCase();
-      if (welcomeAvatar && !currentAvatar) {
-        welcomeAvatar.textContent = firstLetter;
-      }
-      const previewLetter = overlay.querySelector("#spark-avatar-preview .spark-avatar-letter");
-      if (previewLetter && !currentAvatar) {
-        previewLetter.textContent = firstLetter;
-      }
-    }
-    nameInput.addEventListener("input", () => {
-      const nameVal = nameInput.value.trim();
-      titleLabel.textContent = nameVal || "New Spark";
-      if (welcomeTitle) {
-        welcomeTitle.textContent = nameVal || "New Spark";
-      }
-      updateWelcomeAvatarLetter(nameVal);
-      updatePreviewState();
-      updateSaveButtonState();
-    });
-    const welcomeDesc = overlay.querySelector("#sparks-preview-welcome-description");
-    if (descriptionInput && welcomeDesc) {
-      descriptionInput.addEventListener("input", () => {
-        const descVal = descriptionInput.value.trim();
-        welcomeDesc.textContent = descVal;
-        welcomeDesc.style.display = descVal ? "block" : "none";
-        updateSaveButtonState();
-      });
-    }
-    if (instructionsInput) {
-      instructionsInput.addEventListener("input", () => {
-        updateSaveButtonState();
-      });
-    }
-    updatePreviewState();
-    updateSaveButtonState();
-    const fileInput2 = overlay.querySelector("#sparks-file-input");
-    overlay.querySelector("#sparks-add-file-btn").addEventListener("click", () => fileInput2.click());
-    fileInput2.addEventListener("change", async () => {
-      for (const file of fileInput2.files) {
-        const reader = new FileReader();
-        await new Promise((resolve) => {
-          reader.onload = (e) => {
-            currentFiles.push({
-              name: file.name,
-              type: file.type,
-              size: file.size,
-              content: e.target.result
-            });
-            resolve();
-          };
-          if (file.type.startsWith("text/") || file.name.match(/\.(txt|md|csv|json|js|ts|py|html|css|xml|yaml|yml)$/i)) {
-            reader.readAsText(file);
-          } else {
-            reader.readAsDataURL(file);
-          }
-        });
-      }
-      fileInput2.value = "";
-      renderFileChips();
-      updateSaveButtonState();
-    });
-    function renderFileChips() {
-      const filesContainer = overlay.querySelector("#sparks-knowledge-files");
-      filesContainer.innerHTML = currentFiles.map((f, i) => `
-            <div class="sparks-file-chip" data-file-index="${i}">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span>${escapeHtml(f.name)}</span>
-                <button class="sparks-file-remove" data-file-index="${i}">\xD7</button>
-            </div>
-        `).join("");
-      filesContainer.querySelectorAll(".sparks-file-remove").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const idx = parseInt(btn.dataset.fileIndex);
-          currentFiles.splice(idx, 1);
-          renderFileChips();
-          updateSaveButtonState();
-        });
-      });
-    }
-    const resetDefaultBtn = overlay.querySelector("#spark-reset-default-btn");
-    if (resetDefaultBtn && sparkId && DEFAULT_SPARKS[sparkId]) {
-      resetDefaultBtn.addEventListener("click", () => {
-        const def = DEFAULT_SPARKS[sparkId];
-        overlay.querySelector("#spark-instructions-input").value = def.instructions;
-        if (def.description) {
-          overlay.querySelector("#spark-description-input").value = def.description;
-        }
-        if (def.name) {
-          overlay.querySelector("#spark-name-input").value = def.name;
-        }
-        updateSaveButtonState();
-      });
-    }
-    saveBtn.addEventListener("click", async () => {
-      const name = nameInput.value.trim();
-      if (!name) {
-        nameInput.focus();
-        nameInput.classList.add("sparks-input--error");
-        setTimeout(() => nameInput.classList.remove("sparks-input--error"), 1500);
-        return;
-      }
-      const sparks2 = await sparksLoad();
-      const isNew = !sparkId || !sparks2[sparkId];
-      const id = sparkId || sparksNewId();
-      const existingSpark = sparks2[id];
-      if (isNew) {
-        Object.values(sparks2).forEach((s) => {
-          if (s.order !== void 0) {
-            s.order += 1;
-          }
-        });
-      }
-      sparks2[id] = {
-        ...existingSpark,
-        id,
-        name,
-        description: overlay.querySelector("#spark-description-input").value.trim(),
-        instructions: overlay.querySelector("#spark-instructions-input").value.trim(),
-        knowledgeFiles: currentFiles,
-        avatar: currentAvatar,
-        createdAt: isNew ? Date.now() : existingSpark?.createdAt || Date.now(),
-        updatedAt: Date.now(),
-        order: isNew ? 0 : existingSpark?.order
-      };
-      await sparksSave(sparks2);
-      overlay.remove();
-      sparksRenderList2();
-    });
-    const messagesEl = overlay.querySelector("#sparks-preview-messages");
-    function buildSystemPrompt() {
-      let sys = overlay.querySelector("#spark-instructions-input").value.trim();
-      if (currentFiles.length > 0) {
-        const fileContexts = currentFiles.filter((f) => typeof f.content === "string" && !f.content.startsWith("data:")).map((f) => `--- File: ${f.name} ---
-${f.content}`).join("\n\n");
-        if (fileContexts) {
-          sys += `
-
-# Knowledge Files
-${fileContexts}`;
-        }
-      }
-      return sys;
-    }
-    function appendPreviewMessage(role, text) {
-      if (role === "user") {
-        const row = document.createElement("div");
-        row.className = "nexus-question-row";
-        const qDiv = document.createElement("div");
-        qDiv.className = "nexus-chat-question";
-        qDiv.textContent = text;
-        row.appendChild(qDiv);
-        messagesEl.appendChild(row);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-        return qDiv;
-      } else {
-        const aDiv = document.createElement("div");
-        aDiv.className = "nexus-chat-answer";
-        aDiv.textContent = text;
-        messagesEl.appendChild(aDiv);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-        return aDiv;
-      }
-    }
-    let sparkSelectedModel = null;
-    async function initSparkPreviewModelSelector() {
-      const btn = overlay.querySelector("#sparks-preview-model-btn");
-      const label = overlay.querySelector("#sparks-preview-model-label");
-      const dropdown = overlay.querySelector("#sparks-preview-model-dropdown");
-      if (!btn || !dropdown || !label) return;
-      const data = await chrome.storage.local.get(["providers", "advancedParamsByModel", "lastUsedModel"]);
-      const chain = window.NexusModelHelper ? window.NexusModelHelper.buildModelChain(data) : [];
-      let currentModel = data.lastUsedModel?.model;
-      let currentProviderId = data.lastUsedModel?.providerId;
-      if (!currentModel && chain.length > 0) {
-        currentModel = chain[0].model;
-        currentProviderId = chain[0].providerId;
-      }
-      if (currentModel) {
-        sparkSelectedModel = { model: currentModel, providerId: currentProviderId };
-        const foundItem = chain.find((c) => c.model === currentModel && c.providerId === currentProviderId) || chain.find((c) => c.model === currentModel);
-        label.textContent = foundItem ? foundItem.displayName || foundItem.model : currentModel;
-      }
-      const renderDropdown = () => {
-        dropdown.innerHTML = chain.map((item) => {
-          const isSelected = sparkSelectedModel && sparkSelectedModel.model === item.model && sparkSelectedModel.providerId === item.providerId;
-          return `
-                    <div class="nexus-model-item ${isSelected ? "active" : ""}" data-model="${escapeHtml(item.model)}" data-provider-id="${escapeHtml(item.providerId)}">
-                        <div class="nexus-model-item-info">
-                            <div class="nexus-model-name">${escapeHtml(item.displayName)}</div>
-                            <div class="nexus-model-provider">${escapeHtml(item.providerName || item.providerId)}</div>
-                        </div>
-                    </div>
-                `;
-        }).join("");
-        dropdown.querySelectorAll(".nexus-model-item").forEach((el) => {
-          el.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const m = el.dataset.model;
-            const p = el.dataset.providerId;
-            sparkSelectedModel = { model: m, providerId: p };
-            const foundItem = chain.find((c) => c.model === m && c.providerId === p) || chain.find((c) => c.model === m);
-            label.textContent = foundItem ? foundItem.displayName || foundItem.model : m;
-            dropdown.classList.remove("active");
-          });
-        });
-      };
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const isActive = dropdown.classList.contains("active");
-        document.querySelectorAll(".nexus-model-dropdown.active").forEach((d) => d.classList.remove("active"));
-        if (!isActive) {
-          renderDropdown();
-          dropdown.classList.add("active");
-        }
-      });
-      document.addEventListener("click", (e) => {
-        if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
-          dropdown.classList.remove("active");
-        }
-      });
-    }
-    initSparkPreviewModelSelector();
-    async function sendPreviewMessage() {
-      if (previewStreaming) return;
-      const input = overlay.querySelector("#sparks-preview-input");
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = "";
-      input.style.height = "auto";
-      appendPreviewMessage("user", text);
-      const systemPrompt = buildSystemPrompt();
-      const historyForAPI = previewHistory.map((h) => ({ role: h.role, parts: [{ text: h.text }] }));
-      previewHistory.push({ role: "user", text });
-      updatePreviewState();
-      const aiDiv = appendPreviewMessage("assistant", "");
-      aiDiv.innerHTML = NexusTemplates.thinkingDots();
-      previewStreaming = true;
-      previewSend.disabled = true;
-      try {
-        let model = sparkSelectedModel?.model;
-        let providerId = sparkSelectedModel?.providerId;
-        if (!model || !providerId) {
-          const storageData = await chrome.storage.local.get(["lastUsedModel", "providers"]);
-          if (storageData?.lastUsedModel?.model && storageData?.lastUsedModel?.providerId) {
-            model = storageData.lastUsedModel.model;
-            providerId = storageData.lastUsedModel.providerId;
-          } else if (typeof window.getActiveNexusTab === "function" && window.getActiveNexusTab()?.selectedModel) {
-            const curTab = window.getActiveNexusTab();
-            model = curTab.selectedModel.model;
-            providerId = curTab.selectedModel.providerId;
-          } else if (typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" && tabs[activeTabIndex]?.selectedModel) {
-            model = tabs[activeTabIndex].selectedModel.model;
-            providerId = tabs[activeTabIndex].selectedModel.providerId;
-          }
-          if (!providerId && storageData?.providers && storageData.providers.length > 0) {
-            const activeProv = storageData.providers.find((p) => p.enabled !== false && p.apiKey);
-            if (activeProv) {
-              providerId = activeProv.id;
-              model = activeProv.model || "gemini-2.0-flash";
-            }
-          }
-        }
-        const messages = [
-          ...systemPrompt ? [{ role: "user", parts: [{ text: `[System Instructions]
-${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will follow these instructions." }] }] : [],
-          ...historyForAPI,
-          { role: "user", parts: [{ text }] }
-        ];
-        const response = await chrome.runtime.sendMessage({
-          action: "preview_spark",
-          messages,
-          model,
-          providerId
-        });
-        let replyText = "";
-        if (response?.text) {
-          replyText = response.text;
-        } else if (response?.error) {
-          replyText = `Error: ${response.error}`;
-        } else {
-          replyText = "(No response)";
-        }
-        aiDiv.textContent = replyText;
-        previewHistory.push({ role: "assistant", text: replyText });
-      } catch (err) {
-        aiDiv.textContent = "Could not get a response. Check your API connection.";
-        console.error("[Sparks preview]", err);
-      } finally {
-        previewStreaming = false;
-        if (nameInput.value.trim()) previewSend.disabled = false;
-      }
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-    previewSend.addEventListener("click", sendPreviewMessage);
-    previewInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendPreviewMessage();
-      }
-    });
-    previewInput.addEventListener("input", () => {
-      previewInput.style.height = "auto";
-      previewInput.style.height = Math.min(previewInput.scrollHeight, 100) + "px";
-    });
-  }
-  function getSparkColor(name) {
-    const gradients = [
-      "linear-gradient(135deg, #6366f1, #8b5cf6)",
-      "linear-gradient(135deg, #3b82f6, #06b6d4)",
-      "linear-gradient(135deg, #0ea5e9, #10b981)",
-      "linear-gradient(135deg, #10b981, #84cc16)",
-      "linear-gradient(135deg, #f59e0b, #f97316)",
-      "linear-gradient(135deg, #ec4899, #f43f5e)",
-      "linear-gradient(135deg, #8b5cf6, #d946ef)",
-      "linear-gradient(135deg, #14b8a6, #3b82f6)",
-      "linear-gradient(135deg, #f43f5e, #fb923c)",
-      "linear-gradient(135deg, #0284c7, #6366f1)"
-    ];
-    let hash = 0;
-    for (let i = 0; i < (name || "").length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return gradients[Math.abs(hash) % gradients.length];
-  }
-  async function sidebarSparksRenderList2() {
-    const container2 = document.getElementById("sidebar-sparks-list");
-    if (!container2) return;
-    const sparks = await sparksLoad();
-    const list = Object.values(sparks).filter((s) => s && !s.isDeleted).sort((a, b) => {
-      const orderA = a.order !== void 0 ? a.order : 99999;
-      const orderB = b.order !== void 0 ? b.order : 99999;
-      if (orderA !== orderB) return orderA - orderB;
-      return (b.createdAt || 0) - (a.createdAt || 0);
-    });
-    let html = "";
-    list.forEach((spark) => {
-      const color = getSparkColor(spark.name);
-      const avatarHTML = spark.avatar ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />` : (spark.name || "?")[0].toUpperCase();
-      const bgStyle = spark.avatar ? "background: transparent;" : `background: ${color}`;
-      html += `
-            <div class="sidebar-spark-item" draggable="true" data-spark-id="${spark.id}" title="${escapeHtml(spark.name)}">
-                <div class="sidebar-spark-item__avatar" style="${bgStyle}">${avatarHTML}</div>
-                <span class="sidebar-spark-item__title">${escapeHtml(spark.name)}</span>
-                <button class="sidebar-spark-item__menu-btn" data-spark-id="${spark.id}" title="More options" tabindex="-1">
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
-                </button>
-            </div>
-        `;
-    });
-    container2.innerHTML = html;
-    let draggedItem = null;
-    container2.querySelectorAll(".sidebar-spark-item").forEach((item) => {
-      item.addEventListener("click", (e) => {
-        if (e.target.closest(".sidebar-spark-item__menu-btn")) return;
-        openSparkChat2(item.dataset.sparkId);
-        const sidebar = document.getElementById("nexus-sidebar");
-        const backdrop = document.querySelector(".sidebar-backdrop");
-        if (sidebar) sidebar.classList.remove("active");
-        if (backdrop) backdrop.classList.remove("active");
-        document.body.classList.remove("sidebar-open");
-      });
-      item.addEventListener("dragstart", (e) => {
-        draggedItem = item;
-        item.classList.add("dragging");
-        e.dataTransfer.effectAllowed = "move";
-      });
-      item.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        const draggingEl = container2.querySelector(".sidebar-spark-item.dragging");
-        if (!draggingEl || draggingEl === item) return;
-        const rect = item.getBoundingClientRect();
-        const midpoint = rect.top + rect.height / 2;
-        if (e.clientY < midpoint) {
-          container2.insertBefore(draggingEl, item);
-        } else {
-          container2.insertBefore(draggingEl, item.nextSibling);
-        }
-      });
-      item.addEventListener("dragend", async () => {
-        item.classList.remove("dragging");
-        draggedItem = null;
-        const orderedIds = Array.from(container2.querySelectorAll(".sidebar-spark-item")).map((el) => el.dataset.sparkId);
-        await sparksSaveOrder(orderedIds);
-        if (typeof sparksRenderList2 === "function") {
-          sparksRenderList2();
-        }
-      });
-    });
-    container2.querySelectorAll(".sidebar-spark-item__menu-btn").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        showSparkContextMenu(btn, btn.dataset.sparkId);
-      });
-    });
-  }
-  function showSparkContextMenu(btn, sparkId) {
-    if (!btn) return;
-    NexusMenu.show({
-      anchor: btn,
-      placement: "bottom-end",
-      items: [
-        {
-          label: "Edit",
-          icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`,
-          action: () => sparksOpenEditor(sparkId)
-        },
-        {
-          label: "Delete",
-          icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
-          action: async () => {
-            const confirmed = await window.showCustomPopup({
-              title: "Delete Spark",
-              body: "Are you sure you want to delete this Spark?",
-              confirmLabel: "Delete",
-              isDanger: true
-            });
-            if (confirmed) {
-              await sparksDelete(sparkId);
-              sidebarSparksRenderList2();
-              if (typeof sparksRenderList2 === "function") sparksRenderList2();
-            }
-          }
-        }
-      ]
-    });
-  }
-  async function openSparkChat2(sparkId) {
-    sparksClosePage2();
-    document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
-    document.querySelectorAll(".sidebar-spark-item").forEach((el) => {
-      if (el.dataset.sparkId === sparkId) el.classList.add("active");
-      else el.classList.remove("active");
-    });
-    document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
-    document.getElementById("sidebar-notes-btn")?.classList.remove("active");
-    document.getElementById("sidebar-tts-btn")?.classList.remove("active");
-    const activeTab = typeof window.getActiveNexusTab === "function" ? window.getActiveNexusTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : window.NexusSelectionScope?.getTabs?.()?.[window.NexusSelectionScope?.getActiveTabIndex?.()] ?? null;
-    if (activeTab) {
-      activeTab.sparkId = sparkId;
-      if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = sparkId;
-      const targetChatUI = activeTab ? activeTab.chatUIInstance : null;
-      const targetSharedInputUI = typeof window.getSharedInputUI === "function" ? window.getSharedInputUI() : typeof sharedInputUI !== "undefined" ? sharedInputUI : activeTab?.chatUIInstance?.sharedInputUI || null;
-      const settingsRes = await chrome.storage.local.get(["nexus_spark_last_settings"]);
-      const sparkSettings = (settingsRes.nexus_spark_last_settings || {})[sparkId];
-      if (activeTab.selectedModel) {
-        if (targetChatUI) {
-          targetChatUI.activeTabModel = { ...activeTab.selectedModel };
-          targetChatUI.thinkingLevel = activeTab.thinkingLevel || null;
-        }
-        if (targetSharedInputUI) {
-          targetSharedInputUI.activeTabModel = { ...activeTab.selectedModel };
-          targetSharedInputUI.thinkingLevel = activeTab.thinkingLevel || null;
-          if (typeof targetSharedInputUI.refreshModelSelector === "function") targetSharedInputUI.refreshModelSelector();
-          if (typeof targetSharedInputUI.refreshReasoningSelector === "function") targetSharedInputUI.refreshReasoningSelector();
-        }
-      } else if (sparkSettings) {
-        activeTab.selectedModel = sparkSettings.selectedModel || null;
-        activeTab.thinkingLevel = sparkSettings.thinkingLevel || null;
-        if (targetChatUI) {
-          targetChatUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
-          targetChatUI.thinkingLevel = activeTab.thinkingLevel || null;
-        }
-        if (targetSharedInputUI) {
-          targetSharedInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
-          targetSharedInputUI.thinkingLevel = activeTab.thinkingLevel || null;
-          if (typeof targetSharedInputUI.refreshModelSelector === "function") targetSharedInputUI.refreshModelSelector();
-          if (typeof targetSharedInputUI.refreshReasoningSelector === "function") targetSharedInputUI.refreshReasoningSelector();
-        }
-      } else {
-        activeTab.selectedModel = null;
-        activeTab.thinkingLevel = null;
-        if (targetChatUI) {
-          targetChatUI.activeTabModel = null;
-          targetChatUI.thinkingLevel = null;
-        }
-        if (targetSharedInputUI) {
-          targetSharedInputUI.activeTabModel = null;
-          targetSharedInputUI.thinkingLevel = null;
-          if (typeof targetSharedInputUI.refreshModelSelector === "function") targetSharedInputUI.refreshModelSelector();
-          if (typeof targetSharedInputUI.refreshReasoningSelector === "function") targetSharedInputUI.refreshReasoningSelector();
-        }
-      }
-      activeTab.title = "New Tab";
-      activeTab.sessionId = null;
-      activeTab.rawHistoryHtml = null;
-      if (activeTab.historyEl) {
-        activeTab.historyEl.removeAttribute("data-session-id");
-      }
-      activeTab.scrollTop = -1;
-      if (typeof window.updateUrlSessionId === "function") {
-        window.updateUrlSessionId(null);
-      } else if (typeof updateUrlSessionId === "function") {
-        updateUrlSessionId(null);
-      }
-      if (targetChatUI) {
-        targetChatUI.clearHistory();
-        if (targetChatUI.inputEl) {
-          targetChatUI.inputEl.value = "";
-          targetChatUI.inputEl.style.height = "auto";
-          targetChatUI.inputEl.focus();
-        }
-      }
-      await renderSparkWelcomeScreen2(activeTab);
-      if (typeof window.updateWelcomeScreenState === "function") {
-        window.updateWelcomeScreenState("primary");
-      } else if (typeof updateWelcomeScreenState === "function") {
-        updateWelcomeScreenState("primary");
-      }
-      if (typeof window.renderTabs === "function") window.renderTabs();
-      else if (typeof renderTabs === "function") renderTabs();
-      if (typeof window.saveTabsState === "function") window.saveTabsState();
-      else if (typeof saveTabsState === "function") saveTabsState();
-      if (typeof window.updateModelSelector === "function") {
-        window.updateModelSelector();
-      } else if (typeof window.updateTopbarModelSelector === "function") {
-        window.updateTopbarModelSelector();
-      }
-      if (typeof window.updateInputPlaceholder === "function") {
-        window.updateInputPlaceholder();
-      }
-    }
-  }
-  async function renderSparkWelcomeScreen2(activeTab) {
-    const historyEl = activeTab.historyEl;
-    if (!historyEl) return;
-    const sparks = await sparksLoad();
-    const spark = sparks[activeTab.sparkId];
-    if (!spark) return;
-    const sessions = await ChatHistoryManager.getAllHistories();
-    const sparkChats = Object.values(sessions).filter((s) => s.sparkId === spark.id).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5);
-    const color = getSparkColor(spark.name);
-    const avatarHTML = spark.avatar ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />` : (spark.name || "?")[0].toUpperCase();
-    const bgStyle = spark.avatar ? "background: transparent;" : `background: ${color}`;
-    let recentHTML = "";
-    if (sparkChats.length > 0) {
-      recentHTML = `
-            <div class="spark-welcome__recent">
-                <div class="spark-welcome__recent-title">Recent</div>
-                <div class="spark-welcome__recent-list">
-                    ${sparkChats.map((s) => {
-        let displayTitle = s.title;
-        if (!s.isRenamed && !s.autoNamed && s.questions && s.questions.length > 0) {
-          displayTitle = s.questions[s.questions.length - 1].text || "Untitled Chat";
-        }
-        if (!displayTitle) displayTitle = "Untitled Chat";
-        displayTitle = displayTitle.charAt(0).toUpperCase() + displayTitle.slice(1);
-        return `
-                            <div class="spark-welcome__recent-item" data-session-id="${s.id}">
-                                <div class="spark-welcome__recent-item-avatar" style="${bgStyle}">${avatarHTML}</div>
-                                <span class="spark-welcome__recent-item-title">${escapeHtml(displayTitle)}</span>
-                            </div>
-                        `;
-      }).join("")}
-                </div>
-            </div>
-        `;
-    }
-    historyEl.innerHTML = `
-        <div class="spark-welcome">
-            <div class="spark-welcome__avatar" style="${bgStyle}">${avatarHTML}</div>
-            <h1 class="spark-welcome__title">${escapeHtml(spark.name)}</h1>
-            ${spark.description ? `<p class="spark-welcome__description" style="color: var(--nexus-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45;">${escapeHtml(spark.description)}</p>` : ""}
-            ${recentHTML}
-        </div>
-    `;
-    historyEl.querySelectorAll(".spark-welcome__recent-item").forEach((item) => {
-      item.addEventListener("click", async () => {
-        const sid = item.dataset.sessionId;
-        const messages = await ChatHistoryManager.getSessionMessages(sid);
-        const meta = sessions[sid] || { id: sid };
-        window.loadHistoryIntoNewTab(messages, meta, sid, null, false);
-      });
-    });
-  }
-  function openAvatarCropper(imageSrc, callback) {
-    const modal = document.createElement("div");
-    modal.className = "spark-crop-modal";
-    modal.innerHTML = `
-        <div class="spark-crop-container">
-            <div class="spark-crop-title">Adjust Avatar</div>
-            <div class="spark-crop-viewport">
-                <div class="spark-crop-mask"></div>
-                <img id="spark-crop-image" src="${imageSrc}" style="position: absolute; cursor: move; user-select: none; max-width: none !important; max-height: none !important; width: auto; height: auto;" />
-            </div>
-            <div class="spark-crop-controls">
-                <input type="range" id="spark-crop-zoom" min="100" max="300" value="100" style="width: 80%; cursor: pointer;" />
-            </div>
-            <div class="spark-crop-actions">
-                <button class="spark-crop-btn spark-crop-cancel" id="spark-crop-cancel">Cancel</button>
-                <button class="spark-crop-btn spark-crop-done" id="spark-crop-done">Apply</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    const img = modal.querySelector("#spark-crop-image");
-    const zoomInput = modal.querySelector("#spark-crop-zoom");
-    const doneBtn = modal.querySelector("#spark-crop-done");
-    const cancelBtn = modal.querySelector("#spark-crop-cancel");
-    let scale = 1;
-    let imgWidth = 0;
-    let imgHeight = 0;
-    let posX = 0;
-    let posY = 0;
-    let startX = 0;
-    let startY = 0;
-    let isDragging = false;
-    function clampPosition() {
-      const viewportSize = 250;
-      const currentWidth = imgWidth * scale;
-      const currentHeight = imgHeight * scale;
-      if (posX > 0) posX = 0;
-      if (posX < viewportSize - currentWidth) posX = viewportSize - currentWidth;
-      if (posY > 0) posY = 0;
-      if (posY < viewportSize - currentHeight) posY = viewportSize - currentHeight;
-    }
-    img.onload = () => {
-      const viewportSize = 250;
-      const ratio = img.naturalWidth / img.naturalHeight;
-      if (ratio >= 1) {
-        imgHeight = viewportSize;
-        imgWidth = viewportSize * ratio;
-      } else {
-        imgWidth = viewportSize;
-        imgHeight = viewportSize / ratio;
-      }
-      const minScale = Math.max(viewportSize / imgWidth, viewportSize / imgHeight);
-      scale = minScale;
-      zoomInput.min = Math.round(minScale * 100);
-      zoomInput.max = Math.round(minScale * 300);
-      zoomInput.value = Math.round(minScale * 100);
-      posX = (viewportSize - imgWidth * scale) / 2;
-      posY = (viewportSize - imgHeight * scale) / 2;
-      clampPosition();
-      updateTransform();
-    };
-    if (img.complete) {
-      img.onload();
-    }
-    function updateTransform() {
-      img.style.width = `${imgWidth * scale}px`;
-      img.style.height = `${imgHeight * scale}px`;
-      img.style.left = `${posX}px`;
-      img.style.top = `${posY}px`;
-    }
-    function performZoom(factor, clientX, clientY) {
-      const prevScale = scale;
-      const minScale = parseFloat(zoomInput.min) / 100;
-      const maxScale = parseFloat(zoomInput.max) / 100;
-      let newScale = scale * factor;
-      if (newScale < minScale) newScale = minScale;
-      if (newScale > maxScale) newScale = maxScale;
-      if (newScale === prevScale) return;
-      scale = newScale;
-      zoomInput.value = Math.round(scale * 100);
-      const viewport2 = modal.querySelector(".spark-crop-viewport");
-      const rect = viewport2.getBoundingClientRect();
-      const zoomX = clientX !== void 0 ? clientX - rect.left : 125;
-      const zoomY = clientY !== void 0 ? clientY - rect.top : 125;
-      posX = zoomX - (zoomX - posX) * (scale / prevScale);
-      posY = zoomY - (zoomY - posY) * (scale / prevScale);
-      clampPosition();
-      updateTransform();
-    }
-    zoomInput.addEventListener("input", () => {
-      const targetScale = parseInt(zoomInput.value) / 100;
-      const factor = targetScale / scale;
-      performZoom(factor);
-    });
-    const viewport = modal.querySelector(".spark-crop-viewport");
-    viewport.addEventListener("wheel", (e) => {
-      e.preventDefault();
-      let delta = e.deltaY;
-      let sensitivity = 15e-4;
-      if (e.ctrlKey) {
-        sensitivity = 3e-3;
-      }
-      delta = Math.max(-100, Math.min(100, delta));
-      const factor = Math.exp(-delta * sensitivity);
-      performZoom(factor, e.clientX, e.clientY);
-    }, { passive: false });
-    img.addEventListener("mousedown", (e) => {
-      e.preventDefault();
-      startX = e.clientX - posX;
-      startY = e.clientY - posY;
-      isDragging = true;
-    });
-    const moveHandler = (e) => {
-      if (!isDragging) return;
-      posX = e.clientX - startX;
-      posY = e.clientY - startY;
-      clampPosition();
-      updateTransform();
-    };
-    const upHandler = () => {
-      isDragging = false;
-    };
-    window.addEventListener("mousemove", moveHandler);
-    window.addEventListener("mouseup", upHandler);
-    cancelBtn.addEventListener("click", () => {
-      window.removeEventListener("mousemove", moveHandler);
-      window.removeEventListener("mouseup", upHandler);
-      modal.remove();
-    });
-    doneBtn.addEventListener("click", () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = 150;
-      canvas.height = 150;
-      const ctx = canvas.getContext("2d");
-      const drawScale = 150 / 250;
-      ctx.drawImage(img, posX * drawScale, posY * drawScale, imgWidth * scale * drawScale, imgHeight * scale * drawScale);
-      const dataUrl = canvas.toDataURL("image/png");
-      callback(dataUrl);
-      window.removeEventListener("mousemove", moveHandler);
-      window.removeEventListener("mouseup", upHandler);
-      modal.remove();
-    });
-  }
-  function initSparks() {
-    const sparksBtn = document.getElementById("sidebar-sparks-btn");
-    if (sparksBtn) {
-      sparksBtn.removeAttribute("disabled");
-      sparksBtn.classList.remove("disabled");
-      sparksBtn.title = "My Sparks";
-      sparksBtn.addEventListener("click", () => {
-        const page = document.getElementById("sparks-page");
-        if (page && page.style.display !== "none") {
-          sparksClosePage2();
-        } else {
-          sparksOpenPage();
-        }
-      });
-    }
-    const newSparkBtn = document.getElementById("sparks-new-btn");
-    if (newSparkBtn) {
-      newSparkBtn.addEventListener("click", () => sparksOpenEditor(null));
-    }
-    const sidebarNewSparkBtn = document.getElementById("sidebar-new-spark-btn");
-    if (sidebarNewSparkBtn) {
-      sidebarNewSparkBtn.addEventListener("click", () => sparksOpenEditor(null));
-    }
-    document.getElementById("sidebar-new-chat-btn")?.addEventListener("click", () => {
-      const activeTab = typeof window.getActiveNexusTab === "function" ? window.getActiveNexusTab() : typeof window.getActiveSpotlightTab === "function" ? window.getActiveSpotlightTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
-      if (activeTab) {
-        activeTab.sparkId = null;
-        if (typeof renderTabs === "function") renderTabs();
-        if (typeof saveTabsState === "function") saveTabsState();
-      }
-      sparksClosePage2();
-      sidebarSparksRenderList2();
-    });
-    document.getElementById("topbar-new-chat-btn")?.addEventListener("click", () => {
-      const activeTab = typeof window.getActiveNexusTab === "function" ? window.getActiveNexusTab() : typeof window.getActiveSpotlightTab === "function" ? window.getActiveSpotlightTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
-      if (activeTab) {
-        activeTab.sparkId = null;
-        if (typeof renderTabs === "function") renderTabs();
-        if (typeof saveTabsState === "function") saveTabsState();
-      }
-      sparksClosePage2();
-      sidebarSparksRenderList2();
-    });
-    document.addEventListener("click", (e) => {
-      const chatItem = e.target.closest(".recent-chat-item");
-      if (chatItem && !e.target.closest(".recent-chat-item__menu-btn")) {
-        sparksClosePage2();
-        sidebarSparksRenderList2();
-      }
-    });
-    sidebarSparksRenderList2();
-    if (typeof tabs !== "undefined") {
-      tabs.forEach((tab) => {
-        if (tab && tab.sparkId && !tab.sessionId) {
-          renderSparkWelcomeScreen2(tab);
-          if (typeof window.updateWelcomeScreenState === "function") {
-            window.updateWelcomeScreenState("primary");
-          } else if (typeof updateWelcomeScreenState === "function") {
-            updateWelcomeScreenState("primary");
-          }
-        }
-      });
-    }
-  }
-  if (typeof window !== "undefined") {
-    window.openSparkChat = openSparkChat2;
-    window.renderSparkWelcomeScreen = renderSparkWelcomeScreen2;
-    window.sparksClosePage = sparksClosePage2;
-    window.sparksOpenPage = sparksOpenPage;
-    window.sidebarSparksRenderList = sidebarSparksRenderList2;
-  }
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initSparks);
-  } else {
-    initSparks();
   }
 
   // src/components/widgets/audio_notifier.js
@@ -36916,14 +30745,98 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
   var WidgetRunner = {
     DEFAULT_HEIGHT: "380px",
     /**
-     * Extracts raw HTML/CSS/JS or JSON spec from inside <GenerateWidget>
+     * Applies SEARCH / REPLACE patch blocks to existing code (Aider/Cursor/Codex standard).
+     * Format:
+     * <<<<<<< SEARCH
+     * exact code to match
+     * =======
+     * updated replacement code
+     * >>>>>>> REPLACE
      */
-    extractWidgetCode(rawBody) {
-      if (!rawBody || typeof rawBody !== "string") return "";
+    applySearchReplace(originalCode, patchText) {
+      if (!originalCode || !patchText) return { success: false, code: originalCode || "", count: 0 };
+      let workingCode = originalCode;
+      let appliedCount = 0;
+      const patchRegex = /<<<<<<< SEARCH\r?\n([\s\S]*?)\r?\n=======\r?\n([\s\S]*?)\r?\n>>>>>>> REPLACE/g;
+      let match;
+      while ((match = patchRegex.exec(patchText)) !== null) {
+        const searchBlock = match[1];
+        const replaceBlock = match[2];
+        if (!searchBlock) continue;
+        if (workingCode.includes(searchBlock)) {
+          workingCode = workingCode.replace(searchBlock, replaceBlock);
+          appliedCount++;
+          continue;
+        }
+        const normWorking = workingCode.replace(/\r\n/g, "\n");
+        const normSearch = searchBlock.replace(/\r\n/g, "\n");
+        const normReplace = replaceBlock.replace(/\r\n/g, "\n");
+        if (normWorking.includes(normSearch)) {
+          workingCode = normWorking.replace(normSearch, normReplace);
+          appliedCount++;
+          continue;
+        }
+        const searchLines = normSearch.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
+        if (searchLines.length > 0) {
+          const codeLines = normWorking.split("\n");
+          let foundStart = -1;
+          let foundEnd = -1;
+          for (let i = 0; i <= codeLines.length - searchLines.length; i++) {
+            let isMatch = true;
+            for (let j = 0; j < searchLines.length; j++) {
+              if (codeLines[i + j].trim() !== searchLines[j]) {
+                isMatch = false;
+                break;
+              }
+            }
+            if (isMatch) {
+              foundStart = i;
+              foundEnd = i + searchLines.length;
+              break;
+            }
+          }
+          if (foundStart !== -1 && foundEnd !== -1) {
+            const before = codeLines.slice(0, foundStart).join("\n");
+            const after = codeLines.slice(foundEnd).join("\n");
+            workingCode = (before ? before + "\n" : "") + normReplace + (after ? "\n" + after : "");
+            appliedCount++;
+          }
+        }
+      }
+      return {
+        success: appliedCount > 0,
+        code: workingCode,
+        count: appliedCount
+      };
+    },
+    /**
+     * Extracts raw HTML/CSS/JS or applies targeted SEARCH/REPLACE patches
+     */
+    extractWidgetCode(rawBody, currentCode = "") {
+      if (!rawBody || typeof rawBody !== "string") return null;
       let clean = rawBody.trim();
-      clean = clean.replace(/^```[a-zA-Z0-9_-]*\s*\n?/i, "");
-      clean = clean.replace(/\n?```\s*$/i, "");
-      clean = clean.trim();
+      if (clean.includes("<<<<<<< SEARCH") && clean.includes(">>>>>>> REPLACE")) {
+        const patchContent = clean.includes("<PatchApp") || clean.includes("<PatchWidget") ? clean.match(/<(?:PatchApp|PatchWidget)[^>]*>([\s\S]*?)(?:<\/(?:PatchApp|PatchWidget)>|$)/i)?.[1] || clean : clean;
+        const patchResult = this.applySearchReplace(currentCode, patchContent);
+        if (patchResult.success) {
+          return patchResult.code;
+        }
+      }
+      const generateAppMatch = clean.match(/<(?:GenerateApp|GenerateWidget)[^>]*>([\s\S]*?)(?:<\/(?:GenerateApp|GenerateWidget)>|$)/i);
+      if (generateAppMatch) {
+        return generateAppMatch[1].trim();
+      }
+      const codeBlockMatch = clean.match(/```(?:html|xml)?\s*\n([\s\S]*?)\n```/i);
+      if (codeBlockMatch) {
+        const codeContent = codeBlockMatch[1].trim();
+        if (codeContent.includes("<") && (codeContent.includes("</div>") || codeContent.includes("</html>") || codeContent.includes("<\/script>") || codeContent.includes("</style>"))) {
+          return codeContent;
+        }
+      }
+      const docTypeMatch = clean.match(/(<!DOCTYPE html[\s\S]*<\/html>)/i) || clean.match(/(<html[\s\S]*<\/html>)/i);
+      if (docTypeMatch) {
+        return docTypeMatch[1].trim();
+      }
       if (clean.startsWith("{") && clean.endsWith("}")) {
         try {
           const parsed = JSON.parse(clean);
@@ -36933,7 +30846,7 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
         } catch (_) {
         }
       }
-      return clean;
+      return null;
     },
     /**
      * Builds a complete, self-contained HTML document with safety constraints and theme styling
@@ -37267,6 +31180,7706 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
   };
   if (typeof window !== "undefined") {
     window.NexusModelHelper = NexusModelHelper;
+  }
+
+  // src/components/panels/apps_panel.js
+  var APPS_STORAGE_KEY = "nexus_custom_apps";
+  var BUILTIN_APPS_CATALOG = [
+    {
+      id: "timer",
+      name: "Countdown Timer",
+      category: "productivity",
+      description: "Set countdown timers with instant presets, sound alerts, and full-screen focus mode.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
+      tags: ["Timer", "Focus", "Clock"],
+      defaultCode: `<div class="card" style="text-align: center; padding: 24px;">
+  <h2 style="margin-bottom: 8px;">Countdown Timer</h2>
+  <div id="display" style="font-size: 42px; font-weight: 700; font-variant-numeric: tabular-nums; margin: 16px 0;">05:00</div>
+  <div class="row" style="justify-content: center; gap: 8px;">
+    <button id="start-btn" style="background: #1a73e8; color: #fff;">Start</button>
+    <button id="reset-btn">Reset</button>
+  </div>
+</div>
+<script>
+  let seconds = 300;
+  let timer = null;
+  const disp = document.getElementById('display');
+  const btn = document.getElementById('start-btn');
+  function update() {
+    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    disp.textContent = m + ':' + s;
+  }
+  btn.onclick = () => {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+      btn.textContent = 'Start';
+    } else {
+      btn.textContent = 'Pause';
+      timer = setInterval(() => {
+        if (seconds > 0) { seconds--; update(); }
+        else { clearInterval(timer); timer = null; btn.textContent = 'Start'; alert('Time is up!'); }
+      }, 1000);
+    }
+  };
+  document.getElementById('reset-btn').onclick = () => {
+    clearInterval(timer);
+    timer = null;
+    seconds = 300;
+    btn.textContent = 'Start';
+    update();
+  };
+  update();
+<\/script>`
+    },
+    {
+      id: "pomodoro",
+      name: "Pomodoro Focus",
+      category: "productivity",
+      description: "25/5 focus & break interval cycles with ambient sound alerts and session tracking.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 3v3"></path><path d="M12 9v6l3 2"></path></svg>`,
+      tags: ["Work", "Pomodoro", "Productivity"]
+    },
+    {
+      id: "stopwatch",
+      name: "Precision Stopwatch",
+      category: "productivity",
+      description: "Millisecond-accurate lap stopwatch with split timings and data export.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2 2"></path><path d="M10 2h4"></path></svg>`,
+      tags: ["Stopwatch", "Lap", "Time"]
+    },
+    {
+      id: "unit_converter",
+      name: "Multi-Unit Converter",
+      category: "utilities",
+      description: "Convert length, mass, temperature, speed, volume, and digital storage units.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 16-4 4-4-4"></path><path d="M17 20V4"></path><path d="m3 8 4-4 4 4"></path><path d="M7 4v16"></path></svg>`,
+      tags: ["Converter", "Math", "Units"]
+    },
+    {
+      id: "world_clock",
+      name: "World Timezones",
+      category: "utilities",
+      description: "Realtime international clock with multi-city timezone differences and solar status.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>`,
+      tags: ["Timezone", "World", "Clock"]
+    },
+    {
+      id: "date_diff",
+      name: "Date Diff & Countdown",
+      category: "utilities",
+      description: "Calculate exact elapsed days, weeks, business days, and live event countdowns.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>`,
+      tags: ["Date", "Calendar", "Countdown"]
+    },
+    {
+      id: "qr_generator",
+      name: "QR Studio Generator",
+      category: "utilities",
+      description: "Generate high-resolution customizable QR codes for links, Wi-Fi, and contact cards.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`,
+      tags: ["QR Code", "Generator", "Link"]
+    },
+    {
+      id: "currency",
+      name: "Currency Exchange",
+      category: "finance",
+      description: "Live global exchange rates with multi-currency comparison and offline caching.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>`,
+      tags: ["Forex", "USD", "VND", "Rates"]
+    },
+    {
+      id: "crypto",
+      name: "Crypto Market",
+      category: "finance",
+      description: "Realtime cryptocurrency market prices, 24h gainers/losers, and sparkline trends.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.5 9h5c1 0 2 .5 2 1.5s-1 1.5-2 1.5M9.5 12h5.5c1 0 2 .5 2 1.5s-1 1.5-2 1.5h-5.5"></path><line x1="9.5" y1="7" x2="9.5" y2="17"></line></svg>`,
+      tags: ["Bitcoin", "ETH", "Crypto", "Market"]
+    },
+    {
+      id: "loan_calc",
+      name: "Loan & Mortgage",
+      category: "finance",
+      description: "Calculate monthly loan amortizations, interest breakdowns, and payoff timelines.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9v.01"></path><path d="M9 12v.01"></path><path d="M9 15v.01"></path><path d="M9 18v.01"></path></svg>`,
+      tags: ["Mortgage", "Bank", "Interest"]
+    },
+    {
+      id: "compound_interest",
+      name: "Compound Interest",
+      category: "finance",
+      description: "Project wealth growth with recurring deposits, compounding frequencies, and charts.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>`,
+      tags: ["Savings", "Investment", "Growth"]
+    },
+    {
+      id: "tip_splitter",
+      name: "Tip & Bill Splitter",
+      category: "finance",
+      description: "Calculate custom tip percentages and divide restaurant bills evenly across groups.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`,
+      tags: ["Dining", "Split", "Bill"]
+    },
+    {
+      id: "gold_price",
+      name: "Gold Price Monitor",
+      category: "finance",
+      description: "Live SJC, 9999 ring, and international gold prices with buy/sell spreads.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`,
+      tags: ["Gold", "SJC", "XAU", "Finance"]
+    },
+    {
+      id: "weather",
+      name: "Live Weather",
+      category: "health",
+      description: "Current temperature, atmospheric pressure, wind velocity, and radar conditions.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>`,
+      tags: ["Weather", "Rain", "Temperature"]
+    },
+    {
+      id: "weather_forecast",
+      name: "7-Day Forecast",
+      category: "health",
+      description: "Extended weekly weather outlook with rain probability and thermal trends.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M20 12h2"></path><path d="m19.07 4.93-1.41 1.41"></path><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"></path><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"></path></svg>`,
+      tags: ["Forecast", "Weekly", "Weather"]
+    },
+    {
+      id: "air_quality",
+      name: "Air Quality (AQI)",
+      category: "health",
+      description: "Realtime PM2.5, PM10, and AQI pollution levels with health advice.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path></svg>`,
+      tags: ["AQI", "PM2.5", "Health", "Air"]
+    },
+    {
+      id: "sun_uv",
+      name: "Sun & UV Index",
+      category: "health",
+      description: "Solar elevation, sunrise, sunset, and UV radiation index with skin protection guides.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="12" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`,
+      tags: ["UV", "Sun", "Sunrise", "Sunset"]
+    },
+    {
+      id: "bmi_tdee",
+      name: "BMI & TDEE Calculator",
+      category: "health",
+      description: "Calculate Body Mass Index, Basal Metabolic Rate (BMR), and daily calorie targets.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>`,
+      tags: ["Fitness", "Calories", "BMI", "Health"]
+    },
+    {
+      id: "function_plotter",
+      name: "Function Plotter",
+      category: "science",
+      description: "Interactive 2D mathematical function graphing calculator with pan and zoom.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="3" x2="3" y2="21"></line><line x1="3" y1="21" x2="21" y2="21"></line><path d="M3 18c3-3 6-12 9-12s6 9 9 9"></path></svg>`,
+      tags: ["Math", "Plotter", "Graph", "Calculus"]
+    },
+    {
+      id: "periodic_table",
+      name: "Periodic Table",
+      category: "science",
+      description: "Interactive Mendeleev chemical table with atomic numbers, electron shells, and masses.",
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31"></path><path d="M14 9.3V1.99"></path><path d="M8.5 2h7"></path><path d="M14 9.3a6.5 6.5 0 1 1-4 0"></path><path d="M5.52 16h12.96"></path></svg>`,
+      tags: ["Chemistry", "Elements", "Science"]
+    }
+  ];
+  var APP_BUILDER_SYSTEM_PROMPT = `You are Codex, an expert full-stack AI engineer and interactive web application architect inside Nexus App Studio. You collaborate with the user to brainstorm, design, build, and refine self-contained, production-grade interactive web applications.
+
+# GENERAL
+You bring a senior engineer\u2019s judgment to the work. You read the current app code and recent conversation history first, resist easy assumptions, and let the existing patterns guide how you move.
+
+- You prefer the existing patterns, styling conventions, and helper logic over inventing unnecessary abstractions.
+- You keep edits closely scoped to the user's intent and behavioral requirements.
+- You build feature-complete, robust, and delightful experiences that a target user would naturally expect.
+
+# INTENT CLASSIFICATION & AUTONOMY
+1. **Conversational Intent (Chat / Explain / Discuss)**:
+   - When the user is greeting you ("hi", "hello"), asking general questions, discussing architecture or possible features, asking for explanations, or brainstorming, RESPOND CONVERSATIONALLY in concise, helpful Markdown.
+   - DO NOT output code or the <GenerateApp> / <PatchApp> tags when the user is merely conversing.
+
+2. **Code Generation & Modification Intent (Build / Modify / Fix)**:
+   - When the user asks to create a new app or do a major redesign, output the complete executable code inside the <GenerateApp> block.
+   - When the user asks to modify, fix, or enhance an existing app, output targeted SEARCH / REPLACE edits inside the <PatchApp> block.
+   - Lead with a concise 1-2 sentence overview of what was added or changed before the code block.
+
+# DEFAULT NEXUS COMPONENT DESIGN SYSTEM (STRICT CONSISTENCY)
+Unless the user explicitly requests a custom aesthetic, theme, or different design style, ALL created mini apps MUST strictly adhere to the Nexus Component Design System for maximum visual consistency:
+
+### 1. Theme, Surfaces & Colors
+- **Canvas / Body**: Set \`body { background: transparent; color: #ffffff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 16px; box-sizing: border-box; }\` so the widget card floats cleanly on the canvas.
+- **Card Shell**: Background \`#0d0d0d\`, border \`1px solid rgba(255, 255, 255, 0.08)\`, border-radius \`18px\`, padding \`16px 20px\`, max-width \`480px\` (or \`350px-480px\` centered), box-shadow \`0 4px 20px rgba(0, 0, 0, 0.25)\`, box-sizing \`border-box\`.
+- **Inputs & Inner Boxes**: Background \`#18181b\`, border \`1px solid rgba(255, 255, 255, 0.12)\`, border-radius \`8px\`-\`10px\`, height \`38px\`, color \`#ffffff\`. Focus-within: border-color \`rgba(255, 255, 255, 0.35)\`.
+- **Text Palette**: Primary \`#ffffff\` (100%), Secondary \`rgba(255, 255, 255, 0.65)\`, Tertiary/Muted \`rgba(255, 255, 255, 0.45)\`.
+- **Accents**: Emerald \`#10b981\` (active/success/running), Cyan \`#38bdf8\` (time/data/info), Amber \`#f59e0b\` (warning/pending), Rose \`#f43f5e\` (danger/loss), Indigo \`#6366f1\`.
+
+### 2. Standard Widget Layout & Component Anatomy
+- **Top Bar Header**:
+  * Left: Title badge with status dot (\`width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4); flex-shrink: 0;\`) + uppercase title text (\`font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.04em;\`).
+  * Right: Live status badge, rate display, or action icon button (\`background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 20px; font-size: 11px; font-family: monospace; color: rgba(255,255,255,0.7);\`).
+- **Hero Display Block** (for timers, clocks, calculators, counters, big metrics):
+  * Label: \`font-size: 11px; font-weight: 600; text-transform: uppercase; color: rgba(255,255,255,0.5); letter-spacing: 0.04em;\`.
+  * Value: \`font-size: 32px\` to \`42px\`, \`font-weight: 700\`, \`font-variant-numeric: tabular-nums\`, \`letter-spacing: -0.02em\`, \`line-height: 1.1\`, \`color: #ffffff\`.
+- **Buttons & Controls**:
+  * Primary CTA: \`background: #ffffff; color: #000000; font-weight: 700; border-radius: 8px; height: 36px; padding: 0 16px; border: none; box-shadow: 0 1px 4px rgba(0,0,0,0.2); transition: all 0.15s ease;\` (Hover: \`background: #f0f0f0; transform: translateY(-1px);\`, Active: \`transform: translateY(0) scale(0.98);\`).
+  * Secondary Button: \`background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); color: #ffffff; border-radius: 8px; height: 36px; padding: 0 14px;\` (Hover: \`background: rgba(255, 255, 255, 0.12);\`).
+  * Icon Button: \`width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;\`.
+- **Segmented Tabs / Switchers**:
+  * Track: \`background: rgba(255, 255, 255, 0.04); padding: 3px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.06); display: flex; gap: 4px;\`.
+  * Active tab: \`background: rgba(255, 255, 255, 0.12); color: #ffffff; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.2);\`.
+- **Stat Summary Grid**:
+  * Container: \`display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 10px; margin-top: 12px;\`.
+  * Item Box: \`background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 10px 12px;\`.
+
+### 3. Typography & Numerical Precision
+- Primary Font: \`'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif\`.
+- All numbers, timers, rates, and values MUST use \`font-variant-numeric: tabular-nums;\` to prevent layout jittering during state changes.
+
+# USER OVERRIDES
+If the user explicitly asks for a custom visual theme (e.g. "make it light mode", "retro cyberpunk", "pastel minimal", "full-page dashboard", "game canvas"), fulfill their specific creative request while maintaining clean code architecture and responsive stability.
+
+# CODE QUALITY & CONSTRAINTS
+- Output clean, self-contained HTML5, modern CSS3, and Vanilla JavaScript (ES6+).
+- **Zero Narrative Comments**: Do not write comments that narrate the obvious (e.g., avoid "// Define function", "// Add event listener", "// Increment counter"). Code must be self-documenting.
+- **Robustness**: Implement complete event handlers, input validation, and defensive fallbacks (e.g. localStorage caching when appropriate). Avoid placeholder functions or incomplete TODOs.
+
+# DUAL PROTOCOL FOR CODE GENERATION & TARGETED EDITING
+
+### PROTOCOL A: CREATING A NEW APP OR COMPLETE REWRITE (&lt;GenerateApp&gt;)
+When creating an app from scratch or when the user explicitly requests a complete redesign/rewrite, output the entire runnable document wrapped in &lt;GenerateApp&gt;:
+
+<GenerateApp title="App Name" height="480px">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* Domain-tailored CSS adhering to Nexus Component Design System */
+  </style>
+</head>
+<body>
+  <!-- Semantic DOM elements -->
+  <script>
+    // Robust, interactive logic
+  <\/script>
+</body>
+</html>
+</GenerateApp>
+
+### PROTOCOL B: TARGETED EDITING / REFACTORING / FIXING EXISTING APPS (&lt;PatchApp&gt;)
+When modifying an existing app (adding features, changing colors, tweaking layout, fixing bugs, updating functions), DO NOT regenerate the entire file. Use precise SEARCH / REPLACE blocks wrapped inside &lt;PatchApp&gt;:
+
+<PatchApp>
+<<<<<<< SEARCH
+[Exact lines of existing code to match]
+=======
+[New replacement lines of code]
+>>>>>>> REPLACE
+</PatchApp>
+
+- **SEARCH block rules**:
+  * Must match the existing code in the app character-for-character, including indentation and formatting.
+  * Include 1 to 3 lines of surrounding context if necessary to ensure unique matching.
+  * You can include multiple SEARCH / REPLACE blocks inside a single &lt;PatchApp&gt; tag to make non-contiguous edits in one turn.
+- **Speed & Token Optimization**:
+  * Keep patches minimal and tightly scoped to what the user requested. Never rewrite unchanged sections.`;
+  var AppsPanel2 = class {
+    constructor() {
+      this.container = null;
+      this.activeFilter = "all";
+      this.searchTerm = "";
+      this.currentApp = null;
+      this.customApps = {};
+      this.activeStudioTab = "preview";
+      this.isGenerating = false;
+      this.currentStreamPort = null;
+      this.isInitialized = false;
+      this.selectedModel = null;
+      this.fileInputEl = null;
+      this.speechRecognition = null;
+      this.isRecording = false;
+      this.isPlayerMode = false;
+    }
+    async init(targetAppId, mode) {
+      this.cacheElements();
+      if (!this.isInitialized) {
+        this.bindEvents();
+        this.isInitialized = true;
+      }
+      await this.loadCustomApps();
+      await this.initStudioModelSelector();
+      if (targetAppId) {
+        this.showStudioView();
+        const foundCustom = this.customApps[targetAppId];
+        const foundBuiltin = BUILTIN_APPS_CATALOG.find((b) => b.id === targetAppId);
+        if (foundCustom) {
+          if (mode === "studio" || mode === "edit") {
+            this.openAppStudio(foundCustom);
+          } else {
+            this.launchApp(foundCustom);
+          }
+        } else if (foundBuiltin) {
+          if (mode === "remix" || mode === "studio" || mode === "edit") {
+            this.remixBuiltinApp(foundBuiltin);
+          } else {
+            this.launchBuiltinApp(foundBuiltin);
+          }
+        } else {
+          this.showHubView();
+        }
+      } else {
+        this.showHubView();
+      }
+    }
+    cacheElements() {
+      this.container = document.getElementById("apps-page");
+      this.hubView = document.getElementById("apps-hub-view");
+      this.studioView = document.getElementById("apps-studio-view");
+      this.appsStudioContainer = document.querySelector(".apps-studio-container");
+      this.catalogGrid = document.getElementById("apps-catalog-grid");
+      this.searchInput = document.getElementById("apps-search-input");
+      this.createAppBtn = document.getElementById("apps-create-btn");
+      this.filterPills = document.querySelectorAll(".apps-filter-pill");
+      this.studioBackBtn = document.getElementById("apps-studio-back-btn");
+      this.studioTitleInput = document.getElementById("apps-studio-title-input");
+      this.appsStudioModeToggleBtn = document.getElementById("apps-studio-mode-toggle-btn");
+      this.appsStudioModeLabel = document.getElementById("apps-studio-mode-label");
+      this.studioReloadBtn = document.getElementById("apps-studio-reload-btn");
+      this.studioSaveBtn = document.getElementById("apps-studio-save-btn");
+      this.studioExportBtn = document.getElementById("apps-studio-export-btn");
+      this.studioDeleteBtn = document.getElementById("apps-studio-delete-btn");
+      this.studioPreviewFrame = document.getElementById("apps-studio-preview-iframe");
+      this.studioCodeEditor = document.getElementById("apps-studio-code-editor");
+      this.studioPromptInput = document.getElementById("apps-studio-prompt-input");
+      this.studioSendBtn = document.getElementById("apps-studio-send-btn");
+      this.studioChatMessages = document.getElementById("apps-studio-chat-messages");
+      this.studioTabPreview = document.getElementById("apps-tab-preview");
+      this.studioTabCode = document.getElementById("apps-tab-code");
+      this.studioPreviewPane = document.getElementById("apps-preview-pane");
+      this.nativeWidgetHost = document.getElementById("apps-native-widget-host");
+      this.studioCodePane = document.getElementById("apps-code-pane");
+      this.appsUploadBtn = document.getElementById("apps-upload-btn");
+      this.appsModelBtn = document.getElementById("apps-model-btn");
+      this.appsModelLabel = document.getElementById("apps-model-label");
+      this.appsMicBtn = document.getElementById("apps-mic-btn");
+    }
+    bindEvents() {
+      if (this.searchInput) {
+        this.searchInput.addEventListener("input", (e) => {
+          this.searchTerm = e.target.value.trim().toLowerCase();
+          this.renderCatalog();
+        });
+      }
+      if (this.filterPills) {
+        this.filterPills.forEach((pill) => {
+          pill.addEventListener("click", () => {
+            this.filterPills.forEach((p) => p.classList.remove("active"));
+            pill.classList.add("active");
+            this.activeFilter = pill.dataset.filter || "all";
+            this.renderCatalog();
+          });
+        });
+      }
+      if (this.createAppBtn) {
+        this.createAppBtn.addEventListener("click", () => {
+          this.createNewCustomApp();
+        });
+      }
+      if (this.studioBackBtn) {
+        this.studioBackBtn.addEventListener("click", () => {
+          this.showHubView();
+        });
+      }
+      if (this.studioTitleInput) {
+        this.studioTitleInput.addEventListener("change", () => {
+          if (this.currentApp) {
+            this.currentApp.name = this.studioTitleInput.value.trim() || "Untitled App";
+            this.saveCurrentApp();
+          }
+        });
+      }
+      if (this.studioReloadBtn) {
+        this.studioReloadBtn.addEventListener("click", () => {
+          this.refreshStudioPreview();
+        });
+      }
+      if (this.studioSaveBtn) {
+        this.studioSaveBtn.addEventListener("click", () => {
+          if (this.activeStudioTab === "code" && this.studioCodeEditor && this.currentApp) {
+            this.currentApp.code = this.studioCodeEditor.value;
+          }
+          this.saveCurrentApp(true);
+        });
+      }
+      if (this.studioExportBtn) {
+        this.studioExportBtn.addEventListener("click", () => {
+          this.exportAppHtml();
+        });
+      }
+      if (this.studioDeleteBtn) {
+        this.studioDeleteBtn.addEventListener("click", () => {
+          this.deleteCurrentApp();
+        });
+      }
+      if (this.appsStudioModeToggleBtn) {
+        this.appsStudioModeToggleBtn.addEventListener("click", () => {
+          if (this.isPlayerMode) {
+            if (this.currentApp?.isBuiltin) {
+              const builtin = BUILTIN_APPS_CATALOG.find((b) => b.id === this.currentApp.id);
+              if (builtin) {
+                this.remixBuiltinApp(builtin);
+              } else {
+                this.setPlayerMode(false);
+              }
+            } else {
+              this.setPlayerMode(false);
+            }
+          } else {
+            this.setPlayerMode(true);
+          }
+        });
+      }
+      if (this.studioTabPreview) {
+        this.studioTabPreview.addEventListener("click", () => {
+          this.switchStudioTab("preview");
+        });
+      }
+      if (this.studioTabCode) {
+        this.studioTabCode.addEventListener("click", () => {
+          this.switchStudioTab("code");
+        });
+      }
+      if (this.studioSendBtn) {
+        this.studioSendBtn.addEventListener("click", () => {
+          this.handlePromptSubmit();
+        });
+      }
+      if (this.studioPromptInput) {
+        NexusChatInput.bindAutoGrow(this.studioPromptInput);
+        this.studioPromptInput.addEventListener("input", () => {
+          if (this.studioSendBtn) {
+            this.studioSendBtn.disabled = !this.studioPromptInput.value.trim();
+          }
+        });
+        this.studioPromptInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            this.handlePromptSubmit();
+          }
+        });
+      }
+      this.bindStudioInputActions();
+    }
+    async initStudioModelSelector() {
+      try {
+        const data = await chrome.storage.local.get(["providers", "models", "advancedParamsByModel", "lastUsedModel"]);
+        const chain = typeof window !== "undefined" && window.NexusModelHelper ? window.NexusModelHelper.buildModelChain(data) : typeof NexusModelHelper !== "undefined" ? NexusModelHelper.buildModelChain(data) : [];
+        let currentModel = this.selectedModel?.model || data.lastUsedModel?.model;
+        let currentProviderId = this.selectedModel?.providerId || data.lastUsedModel?.providerId;
+        if (!currentModel && chain.length > 0) {
+          currentModel = chain[0].model;
+          currentProviderId = chain[0].providerId;
+        }
+        if (currentModel) {
+          this.selectedModel = { model: currentModel, providerId: currentProviderId };
+          const found = chain.find((c) => c.model === currentModel && c.providerId === currentProviderId) || chain.find((c) => c.model === currentModel);
+          const displayName = found ? found.displayName || found.name || found.model : currentModel;
+          if (this.appsModelLabel) {
+            this.appsModelLabel.textContent = displayName;
+          }
+        }
+      } catch (e) {
+        console.warn("[AppsPanel] Model init error:", e);
+      }
+    }
+    bindStudioInputActions() {
+      if (this.appsModelBtn) {
+        this.appsModelBtn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          try {
+            const data = await chrome.storage.local.get(["providers", "models", "advancedParamsByModel", "lastUsedModel"]);
+            const chain = typeof window !== "undefined" && window.NexusModelHelper ? window.NexusModelHelper.buildModelChain(data) : typeof NexusModelHelper !== "undefined" ? NexusModelHelper.buildModelChain(data) : [];
+            if (chain.length === 0) return;
+            let currentModel = this.selectedModel?.model || data.lastUsedModel?.model;
+            let currentProviderId = this.selectedModel?.providerId || data.lastUsedModel?.providerId;
+            if (!currentModel && chain.length > 0) {
+              currentModel = chain[0].model;
+              currentProviderId = chain[0].providerId;
+            }
+            const items = chain.map((item) => {
+              const isSelected = currentModel === item.model && currentProviderId === item.providerId || currentModel === item.model;
+              const displayName = item.displayName || item.name || item.model;
+              return {
+                label: displayName,
+                subtitle: item.providerName || item.providerId,
+                active: !!isSelected,
+                action: async () => {
+                  this.selectedModel = { model: item.model, providerId: item.providerId };
+                  if (this.appsModelLabel) {
+                    this.appsModelLabel.textContent = displayName;
+                  }
+                  await chrome.storage.local.set({ lastUsedModel: this.selectedModel });
+                }
+              };
+            });
+            NexusMenu.show({
+              anchor: this.appsModelBtn,
+              placement: "top-start",
+              items
+            });
+          } catch (err) {
+            console.warn("[AppsPanel] Model menu error:", err);
+          }
+        });
+      }
+      if (this.appsUploadBtn) {
+        this.appsUploadBtn.addEventListener("click", () => {
+          if (!this.fileInputEl) {
+            this.fileInputEl = document.createElement("input");
+            this.fileInputEl.type = "file";
+            this.fileInputEl.id = "apps-hidden-file-input";
+            this.fileInputEl.style.display = "none";
+            this.fileInputEl.multiple = true;
+            this.fileInputEl.accept = ".txt,.js,.html,.css,.json,.md,image/*";
+            document.body.appendChild(this.fileInputEl);
+            this.fileInputEl.addEventListener("change", async (e) => {
+              const files = Array.from(e.target.files || []);
+              if (files.length === 0) return;
+              for (const file of files) {
+                if (file.type.startsWith("text/") || file.name.match(/\.(txt|js|html|css|json|md|py|ts)$/i)) {
+                  const content = await file.text();
+                  const snippet = `
+
+--- Attached File: ${file.name} ---
+${content}
+--- End of File ---
+`;
+                  if (this.studioPromptInput) {
+                    this.studioPromptInput.value = (this.studioPromptInput.value + snippet).trim();
+                    NexusChatInput.bindAutoGrow(this.studioPromptInput);
+                    if (this.studioSendBtn) this.studioSendBtn.disabled = !this.studioPromptInput.value.trim();
+                  }
+                } else if (file.type.startsWith("image/")) {
+                  const reader = new FileReader();
+                  reader.onload = (re) => {
+                    const snippet = `
+
+[Attached image: ${file.name}]
+`;
+                    if (this.studioPromptInput) {
+                      this.studioPromptInput.value = (this.studioPromptInput.value + snippet).trim();
+                      NexusChatInput.bindAutoGrow(this.studioPromptInput);
+                      if (this.studioSendBtn) this.studioSendBtn.disabled = !this.studioPromptInput.value.trim();
+                    }
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }
+              this.fileInputEl.value = "";
+            });
+          }
+          this.fileInputEl.click();
+        });
+      }
+      if (this.appsMicBtn) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+          this.speechRecognition = new SpeechRecognition();
+          this.speechRecognition.continuous = false;
+          this.speechRecognition.interimResults = false;
+          this.speechRecognition.lang = navigator.language || "en-US";
+          this.speechRecognition.onstart = () => {
+            this.isRecording = true;
+            this.appsMicBtn.classList.add("recording");
+            this.appsMicBtn.style.color = "#EA4335";
+          };
+          this.speechRecognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            if (transcript && this.studioPromptInput) {
+              const currentVal = this.studioPromptInput.value;
+              this.studioPromptInput.value = currentVal ? `${currentVal} ${transcript}` : transcript;
+              NexusChatInput.bindAutoGrow(this.studioPromptInput);
+              if (this.studioSendBtn) this.studioSendBtn.disabled = false;
+            }
+          };
+          this.speechRecognition.onerror = (err) => {
+            console.warn("[AppsMic Error]", err);
+            this.isRecording = false;
+            this.appsMicBtn.classList.remove("recording");
+            this.appsMicBtn.style.removeProperty("color");
+          };
+          this.speechRecognition.onend = () => {
+            this.isRecording = false;
+            this.appsMicBtn.classList.remove("recording");
+            this.appsMicBtn.style.removeProperty("color");
+          };
+          this.appsMicBtn.addEventListener("click", () => {
+            if (!this.speechRecognition) return;
+            if (this.isRecording) {
+              this.speechRecognition.stop();
+            } else {
+              this.speechRecognition.start();
+            }
+          });
+        } else {
+          this.appsMicBtn.title = "Voice input not supported in this browser";
+          this.appsMicBtn.style.opacity = "0.5";
+        }
+      }
+    }
+    async loadCustomApps() {
+      try {
+        const res = await chrome.storage.local.get([APPS_STORAGE_KEY]);
+        this.customApps = res[APPS_STORAGE_KEY] || {};
+      } catch (e) {
+        this.customApps = {};
+      }
+    }
+    async saveCustomApps() {
+      try {
+        await chrome.storage.local.set({ [APPS_STORAGE_KEY]: this.customApps });
+      } catch (e) {
+        console.error("[AppsPanel] Failed to save custom apps:", e);
+      }
+    }
+    showHubView() {
+      if (this.container) {
+        this.container.classList.remove("is-detail");
+      }
+      if (this.hubView) {
+        this.hubView.style.display = "flex";
+      }
+      if (this.studioView) {
+        this.studioView.style.display = "none";
+      }
+      if (typeof window.NexusViewManager !== "undefined") {
+        window.NexusViewManager.updateUrl("apps");
+      }
+      this.renderCatalog();
+    }
+    showStudioView() {
+      if (this.container) {
+        this.container.classList.add("is-detail");
+      }
+      if (this.hubView) {
+        this.hubView.style.display = "none";
+      }
+      if (this.studioView) {
+        this.studioView.style.display = "flex";
+      }
+    }
+    renderCatalog() {
+      if (!this.catalogGrid) return;
+      const customList = Object.values(this.customApps).map((a) => ({
+        ...a,
+        isCustom: true
+      }));
+      const builtinList = BUILTIN_APPS_CATALOG.map((b) => ({
+        ...b,
+        isCustom: false
+      }));
+      let combined = [];
+      if (this.activeFilter === "all") {
+        combined = [...customList, ...builtinList];
+      } else if (this.activeFilter === "my_apps") {
+        combined = customList;
+      } else if (this.activeFilter === "builtin") {
+        combined = builtinList;
+      } else {
+        combined = [...customList, ...builtinList].filter((item) => item.category === this.activeFilter);
+      }
+      if (this.searchTerm) {
+        combined = combined.filter((item) => {
+          const nameMatch = (item.name || "").toLowerCase().includes(this.searchTerm);
+          const descMatch = (item.description || "").toLowerCase().includes(this.searchTerm);
+          const tagMatch = (item.tags || []).some((t) => t.toLowerCase().includes(this.searchTerm));
+          return nameMatch || descMatch || tagMatch;
+        });
+      }
+      if (combined.length === 0) {
+        const isMyApps = this.activeFilter === "my_apps";
+        this.catalogGrid.innerHTML = `
+                <div class="apps-empty-state" style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 56px 16px; text-align: center;">
+                    <div style="font-size: 32px; margin-bottom: 8px;">\u{1F9E9}</div>
+                    <div style="font-weight: 600; font-size: 15px; margin-bottom: 4px; color: var(--nexus-text-primary);">${isMyApps ? "No custom apps yet" : "No apps found"}</div>
+                    <div style="color: var(--nexus-text-secondary); font-size: 13px; margin-bottom: 16px;">${isMyApps ? "Create your own AI-powered custom apps or remix existing built-in tools." : "Try another search keyword or create a new custom AI App."}</div>
+                    ${isMyApps ? `<button type="button" class="nexus-primary-btn" id="apps-empty-create-btn" style="height: 30px; font-size: 13px;">+ Create New App</button>` : ""}
+                </div>
+            `;
+        const emptyBtn = this.catalogGrid.querySelector("#apps-empty-create-btn");
+        if (emptyBtn) {
+          emptyBtn.addEventListener("click", () => this.createNewCustomApp());
+        }
+        return;
+      }
+      this.catalogGrid.innerHTML = combined.map((app) => {
+        const isCustom = !!app.isCustom;
+        const categoryLabel = (app.category || "Utility").toUpperCase();
+        const iconSvg = app.icon || `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>`;
+        return `
+                <div class="nexus-hub-card app-catalog-card" data-app-id="${app.id}" data-is-custom="${isCustom}">
+                    <div class="app-card-top" style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px;">
+                        <div class="app-card-icon-box" style="width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: var(--nexus-question-bg, rgba(0,0,0,0.04)); color: var(--nexus-text-primary);">
+                            ${iconSvg}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            ${isCustom ? `<span class="app-custom-badge" style="font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 5px; background: rgba(26,115,232,0.12); color: #1a73e8;">MY APP</span>` : ""}
+                            <span class="app-category-badge" style="font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 5px; background: var(--nexus-question-bg, rgba(0,0,0,0.04)); color: var(--nexus-text-secondary);">${categoryLabel}</span>
+                        </div>
+                    </div>
+                    <div class="app-card-title" style="font-weight: 600; font-size: 14px; margin-bottom: 5px; color: var(--nexus-text-primary);">${app.name}</div>
+                    <div class="app-card-desc" style="font-size: 12.5px; line-height: 1.45; color: var(--nexus-text-secondary); flex: 1; margin-bottom: 14px;">${app.description || "Interactive custom web application created with Nexus AI."}</div>
+                    <div class="app-card-actions" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; padding-top: 4px;">
+                        <button type="button" class="nexus-primary-btn app-launch-btn" style="flex: 1; height: 28px; font-size: 12px;" data-id="${app.id}">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            Launch
+                        </button>
+                        <button type="button" class="nexus-secondary-btn app-remix-btn" style="height: 28px; font-size: 12px;" data-id="${app.id}" title="${isCustom ? "Edit with AI" : "Customize with AI"}">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            ${isCustom ? "Edit" : "Remix"}
+                        </button>
+                    </div>
+                </div>
+            `;
+      }).join("");
+      this.catalogGrid.querySelectorAll(".app-launch-btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const appId = btn.dataset.id;
+          const custom = this.customApps[appId];
+          const builtin = BUILTIN_APPS_CATALOG.find((b) => b.id === appId);
+          if (custom) {
+            this.launchApp(custom);
+          } else if (builtin) {
+            this.launchBuiltinApp(builtin);
+          }
+        });
+      });
+      this.catalogGrid.querySelectorAll(".app-remix-btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const appId = btn.dataset.id;
+          const custom = this.customApps[appId];
+          const builtin = BUILTIN_APPS_CATALOG.find((b) => b.id === appId);
+          if (custom) {
+            this.openAppStudio(custom);
+          } else if (builtin) {
+            this.remixBuiltinApp(builtin);
+          }
+        });
+      });
+    }
+    createNewCustomApp() {
+      const id = "app_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+      const newApp = {
+        id,
+        name: "New Custom App",
+        description: "Custom web application powered by Nexus AI.",
+        category: "utilities",
+        code: `<div class="card" style="text-align: center; padding: 32px 16px;">
+  <h2 style="margin-bottom: 8px;">\u2728 My New App</h2>
+  <p style="color: #666; margin-bottom: 20px;">Use the AI Assistant on the left to describe what you want this app to do!</p>
+  <button id="demo-btn" style="background: #1a73e8; color: #fff; padding: 8px 18px; border-radius: 8px;">Click Me</button>
+</div>
+<script>
+  let count = 0;
+  document.getElementById('demo-btn').onclick = () => {
+    count++;
+    document.getElementById('demo-btn').textContent = 'Clicked ' + count + ' times! \u{1F680}';
+  };
+<\/script>`,
+        chatHistory: [
+          {
+            role: "assistant",
+            text: "\u{1F44B} Hello! How can I help you customize or enhance this app? Feel free to describe any features, design improvements, or logic you'd like to add.",
+            timestamp: Date.now()
+          }
+        ],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      this.customApps[id] = newApp;
+      this.saveCustomApps();
+      this.openAppStudio(newApp);
+    }
+    remixBuiltinApp(builtin) {
+      const id = "app_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+      const starterCode = builtin.defaultCode || `<div class="card" style="padding: 20px; text-align: center;">
+  <h2>${builtin.name}</h2>
+  <p style="margin: 12px 0;">${builtin.description}</p>
+  <div data-nexus-widget-placeholder data-widget-name="${builtin.id}"></div>
+</div>`;
+      const remixedApp = {
+        id,
+        name: `${builtin.name} (Custom Remix)`,
+        description: `Customized version of ${builtin.name}`,
+        category: builtin.category || "utilities",
+        code: starterCode,
+        chatHistory: [
+          {
+            role: "assistant",
+            text: `\u{1F6E0}\uFE0F Loaded template for **${builtin.name}**. What features or design enhancements would you like to add? Let me know below!`,
+            timestamp: Date.now()
+          }
+        ],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      this.customApps[id] = remixedApp;
+      this.saveCustomApps();
+      this.openAppStudio(remixedApp);
+    }
+    launchBuiltinApp(builtin) {
+      const tempApp = {
+        id: builtin.id,
+        name: builtin.name,
+        description: builtin.description,
+        category: builtin.category || "utilities",
+        code: builtin.defaultCode || `<div class="card" style="padding: 20px; text-align: center;"><h2>${builtin.name}</h2><p style="margin: 12px 0;">${builtin.description}</p><div data-nexus-widget-placeholder data-widget-name="${builtin.id}"></div></div>`,
+        isBuiltin: true
+      };
+      this.launchApp(tempApp);
+    }
+    launchApp(app) {
+      this.currentApp = app;
+      this.showStudioView();
+      this.setPlayerMode(true);
+      if (this.studioTitleInput) {
+        this.studioTitleInput.value = app.name || "Untitled App";
+        this.studioTitleInput.readOnly = !!app.isBuiltin;
+      }
+      if (this.studioCodeEditor) {
+        this.studioCodeEditor.value = app.code || "";
+      }
+      this.renderChatMessages();
+      this.switchStudioTab("preview");
+      this.refreshStudioPreview();
+      if (typeof window.NexusViewManager !== "undefined") {
+        window.NexusViewManager.updateUrl("apps", { appId: app.id, mode: "player" });
+      }
+    }
+    openAppStudio(app) {
+      this.currentApp = app;
+      this.showStudioView();
+      this.setPlayerMode(false);
+      if (this.studioTitleInput) {
+        this.studioTitleInput.value = app.name || "Untitled App";
+        this.studioTitleInput.readOnly = false;
+      }
+      if (this.studioCodeEditor) {
+        this.studioCodeEditor.value = app.code || "";
+      }
+      this.renderChatMessages();
+      this.switchStudioTab("preview");
+      this.refreshStudioPreview();
+      requestAnimationFrame(() => {
+        if (this.studioPromptInput && !this.isPlayerMode) {
+          this.studioPromptInput.focus();
+        }
+      });
+      if (typeof window.NexusViewManager !== "undefined") {
+        window.NexusViewManager.updateUrl("apps", { appId: app.id, mode: "studio" });
+      }
+    }
+    setPlayerMode(isPlayer) {
+      this.isPlayerMode = isPlayer;
+      if (this.appsStudioContainer) {
+        if (isPlayer) {
+          this.appsStudioContainer.classList.add("is-player");
+        } else {
+          this.appsStudioContainer.classList.remove("is-player");
+        }
+      }
+      if (this.appsStudioModeLabel) {
+        this.appsStudioModeLabel.textContent = isPlayer ? "Edit with AI" : "Player";
+      }
+    }
+    switchStudioTab(tab) {
+      this.activeStudioTab = tab;
+      if (tab === "preview") {
+        this.studioTabPreview?.classList.add("active");
+        this.studioTabCode?.classList.remove("active");
+        if (this.studioPreviewPane) this.studioPreviewPane.style.display = "flex";
+        if (this.studioCodePane) this.studioCodePane.style.display = "none";
+        this.refreshStudioPreview();
+      } else {
+        this.studioTabCode?.classList.add("active");
+        this.studioTabPreview?.classList.remove("active");
+        if (this.studioPreviewPane) this.studioPreviewPane.style.display = "none";
+        if (this.studioCodePane) this.studioCodePane.style.display = "flex";
+        if (this.studioCodeEditor && this.currentApp) {
+          this.studioCodeEditor.value = this.currentApp.code || "";
+        }
+      }
+    }
+    refreshStudioPreview() {
+      if (!this.currentApp) return;
+      if (this.currentApp.isBuiltin && widgetRegistry.has(this.currentApp.id) && this.nativeWidgetHost) {
+        if (this.studioPreviewFrame) this.studioPreviewFrame.style.display = "none";
+        this.nativeWidgetHost.style.display = "flex";
+        this.nativeWidgetHost.innerHTML = "";
+        widgetRegistry.mount(this.currentApp.id, this.nativeWidgetHost);
+        return;
+      }
+      if (this.nativeWidgetHost) this.nativeWidgetHost.style.display = "none";
+      if (!this.studioPreviewFrame) return;
+      this.studioPreviewFrame.style.display = "block";
+      const rawCode = this.currentApp.code || "";
+      const cleanCode = WidgetRunner.extractWidgetCode(rawCode, rawCode) || rawCode;
+      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      const sendToSandbox = () => {
+        try {
+          this.studioPreviewFrame.contentWindow?.postMessage({
+            type: "NEXUS_WIDGET_RENDER",
+            code: cleanCode,
+            isDark
+          }, "*");
+        } catch (e) {
+          console.error("[AppsStudio] PostMessage to sandbox error:", e);
+        }
+      };
+      const sandboxUrl = typeof chrome !== "undefined" && chrome.runtime?.getURL ? chrome.runtime.getURL("pages/sandbox/widget_sandbox.html") : "/pages/sandbox/widget_sandbox.html";
+      if (!this.studioPreviewFrame.src || !this.studioPreviewFrame.src.includes("widget_sandbox.html")) {
+        this.studioPreviewFrame.onload = () => sendToSandbox();
+        this.studioPreviewFrame.src = sandboxUrl;
+      } else {
+        sendToSandbox();
+      }
+    }
+    escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+    formatMarkdown(text) {
+      if (!text) return "";
+      let str = this.escapeHtml(text);
+      str = str.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+      str = str.replace(/\*(.*?)\*/g, "<em>$1</em>");
+      str = str.replace(/`([^`]+)`/g, "<code>$1</code>");
+      str = str.replace(/\n/g, "<br>");
+      return str;
+    }
+    renderChatMessages() {
+      if (!this.studioChatMessages || !this.currentApp) return;
+      const msgs = this.currentApp.chatHistory || [];
+      let html = "";
+      for (let i = 0; i < msgs.length; i++) {
+        const m = msgs[i];
+        if (m.role === "user") {
+          const nextMsg = i + 1 < msgs.length && msgs[i + 1].role === "assistant" ? msgs[i + 1] : null;
+          const assistantHtml = nextMsg ? this.formatMarkdown(nextMsg.text) : "";
+          const assistantRaw = nextMsg ? nextMsg.text : "";
+          html += `
+                    <div class="nexus-entry" data-entry-type="qa" data-entry-index="${i}">
+                        <div class="nexus-question-row">
+                            <div class="nexus-chat-question" data-raw-text="${this.escapeHtml(m.text)}">
+                                <div class="nexus-question-content">${this.escapeHtml(m.text).replace(/\n/g, "<br>")}</div>
+                            </div>
+                            <div class="nexus-actions nexus-question-actions-row">
+                                <button type="button" class="nexus-answer-action-btn btn-undo" data-entry-index="${i}" title="Undo">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                                </button>
+                                <button type="button" class="nexus-answer-action-btn btn-copy" data-text="${this.escapeHtml(m.text)}" title="Copy">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </button>
+                                <button type="button" class="nexus-answer-action-btn btn-edit" data-entry-index="${i}" title="Edit">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                        ${nextMsg ? `
+                            <div class="nexus-chat-answer" data-raw-text="${this.escapeHtml(assistantRaw)}">
+                                <div class="nexus-chat-answer-content markdown-body">${assistantHtml}</div>
+                                <div class="nexus-actions">
+                                    <div class="nexus-actions-left" style="display: flex; align-items: center; gap: 6px;">
+                                        <button type="button" class="nexus-answer-action-btn btn-regenerate" data-entry-index="${i}" data-prompt="${this.escapeHtml(m.text)}" title="Regenerate">
+                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
+                                        </button>
+                                        <button type="button" class="nexus-answer-action-btn btn-copy" data-text="${this.escapeHtml(assistantRaw)}" title="Copy">
+                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ""}
+                    </div>
+                `;
+          if (nextMsg) i++;
+        } else {
+          html += `
+                    <div class="nexus-entry" data-entry-type="assistant" data-entry-index="${i}">
+                        <div class="nexus-chat-answer" data-raw-text="${this.escapeHtml(m.text)}">
+                            <div class="nexus-chat-answer-content markdown-body">${this.formatMarkdown(m.text)}</div>
+                            <div class="nexus-actions">
+                                <div class="nexus-actions-left" style="display: flex; align-items: center; gap: 6px;">
+                                    <button type="button" class="nexus-answer-action-btn btn-copy" data-text="${this.escapeHtml(m.text)}" title="Copy">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+        }
+      }
+      this.studioChatMessages.innerHTML = html;
+      this.studioChatMessages.scrollTop = this.studioChatMessages.scrollHeight;
+      this.bindChatMessageActions();
+    }
+    enterQuestionEditMode(questionDiv, entryIndex) {
+      if (!questionDiv || questionDiv.classList.contains("is-editing")) return;
+      const row = questionDiv.closest(".nexus-question-row");
+      const contentDiv = questionDiv.querySelector(".nexus-question-content") || questionDiv;
+      const originalText = questionDiv.getAttribute("data-raw-text") || contentDiv.innerText || "";
+      questionDiv.__originalRaw = originalText;
+      questionDiv.classList.add("is-editing");
+      if (row) row.classList.add("nexus-question-row-editing");
+      contentDiv.contentEditable = "plaintext-only";
+      contentDiv.spellcheck = false;
+      const toolbar = document.createElement("div");
+      toolbar.className = "nexus-edit-toolbar nexus-question-edit-toolbar";
+      toolbar.contentEditable = "false";
+      toolbar.innerHTML = `
+            <button type="button" class="nexus-edit-btn nexus-edit-cancel" title="Cancel">Cancel</button>
+            <button type="button" class="nexus-edit-btn nexus-edit-save" title="Update">Update</button>
+        `;
+      toolbar.onmousedown = (e) => e.preventDefault();
+      const saveBtn = toolbar.querySelector(".nexus-edit-save");
+      const cancelBtn = toolbar.querySelector(".nexus-edit-cancel");
+      const exitEdit = (save) => {
+        if (!questionDiv.classList.contains("is-editing")) return;
+        const newText = (contentDiv.innerText || contentDiv.textContent || "").trim();
+        contentDiv.contentEditable = "false";
+        questionDiv.classList.remove("is-editing");
+        if (row) row.classList.remove("nexus-question-row-editing");
+        toolbar.remove();
+        if (save && newText) {
+          if (this.currentApp && Array.isArray(this.currentApp.chatHistory)) {
+            this.currentApp.chatHistory = this.currentApp.chatHistory.slice(0, entryIndex);
+            this.saveCurrentApp();
+          }
+          if (this.studioPromptInput) {
+            this.studioPromptInput.value = newText;
+            this.studioPromptInput.style.removeProperty("height");
+          }
+          this.handlePromptSubmit();
+        } else {
+          contentDiv.innerHTML = this.escapeHtml(originalText).replace(/\n/g, "<br>");
+        }
+      };
+      cancelBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        exitEdit(false);
+      };
+      saveBtn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        exitEdit(true);
+      };
+      const keyHandler = (e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          exitEdit(false);
+          contentDiv.removeEventListener("keydown", keyHandler);
+        } else if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          exitEdit(true);
+          contentDiv.removeEventListener("keydown", keyHandler);
+        }
+      };
+      contentDiv.addEventListener("keydown", keyHandler);
+      if (row) {
+        row.appendChild(toolbar);
+      } else {
+        questionDiv.appendChild(toolbar);
+      }
+      contentDiv.focus();
+      try {
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.selectNodeContents(contentDiv);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } catch (e) {
+      }
+    }
+    bindChatMessageActions() {
+      if (!this.studioChatMessages) return;
+      this.studioChatMessages.querySelectorAll(".btn-copy").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const text = btn.dataset.text || "";
+          if (text) {
+            navigator.clipboard.writeText(text);
+            const origHTML = btn.innerHTML;
+            btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            btn.title = "Copied!";
+            setTimeout(() => {
+              btn.innerHTML = origHTML;
+              btn.title = "Copy";
+            }, 1500);
+          }
+        });
+      });
+      this.studioChatMessages.querySelectorAll(".btn-undo").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const entryIndex = parseInt(btn.dataset.entryIndex, 10);
+          if (!isNaN(entryIndex) && this.currentApp && Array.isArray(this.currentApp.chatHistory)) {
+            const undoneMsg = this.currentApp.chatHistory[entryIndex];
+            this.currentApp.chatHistory = this.currentApp.chatHistory.slice(0, entryIndex);
+            if (undoneMsg && undoneMsg.text && this.studioPromptInput) {
+              this.studioPromptInput.value = undoneMsg.text;
+              this.studioPromptInput.style.removeProperty("height");
+              this.resetSendButton();
+            }
+            this.saveCurrentApp();
+            this.renderChatMessages();
+          }
+        });
+      });
+      this.studioChatMessages.querySelectorAll(".btn-edit").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const entryIndex = parseInt(btn.dataset.entryIndex, 10);
+          const entry = btn.closest(".nexus-entry");
+          const questionDiv = entry?.querySelector(".nexus-chat-question");
+          if (questionDiv) {
+            this.enterQuestionEditMode(questionDiv, entryIndex);
+          }
+        });
+      });
+      this.studioChatMessages.querySelectorAll(".btn-regenerate").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const entryIndex = parseInt(btn.dataset.entryIndex, 10);
+          const prompt2 = btn.dataset.prompt || "";
+          if (!isNaN(entryIndex) && this.currentApp && Array.isArray(this.currentApp.chatHistory)) {
+            this.currentApp.chatHistory = this.currentApp.chatHistory.slice(0, entryIndex);
+            this.saveCurrentApp();
+          }
+          if (prompt2 && this.studioPromptInput) {
+            this.studioPromptInput.value = prompt2;
+            this.studioPromptInput.style.removeProperty("height");
+            this.handlePromptSubmit();
+          }
+        });
+      });
+    }
+    addChatMessage(role, text) {
+      if (!this.currentApp) return;
+      if (!Array.isArray(this.currentApp.chatHistory)) {
+        this.currentApp.chatHistory = [];
+      }
+      this.currentApp.chatHistory.push({
+        role,
+        text,
+        timestamp: Date.now()
+      });
+      this.renderChatMessages();
+      this.saveCurrentApp();
+    }
+    async handlePromptSubmit() {
+      if (this.isGenerating || !this.studioPromptInput || !this.currentApp) return;
+      const prompt2 = this.studioPromptInput.value.trim();
+      if (!prompt2) return;
+      this.studioPromptInput.value = "";
+      this.studioPromptInput.style.removeProperty("height");
+      if (this.studioSendBtn) this.studioSendBtn.disabled = true;
+      if (!Array.isArray(this.currentApp.chatHistory)) {
+        this.currentApp.chatHistory = [];
+      }
+      const userEntryIndex = this.currentApp.chatHistory.length;
+      this.currentApp.chatHistory.push({
+        role: "user",
+        text: prompt2,
+        timestamp: Date.now()
+      });
+      this.isGenerating = true;
+      const entryDiv = document.createElement("div");
+      entryDiv.className = "nexus-entry";
+      entryDiv.dataset.entryType = "qa";
+      entryDiv.dataset.entryIndex = String(userEntryIndex);
+      entryDiv.innerHTML = `
+            <div class="nexus-question-row">
+                <div class="nexus-chat-question" data-raw-text="${this.escapeHtml(prompt2)}">
+                    <div class="nexus-question-content">${this.escapeHtml(prompt2).replace(/\n/g, "<br>")}</div>
+                </div>
+                <div class="nexus-actions nexus-question-actions-row">
+                    <button type="button" class="nexus-answer-action-btn btn-undo" data-entry-index="${userEntryIndex}" title="Undo">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                    </button>
+                    <button type="button" class="nexus-answer-action-btn btn-copy" data-text="${this.escapeHtml(prompt2)}" title="Copy">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    </button>
+                    <button type="button" class="nexus-answer-action-btn btn-edit" data-entry-index="${userEntryIndex}" title="Edit">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                    </button>
+                </div>
+            </div>
+            <div class="nexus-chat-answer">
+                <div class="nexus-chat-answer-content markdown-body">
+                    <span class="apps-typing-indicator" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--nexus-text-secondary);">
+                        <svg class="nexus-spin" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line></svg>
+                        Thinking...
+                    </span>
+                </div>
+            </div>
+        `;
+      this.studioChatMessages.appendChild(entryDiv);
+      this.studioChatMessages.scrollTop = this.studioChatMessages.scrollHeight;
+      this.bindChatMessageActions();
+      const currentCode = this.currentApp.code || "";
+      const recentHistory = this.currentApp.chatHistory.slice(-8).map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.text}`).join("\n\n");
+      const userPrompt = `Current App Code:
+\`\`\`html
+${currentCode}
+\`\`\`
+
+Recent Conversation History:
+${recentHistory}
+
+User Message:
+${prompt2}`;
+      let fullStreamedText = "";
+      const sessionId = "app_stream_" + Date.now();
+      const answerContentDiv = entryDiv.querySelector(".nexus-chat-answer-content");
+      try {
+        const port2 = chrome.runtime.connect({ name: "nexus-chat-stream" });
+        this.currentStreamPort = port2;
+        port2.onMessage.addListener((msg) => {
+          if (msg.error) {
+            console.error("[AppsStudio Stream Error]", msg.error);
+            if (answerContentDiv) answerContentDiv.innerHTML = `\u26A0\uFE0F Error: ${msg.error}`;
+            this.isGenerating = false;
+            this.resetSendButton();
+            return;
+          }
+          if (msg.action === "chunk" && msg.chunk) {
+            fullStreamedText += msg.chunk;
+            if (answerContentDiv) {
+              let previewExplanation = fullStreamedText;
+              if (previewExplanation.includes("<GenerateApp")) previewExplanation = previewExplanation.split("<GenerateApp")[0];
+              if (previewExplanation.includes("<GenerateWidget")) previewExplanation = previewExplanation.split("<GenerateWidget")[0];
+              if (previewExplanation.includes("<PatchApp")) previewExplanation = previewExplanation.split("<PatchApp")[0];
+              if (previewExplanation.includes("<PatchWidget")) previewExplanation = previewExplanation.split("<PatchWidget")[0];
+              if (previewExplanation.includes("```")) previewExplanation = previewExplanation.split("```")[0];
+              previewExplanation = previewExplanation.trim();
+              answerContentDiv.innerHTML = previewExplanation ? this.formatMarkdown(previewExplanation) : '<span style="color: var(--nexus-text-secondary); font-size: 13px;">\u26A1 Applying smart patch...</span>';
+              this.studioChatMessages.scrollTop = this.studioChatMessages.scrollHeight;
+            }
+          }
+          if (msg.action === "done") {
+            this.isGenerating = false;
+            this.resetSendButton();
+            const currentCode2 = this.currentApp.code || "";
+            const cleanCode = WidgetRunner.extractWidgetCode(fullStreamedText, currentCode2);
+            if (cleanCode && cleanCode.length > 20 && cleanCode !== currentCode2) {
+              this.currentApp.code = cleanCode;
+              if (this.studioCodeEditor) {
+                this.studioCodeEditor.value = cleanCode;
+              }
+              this.saveCurrentApp();
+              this.refreshStudioPreview();
+            }
+            let rawExplanation = fullStreamedText;
+            if (rawExplanation.includes("<GenerateApp")) rawExplanation = rawExplanation.split("<GenerateApp")[0];
+            if (rawExplanation.includes("<GenerateWidget")) rawExplanation = rawExplanation.split("<GenerateWidget")[0];
+            if (rawExplanation.includes("<PatchApp")) rawExplanation = rawExplanation.split("<PatchApp")[0];
+            if (rawExplanation.includes("<PatchWidget")) rawExplanation = rawExplanation.split("<PatchWidget")[0];
+            if (rawExplanation.includes("```")) rawExplanation = rawExplanation.split("```")[0];
+            rawExplanation = rawExplanation.trim();
+            const isCodeGenerated = !!(cleanCode && cleanCode !== currentCode2) || fullStreamedText.includes("<GenerateApp") || fullStreamedText.includes("<GenerateWidget") || fullStreamedText.includes("<PatchApp") || fullStreamedText.includes("<PatchWidget") || fullStreamedText.includes("<<<<<<< SEARCH");
+            const finalExplanation = rawExplanation || (isCodeGenerated ? fullStreamedText.includes("<PatchApp") || fullStreamedText.includes("<<<<<<< SEARCH") ? "\u26A1 Applied targeted patch successfully!" : "\u2705 App updated successfully!" : fullStreamedText);
+            this.currentApp.chatHistory.push({
+              role: "assistant",
+              text: finalExplanation,
+              timestamp: Date.now()
+            });
+            this.renderChatMessages();
+            requestAnimationFrame(() => {
+              if (this.studioPromptInput && !this.isPlayerMode) {
+                this.studioPromptInput.focus();
+              }
+            });
+          }
+        });
+        port2.postMessage({
+          action: "chat_stream",
+          sessionId,
+          question: userPrompt,
+          systemOverride: APP_BUILDER_SYSTEM_PROMPT,
+          model: this.selectedModel?.model,
+          providerId: this.selectedModel?.providerId
+        });
+      } catch (e) {
+        console.error("[AppsStudio Error]", e);
+        if (answerContentDiv) answerContentDiv.innerHTML = `\u26A0\uFE0F Failed to connect to AI streaming service.`;
+        this.isGenerating = false;
+        this.resetSendButton();
+      }
+    }
+    resetSendButton() {
+      if (this.studioSendBtn && this.studioPromptInput) {
+        this.studioSendBtn.disabled = !this.studioPromptInput.value.trim();
+      }
+    }
+    saveCurrentApp(notify = false) {
+      if (!this.currentApp) return;
+      this.currentApp.updatedAt = Date.now();
+      this.customApps[this.currentApp.id] = this.currentApp;
+      this.saveCustomApps();
+      if (notify && this.studioSaveBtn) {
+        const originalText = this.studioSaveBtn.innerHTML;
+        this.studioSaveBtn.innerHTML = "Saved \u2713";
+        setTimeout(() => {
+          this.studioSaveBtn.innerHTML = originalText;
+        }, 1200);
+      }
+    }
+    exportAppHtml() {
+      if (!this.currentApp) return;
+      const cleanCode = WidgetRunner.extractWidgetCode(this.currentApp.code || "");
+      const fullHtml = WidgetRunner.buildSandboxedHtml(cleanCode, false);
+      const blob = new Blob([fullHtml], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${(this.currentApp.name || "nexus_app").toLowerCase().replace(/\s+/g, "_")}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    deleteCurrentApp() {
+      if (!this.currentApp) return;
+      const confirmed = confirm(`Are you sure you want to delete "${this.currentApp.name}"?`);
+      if (confirmed) {
+        delete this.customApps[this.currentApp.id];
+        this.saveCustomApps();
+        this.showHubView();
+      }
+    }
+  };
+  if (typeof window !== "undefined") {
+    window.AppsPanel = AppsPanel2;
+  }
+
+  // src/components/panels/tts_panel.js
+  var TTSPanel2 = class {
+    constructor() {
+      this.currentMode = "single";
+      this.audioElement = new Audio();
+      this.sampleAudioElement = new Audio();
+      this.currentRecordingId = null;
+      this.currentAudioBlob = null;
+      this.currentWavBlob = null;
+      this.recordings = [];
+      this.activeFilter = "all";
+      this.searchQuery = "";
+      this.voiceSearchQuery = "";
+      this.selectedVoiceTraits = /* @__PURE__ */ new Set();
+      this.isPlaying = false;
+      this.isGenerating = false;
+      this.isPracticeMode = false;
+      this.currentActiveSentenceEnd = null;
+      this.activeSpeakerTarget = "1";
+      this.selectedVoice1 = "Kore";
+      this.selectedVoice2 = "Puck";
+      this.selectedStyle = "";
+      this.selectedPace = "";
+      this.selectedAccent = "";
+      this.audioProfile = "";
+      this.loadLastVoiceSettings();
+      this.initDOMElements();
+      this.bindEvents();
+      this.renderDirectorDropdowns();
+      this.renderVoiceFilterMenu();
+      this.renderVoiceCards();
+      this.renderCustomPresets();
+    }
+    loadLastVoiceSettings() {
+      try {
+        const raw = localStorage.getItem("nexus_tts_last_settings");
+        if (raw) {
+          const settings = JSON.parse(raw);
+          if (settings.mode) this.currentMode = settings.mode;
+          if (settings.voice1) this.selectedVoice1 = settings.voice1;
+          if (settings.voice2) this.selectedVoice2 = settings.voice2;
+          if (settings.style !== void 0) this.selectedStyle = settings.style;
+          if (settings.pace !== void 0) this.selectedPace = settings.pace;
+          if (settings.accent !== void 0) this.selectedAccent = settings.accent;
+          if (settings.audioProfile !== void 0) this.audioProfile = settings.audioProfile;
+        }
+      } catch (_) {
+      }
+    }
+    saveLastVoiceSettings() {
+      try {
+        const settings = {
+          mode: this.currentMode,
+          voice1: this.selectedVoice1,
+          voice2: this.selectedVoice2,
+          speaker1: this.speaker1Input ? this.speaker1Input.value : "Joe",
+          speaker2: this.speaker2Input ? this.speaker2Input.value : "Jane",
+          style: this.selectedStyle,
+          pace: this.selectedPace,
+          accent: this.selectedAccent,
+          audioProfile: this.profileInput ? this.profileInput.value : this.audioProfile
+        };
+        localStorage.setItem("nexus_tts_last_settings", JSON.stringify(settings));
+      } catch (_) {
+      }
+    }
+    async init(recordingId = null) {
+      this.initDOMElements();
+      this.renderDirectorDropdowns();
+      this.renderVoiceFilterMenu();
+      this.renderVoiceCards();
+      this.renderCustomPresets();
+      await this.loadRecordings();
+      if (recordingId) {
+        await this.selectRecording(recordingId);
+      }
+    }
+    initDOMElements() {
+      this.page = document.getElementById("tts-page");
+      this.sidebarToggleBtn = document.getElementById("tts-sidebar-toggle-btn");
+      this.backBtn = document.getElementById("tts-back-btn");
+      this.newAudioBtn = document.getElementById("tts-new-audio-btn");
+      this.searchInput = document.getElementById("tts-search-input");
+      this.recordingsListEl = document.getElementById("tts-recordings-list");
+      this.countLabel = document.getElementById("tts-count-label");
+      this.filterBtns = document.querySelectorAll("#tts-filter-controls .notes-sort-btn");
+      this.presetQuickChips = document.querySelectorAll(".tts-preset-quick-chip");
+      this.customPresetsGrid = document.getElementById("tts-custom-presets-grid");
+      this.savePresetBtn = document.getElementById("tts-save-preset-btn");
+      this.modeBtns = document.querySelectorAll(".tts-mode-btn");
+      this.duplicateBtn = document.getElementById("tts-duplicate-btn");
+      this.deleteCurrentBtn = document.getElementById("tts-delete-current-btn");
+      this.viewContainer = document.getElementById("tts-view-container");
+      this.composeContainer = document.getElementById("tts-compose-container");
+      this.modeSwitcher = document.getElementById("tts-mode-switcher");
+      this.viewInfoBadge = document.getElementById("tts-view-info-badge");
+      this.viewBadgeVoice = document.getElementById("tts-view-badge-voice");
+      this.viewBadgeMode = document.getElementById("tts-view-badge-mode");
+      this.viewBadgeDate = document.getElementById("tts-view-badge-date");
+      this.viewActions = document.getElementById("tts-view-actions");
+      this.viewScriptBody = document.getElementById("tts-view-script-body");
+      this.heroTitle = document.getElementById("tts-hero-title");
+      this.editCurrentBtn = document.getElementById("tts-edit-current-btn");
+      this.downloadMp3Btn = document.getElementById("tts-download-mp3-btn");
+      this.scriptInput = document.getElementById("tts-script-input");
+      this.tagChips = document.querySelectorAll(".tts-tag-chip");
+      this.voicePickerWrapper = document.getElementById("tts-voice-picker-wrapper");
+      this.voicePickerPill = document.getElementById("tts-voice-picker-pill");
+      this.voiceSettingsPopover = document.getElementById("tts-voice-settings-popover");
+      this.activeVoiceLabel = document.getElementById("tts-active-voice-label");
+      this.profileInput = document.getElementById("tts-profile-input");
+      this.styleChip = document.getElementById("tts-style-chip");
+      this.styleChipLabel = document.getElementById("tts-style-chip-label");
+      this.styleDropdown = document.getElementById("tts-style-dropdown");
+      this.paceChip = document.getElementById("tts-pace-chip");
+      this.paceChipLabel = document.getElementById("tts-pace-chip-label");
+      this.paceDropdown = document.getElementById("tts-pace-dropdown");
+      this.accentChip = document.getElementById("tts-accent-chip");
+      this.accentChipLabel = document.getElementById("tts-accent-chip-label");
+      this.accentDropdown = document.getElementById("tts-accent-dropdown");
+      this.speakerTabSwitch = document.getElementById("tts-speaker-tab-switch");
+      this.speakerNamesGroup = document.getElementById("tts-speaker-names-group");
+      this.speaker1Input = document.getElementById("tts-speaker-1-name");
+      this.speaker2Input = document.getElementById("tts-speaker-2-name");
+      this.speakerTabBtns = document.querySelectorAll(".tts-speaker-tab-btn");
+      this.s1Badge = document.getElementById("tts-s1-badge");
+      this.s2Badge = document.getElementById("tts-s2-badge");
+      this.voiceSearchInput = document.getElementById("tts-voice-search-input");
+      this.voiceFilterBtn = document.getElementById("tts-voice-filter-btn");
+      this.voiceFilterMenu = document.getElementById("tts-voice-filter-menu");
+      this.voiceCardsContainer = document.getElementById("tts-voice-cards-container");
+      this.generateBtn = document.getElementById("tts-generate-btn");
+      this.generateBtnText = document.getElementById("tts-generate-btn-text");
+      this.generateSpinner = document.getElementById("tts-generate-spinner");
+      this.statusText = document.getElementById("tts-status-text");
+      this.playPauseBtn = document.getElementById("tts-play-pause-btn");
+      this.rewind5sBtn = document.getElementById("tts-rewind-5s-btn");
+      this.forward5sBtn = document.getElementById("tts-forward-5s-btn");
+      this.playIcon = document.getElementById("tts-play-icon");
+      this.pauseIcon = document.getElementById("tts-pause-icon");
+      this.progressBar = document.getElementById("tts-progress-bar");
+      this.currentTimeEl = document.getElementById("tts-current-time");
+      this.durationTimeEl = document.getElementById("tts-duration-time");
+      this.speedBtn = document.getElementById("tts-speed-btn");
+      this.practiceModeBtn = document.getElementById("tts-practice-mode-btn");
+    }
+    bindEvents() {
+      if (this.sidebarToggleBtn) {
+        this.sidebarToggleBtn.addEventListener("click", () => {
+          if (typeof window.toggleSidebar === "function") {
+            window.toggleSidebar();
+          } else if (typeof toggleSidebar === "function") {
+            toggleSidebar();
+          }
+        });
+      }
+      if (this.backBtn) {
+        this.backBtn.addEventListener("click", () => {
+          if (this.page) {
+            this.page.classList.remove("show-studio");
+          }
+        });
+      }
+      if (this.newAudioBtn) {
+        this.newAudioBtn.addEventListener("click", () => this.resetStudioForNew());
+      }
+      if (this.searchInput) {
+        this.searchInput.addEventListener("input", (e) => {
+          this.searchQuery = e.target.value.toLowerCase().trim();
+          this.renderRecordingsList();
+        });
+      }
+      this.filterBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          this.filterBtns.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          this.activeFilter = btn.dataset.filter || "all";
+          this.renderRecordingsList();
+        });
+      });
+      this.presetQuickChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const presetKey = chip.dataset.preset;
+          this.applyPreset(presetKey);
+          if (this.page) {
+            this.page.classList.add("show-studio");
+          }
+        });
+      });
+      this.modeBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const mode = btn.dataset.mode;
+          this.setMode(mode);
+          this.saveLastVoiceSettings();
+        });
+      });
+      if (this.duplicateBtn) {
+        this.duplicateBtn.addEventListener("click", () => this.duplicateCurrent());
+      }
+      if (this.editCurrentBtn) {
+        this.editCurrentBtn.addEventListener("click", () => this.duplicateCurrent());
+      }
+      if (this.deleteCurrentBtn) {
+        this.deleteCurrentBtn.addEventListener("click", () => {
+          if (this.currentRecordingId) {
+            this.deleteRecording(this.currentRecordingId);
+          }
+        });
+      }
+      this.tagChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const tag = chip.dataset.tag;
+          this.insertTagAtCursor(tag);
+        });
+      });
+      if (this.profileInput) {
+        this.profileInput.addEventListener("input", (e) => {
+          this.audioProfile = e.target.value;
+          this.saveLastVoiceSettings();
+        });
+      }
+      if (this.speaker1Input) {
+        this.speaker1Input.addEventListener("input", () => this.saveLastVoiceSettings());
+      }
+      if (this.speaker2Input) {
+        this.speaker2Input.addEventListener("input", () => this.saveLastVoiceSettings());
+      }
+      if (this.savePresetBtn) {
+        this.savePresetBtn.addEventListener("click", () => this.handleSaveAsPreset());
+      }
+      if (this.voicePickerPill && this.voiceSettingsPopover) {
+        this.voicePickerPill.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const isOpen = this.voiceSettingsPopover.classList.contains("show");
+          document.querySelectorAll(".tts-attribute-dropdown, .tts-voice-filter-menu").forEach((d) => d.classList.remove("show"));
+          if (!isOpen) {
+            this.voiceSettingsPopover.classList.add("show");
+          } else {
+            this.voiceSettingsPopover.classList.remove("show");
+          }
+        });
+      }
+      this.setupDropdown(this.styleChip, this.styleDropdown);
+      this.setupDropdown(this.paceChip, this.paceDropdown);
+      this.setupDropdown(this.accentChip, this.accentDropdown);
+      if (this.voiceFilterBtn && this.voiceFilterMenu) {
+        this.voiceFilterBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const isOpen = this.voiceFilterMenu.classList.contains("show");
+          document.querySelectorAll(".tts-attribute-dropdown, .tts-voice-filter-menu").forEach((d) => d.classList.remove("show"));
+          if (!isOpen) {
+            this.voiceFilterMenu.classList.add("show");
+            this.voiceFilterBtn.classList.add("active");
+          } else {
+            this.voiceFilterBtn.classList.remove("active");
+          }
+        });
+      }
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".tts-voice-picker-wrapper")) {
+          if (this.voiceSettingsPopover) this.voiceSettingsPopover.classList.remove("show");
+          if (this.voiceFilterMenu) this.voiceFilterMenu.classList.remove("show");
+          if (this.voiceFilterBtn) this.voiceFilterBtn.classList.remove("active");
+        }
+        if (!e.target.closest(".tts-attribute-chip-wrapper")) {
+          document.querySelectorAll(".tts-attribute-dropdown").forEach((d) => d.classList.remove("show"));
+        }
+      });
+      this.speakerTabBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          this.speakerTabBtns.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          this.activeSpeakerTarget = btn.dataset.targetSpeaker || "1";
+          this.renderVoiceCards();
+        });
+      });
+      if (this.voiceSearchInput) {
+        this.voiceSearchInput.addEventListener("input", (e) => {
+          this.voiceSearchQuery = e.target.value.toLowerCase().trim();
+          this.renderVoiceCards();
+        });
+      }
+      if (this.generateBtn) {
+        this.generateBtn.addEventListener("click", () => this.handleGenerate());
+      }
+      if (this.playPauseBtn) {
+        this.playPauseBtn.addEventListener("click", () => this.togglePlayPause());
+      }
+      if (this.rewind5sBtn) {
+        this.rewind5sBtn.addEventListener("click", () => {
+          const newTime = Math.max(0, (this.audioElement.currentTime || 0) - 5);
+          this.audioElement.currentTime = newTime;
+          if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(newTime);
+        });
+      }
+      if (this.forward5sBtn) {
+        this.forward5sBtn.addEventListener("click", () => {
+          const dur = this.audioElement.duration && isFinite(this.audioElement.duration) ? this.audioElement.duration : this.currentRecordingDuration || 0;
+          const newTime = dur > 0 ? Math.min(dur, (this.audioElement.currentTime || 0) + 5) : (this.audioElement.currentTime || 0) + 5;
+          this.audioElement.currentTime = newTime;
+          if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(newTime);
+        });
+      }
+      if (this.progressBar) {
+        const handleSeek = (e) => {
+          const dur = this.audioElement.duration && isFinite(this.audioElement.duration) ? this.audioElement.duration : this.currentRecordingDuration;
+          if (dur && dur > 0) {
+            const targetTime = parseFloat(e.target.value) / 100 * dur;
+            this.audioElement.currentTime = targetTime;
+            if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(targetTime);
+          }
+        };
+        this.progressBar.addEventListener("input", handleSeek);
+        this.progressBar.addEventListener("change", handleSeek);
+      }
+      if (this.speedBtn) {
+        const speeds = [1, 1.25, 1.5, 1.75, 2, 0.8];
+        let speedIdx = 0;
+        this.speedBtn.addEventListener("click", () => {
+          speedIdx = (speedIdx + 1) % speeds.length;
+          const speed = speeds[speedIdx];
+          this.audioElement.playbackRate = speed;
+          this.speedBtn.textContent = `${speed}x`;
+        });
+      }
+      if (this.practiceModeBtn) {
+        this.practiceModeBtn.addEventListener("click", () => {
+          this.isPracticeMode = !this.isPracticeMode;
+          this.practiceModeBtn.classList.toggle("active", this.isPracticeMode);
+          if (this.isPracticeMode) {
+            this.showStatus("Practice Mode ON: Audio will pause after each sentence.", false);
+          } else {
+            this.showStatus("Practice Mode OFF: Continuous playback.", false);
+          }
+        });
+      }
+      if (this.heroTitle) {
+        this.heroTitle.addEventListener("change", async () => {
+          if (this.currentRecordingId) {
+            const newTitle = this.heroTitle.value.trim() || "Untitled Audio";
+            await TTSDB2.updateRecordingTitle(this.currentRecordingId, newTitle);
+            await this.loadRecordings();
+            if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+              NexusSync.triggerDebouncedSync();
+            }
+          }
+        });
+        this.heroTitle.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            this.heroTitle.blur();
+          }
+        });
+      }
+      if (this.downloadMp3Btn) {
+        this.downloadMp3Btn.addEventListener("click", () => {
+          if (this.currentAudioBlob) {
+            const title = (this.heroTitle ? this.heroTitle.value : "audio").toLowerCase().replace(/[^a-z0-9]/gi, "-").slice(0, 30);
+            TTSManager.downloadMp3(this.currentAudioBlob, `${title || "speech"}.mp3`);
+          }
+        });
+      }
+      if (this.downloadWavBtn) {
+        this.downloadWavBtn.addEventListener("click", () => {
+          const blob = this.currentWavBlob || this.currentAudioBlob;
+          if (blob) {
+            const title = (this.heroTitle ? this.heroTitle.textContent : "audio").toLowerCase().replace(/[^a-z0-9]/gi, "-").slice(0, 30);
+            TTSManager.downloadWav(blob, `${title || "speech"}.wav`);
+          }
+        });
+      }
+      const updateAudioDuration = () => {
+        const dur = this.audioElement.duration;
+        if (dur && isFinite(dur) && !isNaN(dur) && dur > 0) {
+          if (this.durationTimeEl) this.durationTimeEl.textContent = this.formatTime(dur);
+        } else if (this.currentRecordingDuration) {
+          if (this.durationTimeEl) this.durationTimeEl.textContent = this.formatTime(this.currentRecordingDuration);
+        }
+      };
+      this.audioElement.addEventListener("timeupdate", () => {
+        const dur = this.audioElement.duration && isFinite(this.audioElement.duration) ? this.audioElement.duration : this.currentRecordingDuration;
+        if (dur && dur > 0) {
+          const progress = this.audioElement.currentTime / dur * 100;
+          if (this.progressBar) this.progressBar.value = Math.min(100, Math.max(0, progress));
+          if (this.durationTimeEl && (!this.durationTimeEl.textContent || this.durationTimeEl.textContent === "0:00" || this.durationTimeEl.textContent.includes("NaN"))) {
+            this.durationTimeEl.textContent = this.formatTime(dur);
+          }
+        }
+        if (this.currentTimeEl) this.currentTimeEl.textContent = this.formatTime(this.audioElement.currentTime);
+        this.highlightActiveSentence(this.audioElement.currentTime);
+      });
+      this.audioElement.addEventListener("loadedmetadata", updateAudioDuration);
+      this.audioElement.addEventListener("durationchange", updateAudioDuration);
+      this.audioElement.addEventListener("canplay", updateAudioDuration);
+      this.audioElement.addEventListener("ended", () => {
+        this.isPlaying = false;
+        this.updatePlayerUI();
+      });
+      this.audioElement.addEventListener("pause", () => {
+        this.isPlaying = false;
+        this.updatePlayerUI();
+      });
+      this.audioElement.addEventListener("play", () => {
+        this.isPlaying = true;
+        this.updatePlayerUI();
+      });
+      this.sampleAudioElement.addEventListener("ended", () => {
+        document.querySelectorAll(".tts-voice-play-sample-btn").forEach((b) => b.classList.remove("playing"));
+      });
+    }
+    setupDropdown(chipEl, dropdownEl) {
+      if (!chipEl || !dropdownEl) return;
+      chipEl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isOpen = dropdownEl.classList.contains("show");
+        document.querySelectorAll(".tts-attribute-dropdown, .tts-voice-filter-menu").forEach((d) => d.classList.remove("show"));
+        if (!isOpen) {
+          dropdownEl.classList.add("show");
+        }
+      });
+    }
+    renderDirectorDropdowns() {
+      if (this.styleDropdown) {
+        this.styleDropdown.innerHTML = `
+                <div class="tts-dropdown-item ${!this.selectedStyle ? "selected" : ""}" data-val="">None (Default)</div>
+                ${TTSManager.STYLE_OPTIONS.map((opt) => `
+                    <div class="tts-dropdown-item ${this.selectedStyle === opt.value ? "selected" : ""}" data-val="${this.escapeHtml(opt.value)}">${this.escapeHtml(opt.label)}</div>
+                `).join("")}
+            `;
+        this.styleDropdown.querySelectorAll(".tts-dropdown-item").forEach((item) => {
+          item.addEventListener("click", () => {
+            this.selectedStyle = item.dataset.val;
+            this.updateChipLabel(this.styleChip, this.styleChipLabel, "Style", this.selectedStyle);
+            this.styleDropdown.classList.remove("show");
+            this.renderDirectorDropdowns();
+            this.saveLastVoiceSettings();
+          });
+        });
+      }
+      if (this.paceDropdown) {
+        this.paceDropdown.innerHTML = `
+                <div class="tts-dropdown-item ${!this.selectedPace ? "selected" : ""}" data-val="">None (Default)</div>
+                ${TTSManager.PACE_OPTIONS.map((opt) => `
+                    <div class="tts-dropdown-item ${this.selectedPace === opt.value ? "selected" : ""}" data-val="${this.escapeHtml(opt.value)}">${this.escapeHtml(opt.label)}</div>
+                `).join("")}
+            `;
+        this.paceDropdown.querySelectorAll(".tts-dropdown-item").forEach((item) => {
+          item.addEventListener("click", () => {
+            this.selectedPace = item.dataset.val;
+            this.updateChipLabel(this.paceChip, this.paceChipLabel, "Pace", this.selectedPace);
+            this.paceDropdown.classList.remove("show");
+            this.renderDirectorDropdowns();
+            this.saveLastVoiceSettings();
+          });
+        });
+      }
+      if (this.accentDropdown) {
+        this.accentDropdown.innerHTML = `
+                <div class="tts-dropdown-item ${!this.selectedAccent ? "selected" : ""}" data-val="">None (Default)</div>
+                ${TTSManager.ACCENT_OPTIONS.map((opt) => `
+                    <div class="tts-dropdown-item ${this.selectedAccent === opt.value ? "selected" : ""}" data-val="${this.escapeHtml(opt.value)}">${this.escapeHtml(opt.label)}</div>
+                `).join("")}
+            `;
+        this.accentDropdown.querySelectorAll(".tts-dropdown-item").forEach((item) => {
+          item.addEventListener("click", () => {
+            this.selectedAccent = item.dataset.val;
+            this.updateChipLabel(this.accentChip, this.accentChipLabel, "Accent", this.selectedAccent);
+            this.accentDropdown.classList.remove("show");
+            this.renderDirectorDropdowns();
+            this.saveLastVoiceSettings();
+          });
+        });
+      }
+    }
+    renderVoiceFilterMenu() {
+      if (!this.voiceFilterMenu) return;
+      const availableTraits = TTSManager.VOICE_TRAITS.filter((t) => t !== "All");
+      this.voiceFilterMenu.innerHTML = `
+            <div class="tts-filter-menu-header">
+                <span>Filter Traits (${this.selectedVoiceTraits.size})</span>
+                ${this.selectedVoiceTraits.size > 0 ? '<button type="button" class="tts-filter-reset-btn" id="tts-filter-reset-btn">Clear all</button>' : ""}
+            </div>
+            ${availableTraits.map((trait) => {
+        const isChecked = this.selectedVoiceTraits.has(trait);
+        return `
+                    <label class="tts-filter-item-checkbox">
+                        <input type="checkbox" data-trait="${trait}" ${isChecked ? "checked" : ""} />
+                        <span>${trait}</span>
+                    </label>
+                `;
+      }).join("")}
+        `;
+      const resetBtn = this.voiceFilterMenu.querySelector("#tts-filter-reset-btn");
+      if (resetBtn) {
+        resetBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          this.selectedVoiceTraits.clear();
+          if (this.voiceFilterBtn) this.voiceFilterBtn.classList.remove("active");
+          this.renderVoiceFilterMenu();
+          this.renderVoiceCards();
+        });
+      }
+      this.voiceFilterMenu.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+        input.addEventListener("change", (e) => {
+          e.stopPropagation();
+          const trait = input.dataset.trait;
+          if (input.checked) {
+            this.selectedVoiceTraits.add(trait);
+          } else {
+            this.selectedVoiceTraits.delete(trait);
+          }
+          if (this.voiceFilterBtn) {
+            if (this.selectedVoiceTraits.size > 0) {
+              this.voiceFilterBtn.classList.add("active");
+            } else {
+              this.voiceFilterBtn.classList.remove("active");
+            }
+          }
+          this.renderVoiceFilterMenu();
+          this.renderVoiceCards();
+        });
+      });
+    }
+    updateChipLabel(chipEl, labelEl, defaultText, currentValue) {
+      if (!chipEl || !labelEl) return;
+      if (currentValue) {
+        chipEl.classList.add("active-value");
+        const foundLabel = this.findOptionLabel(defaultText, currentValue);
+        labelEl.textContent = `${defaultText}: ${foundLabel}`;
+      } else {
+        chipEl.classList.remove("active-value");
+        labelEl.textContent = defaultText;
+      }
+    }
+    findOptionLabel(type, val) {
+      let list = [];
+      if (type === "Style") list = TTSManager.STYLE_OPTIONS;
+      else if (type === "Pace") list = TTSManager.PACE_OPTIONS;
+      else if (type === "Accent") list = TTSManager.ACCENT_OPTIONS;
+      const item = list.find((o) => o.value === val);
+      return item ? item.label : val.slice(0, 14);
+    }
+    renderVoiceCards() {
+      if (!this.voiceCardsContainer) return;
+      const currentSelected = this.activeSpeakerTarget === "2" ? this.selectedVoice2 : this.selectedVoice1;
+      let voices = TTSManager.VOICES;
+      if (this.selectedVoiceTraits.size > 0) {
+        const traitsArr = Array.from(this.selectedVoiceTraits).map((t) => t.toLowerCase());
+        voices = voices.filter((v) => {
+          return traitsArr.every(
+            (trait) => v.tone.toLowerCase().includes(trait) || v.pitch.toLowerCase().includes(trait) || v.gender.toLowerCase() === trait
+          );
+        });
+      }
+      if (this.voiceSearchQuery) {
+        voices = voices.filter(
+          (v) => v.name.toLowerCase().includes(this.voiceSearchQuery) || v.tone.toLowerCase().includes(this.voiceSearchQuery) || v.pitch.toLowerCase().includes(this.voiceSearchQuery) || v.gender.toLowerCase().includes(this.voiceSearchQuery)
+        );
+      }
+      if (voices.length === 0) {
+        this.voiceCardsContainer.innerHTML = `
+                <div style="padding: 16px; text-align: center; color: var(--nexus-text-muted, #94a3b8); font-size: 0.8rem;">
+                    No voices matching the selected filters.
+                </div>
+            `;
+        return;
+      }
+      this.voiceCardsContainer.innerHTML = voices.map((v) => {
+        const isSelected = v.name === currentSelected;
+        return `
+                <div class="tts-voice-card ${isSelected ? "selected" : ""}" data-voice-name="${v.name}">
+                    <button type="button" class="tts-voice-card-content" aria-label="${v.name}">
+                        <div class="tts-voice-row-primary">
+                            <span class="tts-voice-name">${v.name}</span>
+                            ${isSelected ? '<span class="tts-voice-current-badge">Current</span>' : ""}
+                        </div>
+                        <div class="tts-voice-traits">
+                            <span class="tts-trait-chip">${v.tone}</span>
+                            <span class="tts-trait-chip">${v.pitch}</span>
+                            <span class="tts-trait-chip">${v.gender}</span>
+                        </div>
+                    </button>
+                    <button type="button" class="tts-voice-play-sample-btn" data-voice-name="${v.name}" title="Play voice sample">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                    </button>
+                </div>
+            `;
+      }).join("");
+      this.voiceCardsContainer.querySelectorAll(".tts-voice-card-content").forEach((card) => {
+        card.addEventListener("click", () => {
+          const voiceName = card.closest(".tts-voice-card").dataset.voiceName;
+          if (this.activeSpeakerTarget === "2") {
+            this.selectedVoice2 = voiceName;
+            if (this.s2Badge) this.s2Badge.textContent = voiceName;
+          } else {
+            this.selectedVoice1 = voiceName;
+            if (this.s1Badge) this.s1Badge.textContent = voiceName;
+          }
+          this.updateActiveVoiceHeaderLabel();
+          this.renderVoiceCards();
+          this.saveLastVoiceSettings();
+        });
+      });
+      this.voiceCardsContainer.querySelectorAll(".tts-voice-play-sample-btn").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          const voiceName = btn.dataset.voiceName;
+          await this.playVoiceSample(voiceName, btn);
+        });
+      });
+    }
+    updateActiveVoiceHeaderLabel() {
+      if (!this.activeVoiceLabel) return;
+      if (this.currentMode === "multi") {
+        this.activeVoiceLabel.textContent = `Voice: ${this.selectedVoice1} & ${this.selectedVoice2}`;
+      } else {
+        this.activeVoiceLabel.textContent = `Voice: ${this.selectedVoice1}`;
+      }
+    }
+    async playVoiceSample(voiceName, btnEl) {
+      try {
+        document.querySelectorAll(".tts-voice-play-sample-btn").forEach((b) => b.classList.remove("playing"));
+        btnEl.classList.add("playing");
+        this.showStatus(`Loading sample for ${voiceName}...`, false);
+        const result = await TTSManager.previewVoiceSample(voiceName);
+        this.sampleAudioElement.src = result.audioUrl;
+        this.sampleAudioElement.load();
+        await this.sampleAudioElement.play();
+        this.showStatus(`Playing sample for ${voiceName}`, false);
+      } catch (err) {
+        btnEl.classList.remove("playing");
+        this.showStatus(`Could not preview ${voiceName}: ${err.message}`, true);
+      }
+    }
+    async loadRecordings() {
+      try {
+        this.recordings = await TTSDB2.getAllRecordings();
+        this.renderRecordingsList();
+      } catch (err) {
+        console.error("Failed to load recordings from TTSDB:", err);
+      }
+    }
+    renderRecordingsList() {
+      if (!this.recordingsListEl) return;
+      let filtered = this.recordings;
+      if (this.activeFilter === "starred") {
+        filtered = filtered.filter((r) => r.starred);
+      }
+      if (this.searchQuery) {
+        filtered = filtered.filter(
+          (r) => r.title && r.title.toLowerCase().includes(this.searchQuery) || r.script && r.script.toLowerCase().includes(this.searchQuery) || r.voice && r.voice.toLowerCase().includes(this.searchQuery)
+        );
+      }
+      if (this.countLabel) {
+        this.countLabel.textContent = `Recordings (${filtered.length})`;
+      }
+      if (filtered.length === 0) {
+        this.recordingsListEl.innerHTML = `
+                <div class="notes-list-empty">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.4; margin-bottom: 4px;">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                    </svg>
+                    <span>${this.searchQuery ? "No audio matching search." : "No audio recordings yet."}</span>
+                </div>
+            `;
+        return;
+      }
+      this.recordingsListEl.innerHTML = filtered.map((rec) => {
+        const isActive = rec.id === this.currentRecordingId ? "active" : "";
+        const starColor = rec.starred ? "#f59e0b" : "currentColor";
+        const voiceLabel = rec.mode === "multi" ? `${rec.voice} + ${rec.voice2}` : rec.voice;
+        const timeAgo2 = this.formatRelativeTime(rec.createdAt);
+        const durationStr = this.formatTime(rec.durationSeconds || 0);
+        return `
+                <div class="tts-recording-item ${isActive}" data-id="${rec.id}">
+                    <div class="tts-rec-header">
+                        <span class="tts-rec-title" title="${this.escapeHtml(rec.title)}">${this.escapeHtml(rec.title)}</span>
+                        <div class="tts-rec-quick-actions">
+                            <button type="button" class="notes-qa-btn tts-item-star-btn" data-id="${rec.id}" title="${rec.starred ? "Unstar" : "Star"}">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="${rec.starred ? "#f59e0b" : "none"}" stroke="${starColor}" stroke-width="2">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg>
+                            </button>
+                            <button type="button" class="notes-qa-btn tts-item-delete-btn" data-id="${rec.id}" title="Delete">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="tts-rec-snippet">${this.escapeHtml(rec.script || "")}</div>
+                    <div class="tts-rec-meta">
+                        <span class="tts-rec-voice-tag">${this.escapeHtml(voiceLabel)}</span>
+                        <span class="tts-rec-duration">${durationStr}</span>
+                        <span class="tts-rec-time">${timeAgo2}</span>
+                    </div>
+                </div>
+            `;
+      }).join("");
+      this.recordingsListEl.querySelectorAll(".tts-recording-item").forEach((el) => {
+        el.addEventListener("click", (e) => {
+          if (e.target.closest(".tts-rec-quick-actions")) return;
+          const id = el.dataset.id;
+          this.selectRecording(id);
+          if (this.page) {
+            this.page.classList.add("show-studio");
+          }
+        });
+      });
+      this.recordingsListEl.querySelectorAll(".tts-item-star-btn").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          await TTSDB2.toggleStar(id);
+          await this.loadRecordings();
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
+          }
+        });
+      });
+      this.recordingsListEl.querySelectorAll(".tts-item-delete-btn").forEach((btn) => {
+        btn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          await this.deleteRecording(id);
+        });
+      });
+    }
+    renderScriptViewer(script, mode, speaker1, speaker2, alignment = null) {
+      if (!this.viewScriptBody) return;
+      const text = script || "";
+      this.currentAlignment = alignment;
+      if (mode === "multi") {
+        const lines = text.split("\n");
+        const html = lines.map((line) => {
+          const trimmed = line.trim();
+          if (!trimmed) return "";
+          const match = trimmed.match(/^([^:]+):\s*(.*)$/);
+          if (match) {
+            const spk = this.escapeHtml(match[1].trim());
+            const rawContent = match[2];
+            const contentHtml = this.formatScriptWithSentences(rawContent, alignment);
+            return `<div class="tts-view-dialogue-line"><span class="tts-view-speaker-name">${spk}:</span>${contentHtml}</div>`;
+          } else {
+            const contentHtml = this.formatScriptWithSentences(trimmed, alignment);
+            return `<div class="tts-view-dialogue-line">${contentHtml}</div>`;
+          }
+        }).filter(Boolean).join("");
+        this.viewScriptBody.innerHTML = html || '<div class="tts-view-dialogue-line">No transcript content.</div>';
+      } else {
+        const contentHtml = this.formatScriptWithSentences(text, alignment);
+        this.viewScriptBody.innerHTML = `<div class="tts-view-dialogue-line">${contentHtml}</div>`;
+      }
+      this.bindSentenceClickEvents();
+    }
+    formatScriptWithSentences(rawText, alignment = null) {
+      if (!rawText) return "";
+      let processedText = rawText.replace(/\b(p|a)\.m\./gi, "$1_m_dot_").replace(/\b(e\.g|i\.e|vs|etc|mr|mrs|ms|dr|prof)\./gi, "$1_dot_").replace(/(\d+)\.(\d+)/g, "$1_numdot_$2");
+      const sentenceRegex = /[^.!?:\n]+[.!?:]+["'”’]?|[^.!?:\n]+$/g;
+      const rawMatches = processedText.match(sentenceRegex) || [processedText];
+      const sentences = rawMatches.map((s) => {
+        return s.replace(/_m_dot_/gi, ".m.").replace(/_dot_/gi, ".").replace(/_numdot_/g, ".").trim();
+      }).filter(Boolean);
+      const segments = alignment && Array.isArray(alignment.segments) ? alignment.segments : [];
+      const words = alignment && Array.isArray(alignment.words) ? alignment.words : [];
+      if (words.length > 0) {
+        let wordCursor = 0;
+        return sentences.map((sent, sIdx) => {
+          const cleanWords = sent.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(Boolean);
+          let start = 0;
+          let end = 0;
+          if (cleanWords.length > 0 && wordCursor < words.length) {
+            start = words[wordCursor].start || 0;
+            const lastWord = cleanWords[cleanWords.length - 1];
+            let foundEndIdx = -1;
+            const searchLimit = Math.min(words.length, wordCursor + cleanWords.length + 5);
+            for (let i = wordCursor; i < searchLimit; i++) {
+              const wClean = (words[i].word || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+              if (wClean === lastWord) {
+                foundEndIdx = i;
+              }
+            }
+            if (foundEndIdx !== -1) {
+              end = words[foundEndIdx].end || start + 1;
+              wordCursor = foundEndIdx + 1;
+            } else {
+              const fallbackIdx = Math.min(words.length - 1, wordCursor + cleanWords.length - 1);
+              end = words[fallbackIdx].end || start + 1.5;
+              wordCursor = fallbackIdx + 1;
+            }
+          } else if (segments.length > 0) {
+            end = segments[segments.length - 1].end || 0;
+          }
+          if (sIdx === sentences.length - 1 && words.length > 0) {
+            end = Math.max(end, words[words.length - 1].end || end);
+          }
+          let escapedSent = this.escapeHtml(sent);
+          escapedSent = escapedSent.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
+          return `<span class="tts-sentence-segment" data-start="${start}" data-end="${end}" title="Click to play (${this.formatTime(start)})">${escapedSent}</span>`;
+        }).join(" ");
+      }
+      if (segments.length > 0) {
+        if (segments.length > 1 && sentences.length === segments.length) {
+          return sentences.map((sent, idx) => {
+            const seg = segments[idx];
+            const start = typeof seg.start === "number" ? seg.start : 0;
+            const end = typeof seg.end === "number" ? seg.end : start + 1;
+            let escapedSent = this.escapeHtml(sent);
+            escapedSent = escapedSent.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
+            return `<span class="tts-sentence-segment" data-start="${start}" data-end="${end}" title="Click to play (${this.formatTime(start)})">${escapedSent}</span>`;
+          }).join(" ");
+        }
+        const totalDuration = segments[segments.length - 1].end || 0;
+        const totalChars = sentences.reduce((sum, s) => sum + s.length, 0) || 1;
+        let currentAccumTime = 0;
+        return sentences.map((sent, idx) => {
+          const ratio = sent.length / totalChars;
+          const start = currentAccumTime;
+          const end = idx === sentences.length - 1 ? totalDuration : start + ratio * totalDuration;
+          currentAccumTime = end;
+          let escapedSent = this.escapeHtml(sent);
+          escapedSent = escapedSent.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
+          return `<span class="tts-sentence-segment" data-start="${start.toFixed(2)}" data-end="${end.toFixed(2)}" title="Click to play (${this.formatTime(start)})">${escapedSent}</span>`;
+        }).join(" ");
+      }
+      return sentences.map((sent) => {
+        let escapedSent = this.escapeHtml(sent);
+        escapedSent = escapedSent.replace(/\[(.*?)\]/g, '<span class="tts-view-tag">[$1]</span>');
+        return `<span class="tts-sentence-segment" data-start="0" data-end="0">${escapedSent}</span>`;
+      }).join(" ");
+    }
+    bindSentenceClickEvents() {
+      if (!this.viewScriptBody) return;
+      this.viewScriptBody.querySelectorAll(".tts-sentence-segment").forEach((seg) => {
+        seg.addEventListener("click", (e) => {
+          const startTime = parseFloat(seg.dataset.start || 0);
+          const endTime = parseFloat(seg.dataset.end || 0);
+          if (!isNaN(startTime) && this.audioElement) {
+            this.currentActiveSentenceEnd = endTime > startTime ? endTime : null;
+            this.audioElement.currentTime = Math.max(0, startTime);
+            this.audioElement.play().catch(() => {
+            });
+            this.highlightActiveSentence(startTime);
+          }
+        });
+      });
+    }
+    highlightActiveSentence(currentTime) {
+      if (!this.viewScriptBody) return;
+      const segments = this.viewScriptBody.querySelectorAll(".tts-sentence-segment");
+      let currentActiveSeg = null;
+      let matchedSegEl = null;
+      segments.forEach((seg) => {
+        const start = parseFloat(seg.dataset.start || 0);
+        const end = parseFloat(seg.dataset.end || 0);
+        if (end > start) {
+          const isWithin = currentTime >= start && currentTime < end;
+          const isJustEnded = this.isPracticeMode && Math.abs(currentTime - end) <= 0.25;
+          if (isWithin || isJustEnded) {
+            seg.classList.add("active");
+            currentActiveSeg = { start, end };
+            matchedSegEl = seg;
+          } else {
+            seg.classList.remove("active");
+          }
+        } else {
+          seg.classList.remove("active");
+        }
+      });
+      if (this.isPracticeMode && this.isPlaying && this.audioElement && !this.audioElement.paused) {
+        if (currentActiveSeg) {
+          this.currentActiveSentenceEnd = currentActiveSeg.end;
+        }
+        if (this.currentActiveSentenceEnd && currentTime >= this.currentActiveSentenceEnd - 0.05) {
+          this.audioElement.pause();
+          if (matchedSegEl) {
+            matchedSegEl.classList.add("active");
+          }
+          this.currentActiveSentenceEnd = null;
+        }
+      }
+    }
+    async selectRecording(recOrId) {
+      if (!recOrId) return;
+      let rec = recOrId;
+      if (typeof recOrId === "string") {
+        rec = await TTSDB2.getRecording(recOrId);
+      }
+      if (!rec) return;
+      this.currentRecordingId = rec.id;
+      this.currentAudioBlob = rec.audioBlob || null;
+      this.currentWavBlob = rec.audioBlob || null;
+      this.currentMode = rec.mode || "single";
+      if (this.modeSwitcher) this.modeSwitcher.style.display = "none";
+      if (this.voicePickerWrapper) this.voicePickerWrapper.style.display = "none";
+      if (this.generateBtn) this.generateBtn.style.display = "none";
+      if (this.viewInfoBadge) this.viewInfoBadge.style.display = "flex";
+      if (this.viewActions) this.viewActions.style.display = "flex";
+      if (this.viewContainer) this.viewContainer.style.display = "flex";
+      if (this.composeContainer) this.composeContainer.style.display = "none";
+      if (this.viewBadgeVoice) {
+        this.viewBadgeVoice.textContent = rec.mode === "multi" ? `${rec.voice} & ${rec.voice2}` : rec.voice || "Achernar";
+      }
+      if (this.viewBadgeMode) {
+        this.viewBadgeMode.textContent = rec.mode === "multi" ? "Multi-Speaker" : "Single Speaker";
+      }
+      if (this.viewBadgeDate) {
+        this.viewBadgeDate.textContent = this.formatRelativeTime(rec.createdAt);
+      }
+      if (this.heroTitle) this.heroTitle.value = rec.title || "Untitled Audio";
+      this.renderScriptViewer(rec.script, rec.mode, rec.speaker1, rec.speaker2, rec.alignment);
+      if (rec.audioBlob) {
+        this.currentRecordingDuration = rec.durationSeconds || 0;
+        if (this.durationTimeEl) {
+          this.durationTimeEl.textContent = this.formatTime(this.currentRecordingDuration);
+        }
+        const url = URL.createObjectURL(rec.audioBlob);
+        this.audioElement.src = url;
+        this.audioElement.load();
+        if (!rec.alignment && typeof GroqAligner !== "undefined") {
+          this.triggerBackgroundGroqAlign(rec);
+        }
+      }
+      this.showStatus("", false);
+      this.renderRecordingsList();
+      if (typeof NexusViewManager !== "undefined" && typeof NexusViewManager.updateUrl === "function") {
+        NexusViewManager.updateUrl("tts", { recordingId: rec.id });
+      }
+      if (this.page) {
+        this.page.classList.add("show-studio");
+      }
+    }
+    async triggerBackgroundGroqAlign(rec) {
+      if (!rec || !rec.audioBlob || rec._isAligning) return;
+      rec._isAligning = true;
+      try {
+        const alignment = await GroqAligner.align(rec.audioBlob, rec.script);
+        if (alignment && alignment.segments && alignment.segments.length > 0) {
+          rec.alignment = alignment;
+          await TTSDB2.saveRecording(rec);
+          if (this.currentRecordingId === rec.id) {
+            this.renderScriptViewer(rec.script, rec.mode, rec.speaker1, rec.speaker2, alignment);
+          }
+        }
+      } catch (err) {
+        console.warn("Groq STT alignment background task failed:", err);
+      } finally {
+        rec._isAligning = false;
+      }
+    }
+    resetStudioForNew() {
+      this.currentRecordingId = null;
+      this.currentAudioBlob = null;
+      this.currentWavBlob = null;
+      this.audioElement.pause();
+      this.audioElement.src = "";
+      if (typeof NexusViewManager !== "undefined" && typeof NexusViewManager.updateUrl === "function") {
+        NexusViewManager.updateUrl("tts", {});
+      }
+      if (this.modeSwitcher) this.modeSwitcher.style.display = "flex";
+      if (this.voicePickerWrapper) this.voicePickerWrapper.style.display = "block";
+      if (this.generateBtn) this.generateBtn.style.display = "inline-flex";
+      if (this.viewInfoBadge) this.viewInfoBadge.style.display = "none";
+      if (this.viewActions) this.viewActions.style.display = "none";
+      if (this.viewContainer) this.viewContainer.style.display = "none";
+      if (this.composeContainer) this.composeContainer.style.display = "flex";
+      if (this.scriptInput) {
+        this.scriptInput.value = "";
+        this.scriptInput.focus();
+      }
+      this.loadLastVoiceSettings();
+      this.modeBtns.forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.mode === this.currentMode);
+      });
+      this.updateModeUI();
+      if (this.profileInput) this.profileInput.value = this.audioProfile || "";
+      this.updateChipLabel(this.styleChip, this.styleChipLabel, "Style", this.selectedStyle);
+      this.updateChipLabel(this.paceChip, this.paceChipLabel, "Pace", this.selectedPace);
+      this.updateChipLabel(this.accentChip, this.accentChipLabel, "Accent", this.selectedAccent);
+      this.updateActiveVoiceHeaderLabel();
+      this.renderDirectorDropdowns();
+      this.renderVoiceCards();
+      this.updateGenerateButtonUI(false);
+      this.renderRecordingsList();
+      if (this.page) {
+        this.page.classList.add("show-studio");
+      }
+    }
+    duplicateCurrent() {
+      const recId = this.currentRecordingId;
+      if (!recId) return;
+      TTSDB2.getRecording(recId).then((rec) => {
+        if (!rec) return;
+        this.audioElement.pause();
+        this.audioElement.src = "";
+        if (this.modeSwitcher) this.modeSwitcher.style.display = "flex";
+        if (this.voicePickerWrapper) this.voicePickerWrapper.style.display = "block";
+        if (this.generateBtn) this.generateBtn.style.display = "inline-flex";
+        if (this.viewInfoBadge) this.viewInfoBadge.style.display = "none";
+        if (this.viewActions) this.viewActions.style.display = "none";
+        if (this.viewContainer) this.viewContainer.style.display = "none";
+        if (this.composeContainer) this.composeContainer.style.display = "flex";
+        this.currentMode = rec.mode || "single";
+        this.selectedVoice1 = rec.voice || "Kore";
+        this.selectedVoice2 = rec.voice2 || "Puck";
+        if (this.s1Badge) this.s1Badge.textContent = this.selectedVoice1;
+        if (this.s2Badge) this.s2Badge.textContent = this.selectedVoice2;
+        this.selectedStyle = rec.style || "";
+        this.selectedPace = rec.pace || "";
+        this.selectedAccent = rec.accent || "";
+        this.audioProfile = rec.audioProfile || "";
+        if (this.scriptInput) {
+          this.scriptInput.value = rec.script || "";
+          this.scriptInput.focus();
+        }
+        if (this.profileInput) this.profileInput.value = this.audioProfile;
+        if (this.speaker1Input) this.speaker1Input.value = rec.speaker1 || "Joe";
+        if (this.speaker2Input) this.speaker2Input.value = rec.speaker2 || "Jane";
+        this.setMode(this.currentMode);
+        this.updateChipLabel(this.styleChip, this.styleChipLabel, "Style", this.selectedStyle);
+        this.updateChipLabel(this.paceChip, this.paceChipLabel, "Pace", this.selectedPace);
+        this.updateChipLabel(this.accentChip, this.accentChipLabel, "Accent", this.selectedAccent);
+        this.updateActiveVoiceHeaderLabel();
+        this.renderDirectorDropdowns();
+        this.renderVoiceCards();
+        this.saveLastVoiceSettings();
+        if (this.page) {
+          this.page.classList.add("show-studio");
+        }
+      });
+    }
+    async deleteRecording(id) {
+      await TTSDB2.deleteRecording(id);
+      if (this.currentRecordingId === id) {
+        this.resetStudioForNew();
+      }
+      await this.loadRecordings();
+      if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+        NexusSync.triggerDebouncedSync();
+      }
+    }
+    setMode(mode) {
+      this.currentMode = mode;
+      this.modeBtns.forEach((btn) => {
+        if (btn.dataset.mode === mode) {
+          btn.classList.add("active");
+        } else {
+          btn.classList.remove("active");
+        }
+      });
+      if (mode === "multi") {
+        if (this.speakerTabSwitch) this.speakerTabSwitch.style.display = "flex";
+        if (this.speakerNamesGroup) this.speakerNamesGroup.style.display = "grid";
+      } else {
+        if (this.speakerTabSwitch) this.speakerTabSwitch.style.display = "none";
+        if (this.speakerNamesGroup) this.speakerNamesGroup.style.display = "none";
+        this.activeSpeakerTarget = "1";
+      }
+      this.updateActiveVoiceHeaderLabel();
+      this.renderVoiceCards();
+    }
+    insertTagAtCursor(tag) {
+      if (!this.scriptInput) return;
+      const input = this.scriptInput;
+      const start = input.selectionStart || 0;
+      const end = input.selectionEnd || 0;
+      const text = input.value;
+      const tagToInsert = `${tag} `;
+      input.value = text.substring(0, start) + tagToInsert + text.substring(end);
+      input.focus();
+      input.selectionStart = input.selectionEnd = start + tagToInsert.length;
+    }
+    applyPreset(presetKey) {
+      if (!this.scriptInput) return;
+      switch (presetKey) {
+        case "podcast":
+          this.setMode("multi");
+          if (this.speaker1Input) this.speaker1Input.value = "Joe";
+          if (this.speaker2Input) this.speaker2Input.value = "Jane";
+          this.selectedVoice1 = "Kore";
+          this.selectedVoice2 = "Puck";
+          if (this.s1Badge) this.s1Badge.textContent = "Kore";
+          if (this.s2Badge) this.s2Badge.textContent = "Puck";
+          this.audioProfile = "Engaging tech podcast hosts sharing cutting-edge AI insights with genuine enthusiasm.";
+          this.selectedStyle = "Enthusiastic and energetic";
+          this.selectedPace = "Steady, conversational pace";
+          this.selectedAccent = "Standard English";
+          this.scriptInput.value = `Joe: [excitedly] Welcome back to the show, everyone! Jane, did you see the new speech synthesis update today?
+Jane: [laughs] I certainly did Joe! [amazed] The natural emotional inflections and control tags are genuinely impressive.
+Joe: Exactly. It completely changes how we produce audiobooks and podcasts!`;
+          break;
+        case "story":
+          this.setMode("single");
+          this.selectedVoice1 = "Enceladus";
+          if (this.s1Badge) this.s1Badge.textContent = "Enceladus";
+          this.audioProfile = "Mysterious, atmospheric storyteller around a crackling campfire.";
+          this.selectedStyle = "Mysterious, cinematic, intimate storyteller";
+          this.selectedPace = "Slow tempo with dramatic pauses";
+          this.selectedAccent = "British English accent as heard in London";
+          this.scriptInput.value = `[whispers] Listen closely... [short pause]
+The old grandfather clock in the hallway struck midnight, its hollow chimes echoing through the empty corridors.
+[gasp] Then, from behind the sealed oak door, quiet footsteps sounded...`;
+          break;
+        case "news":
+          this.setMode("single");
+          this.selectedVoice1 = "Charon";
+          if (this.s1Badge) this.s1Badge.textContent = "Charon";
+          this.audioProfile = "Authoritative, clear and professional morning news anchor.";
+          this.selectedStyle = "Authoritative, clear, and informative";
+          this.selectedPace = "Steady, conversational pace";
+          this.selectedAccent = "Standard English";
+          this.scriptInput.value = `Good morning. Here are the top headlines for today.
+Markets reached historic highs this morning following breakthroughs in artificial intelligence technology and renewable energy adoption.`;
+          break;
+        case "influencer":
+          this.setMode("single");
+          this.selectedVoice1 = "Zephyr";
+          if (this.s1Badge) this.s1Badge.textContent = "Zephyr";
+          this.audioProfile = "High-energy, charismatic tech influencer with contagious optimism.";
+          this.selectedStyle = "Bright, cheerful, and sunny with a vocal smile";
+          this.selectedPace = "Fast-paced, rapid energetic delivery";
+          this.selectedAccent = "General American accent";
+          this.scriptInput.value = `[excitedly] What is up, everyone! You will NOT believe what just dropped today!
+[laughs] Drop a like, subscribe, and let's dive right into the demo!`;
+          break;
+      }
+      if (this.profileInput) this.profileInput.value = this.audioProfile;
+      this.updateChipLabel(this.styleChip, this.styleChipLabel, "Style", this.selectedStyle);
+      this.updateChipLabel(this.paceChip, this.paceChipLabel, "Pace", this.selectedPace);
+      this.updateChipLabel(this.accentChip, this.accentChipLabel, "Accent", this.selectedAccent);
+      this.renderDirectorDropdowns();
+      this.renderVoiceCards();
+      this.saveLastVoiceSettings();
+    }
+    async getCustomPresets() {
+      try {
+        const raw = localStorage.getItem("nexus_tts_custom_presets");
+        return raw ? JSON.parse(raw) : [];
+      } catch (_) {
+        return [];
+      }
+    }
+    async saveCustomPresets(presets) {
+      try {
+        localStorage.setItem("nexus_tts_custom_presets", JSON.stringify(presets));
+        this.renderCustomPresets();
+      } catch (_) {
+      }
+    }
+    async renderCustomPresets() {
+      if (!this.customPresetsGrid) return;
+      const presets = await this.getCustomPresets();
+      if (presets.length === 0) {
+        this.customPresetsGrid.style.display = "none";
+        this.customPresetsGrid.innerHTML = "";
+        return;
+      }
+      this.customPresetsGrid.style.display = "flex";
+      this.customPresetsGrid.innerHTML = presets.map((p, idx) => `
+            <div class="tts-custom-preset-chip" data-index="${idx}">
+                <div class="tts-custom-preset-name" title="${this.escapeHtml(p.name)} (${p.mode === "multi" ? `${p.voice1} & ${p.voice2}` : p.voice1})">
+                    \u2B50 ${this.escapeHtml(p.name)}
+                </div>
+                <button type="button" class="tts-custom-preset-delete" data-index="${idx}" title="Delete Preset">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        `).join("");
+      this.customPresetsGrid.querySelectorAll(".tts-custom-preset-chip").forEach((chip) => {
+        chip.addEventListener("click", (e) => {
+          if (e.target.closest(".tts-custom-preset-delete")) return;
+          const idx = parseInt(chip.dataset.index, 10);
+          this.applyCustomPreset(presets[idx]);
+          if (this.page) {
+            this.page.classList.add("show-studio");
+          }
+        });
+      });
+      this.customPresetsGrid.querySelectorAll(".tts-custom-preset-delete").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.index, 10);
+          this.deleteCustomPreset(idx);
+        });
+      });
+    }
+    async handleSaveAsPreset() {
+      const defaultName = this.currentMode === "multi" ? `${this.selectedVoice1} & ${this.selectedVoice2} (${this.selectedStyle || "Default"})` : `${this.selectedVoice1} (${this.selectedStyle || "Preset"})`;
+      const name = prompt("Enter a name for this preset:", defaultName);
+      if (!name || !name.trim()) return;
+      const newPreset = {
+        id: "preset_" + Date.now(),
+        name: name.trim(),
+        mode: this.currentMode,
+        voice1: this.selectedVoice1,
+        voice2: this.selectedVoice2,
+        speaker1: this.speaker1Input ? this.speaker1Input.value : "Joe",
+        speaker2: this.speaker2Input ? this.speaker2Input.value : "Jane",
+        style: this.selectedStyle,
+        pace: this.selectedPace,
+        accent: this.selectedAccent,
+        audioProfile: this.profileInput ? this.profileInput.value : this.audioProfile,
+        createdAt: Date.now()
+      };
+      const presets = await this.getCustomPresets();
+      presets.unshift(newPreset);
+      await this.saveCustomPresets(presets);
+      this.showStatus(`Preset "${name.trim()}" saved successfully!`, false);
+    }
+    applyCustomPreset(preset) {
+      if (!preset) return;
+      this.setMode(preset.mode || "single");
+      this.selectedVoice1 = preset.voice1 || "Kore";
+      this.selectedVoice2 = preset.voice2 || "Puck";
+      if (this.s1Badge) this.s1Badge.textContent = this.selectedVoice1;
+      if (this.s2Badge) this.s2Badge.textContent = this.selectedVoice2;
+      if (this.speaker1Input && preset.speaker1) this.speaker1Input.value = preset.speaker1;
+      if (this.speaker2Input && preset.speaker2) this.speaker2Input.value = preset.speaker2;
+      this.selectedStyle = preset.style || "";
+      this.selectedPace = preset.pace || "";
+      this.selectedAccent = preset.accent || "";
+      this.audioProfile = preset.audioProfile || "";
+      if (this.profileInput) this.profileInput.value = this.audioProfile;
+      this.updateChipLabel(this.styleChip, this.styleChipLabel, "Style", this.selectedStyle);
+      this.updateChipLabel(this.paceChip, this.paceChipLabel, "Pace", this.selectedPace);
+      this.updateChipLabel(this.accentChip, this.accentChipLabel, "Accent", this.selectedAccent);
+      this.updateActiveVoiceHeaderLabel();
+      this.renderDirectorDropdowns();
+      this.renderVoiceCards();
+      this.saveLastVoiceSettings();
+      this.showStatus(`Applied preset: ${preset.name}`, false);
+    }
+    async deleteCustomPreset(idx) {
+      const presets = await this.getCustomPresets();
+      if (idx >= 0 && idx < presets.length) {
+        const removed = presets.splice(idx, 1);
+        await this.saveCustomPresets(presets);
+        this.showStatus(`Deleted preset "${removed[0]?.name || ""}"`, false);
+      }
+    }
+    async handleGenerate() {
+      const script = this.scriptInput ? this.scriptInput.value.trim() : "";
+      if (!script) {
+        if (this.scriptInput) this.scriptInput.focus();
+        return;
+      }
+      const taskPayload = {
+        mode: this.currentMode,
+        script,
+        voice1: this.selectedVoice1 || "Kore",
+        voice2: this.selectedVoice2 || "Puck",
+        speaker1: this.speaker1Input ? this.speaker1Input.value : "Joe",
+        speaker2: this.speaker2Input ? this.speaker2Input.value : "Jane",
+        audioProfile: this.profileInput ? this.profileInput.value : this.audioProfile,
+        style: this.selectedStyle,
+        pace: this.selectedPace,
+        accent: this.selectedAccent
+      };
+      this.updateGenerateButtonUI(true);
+      (async () => {
+        try {
+          const result = await TTSManager.generateSpeech({
+            mode: taskPayload.mode,
+            script: taskPayload.script,
+            voice: taskPayload.voice1,
+            voice2: taskPayload.voice2,
+            speaker1: taskPayload.speaker1,
+            speaker2: taskPayload.speaker2,
+            audioProfile: taskPayload.audioProfile,
+            style: taskPayload.style,
+            pace: taskPayload.pace,
+            accent: taskPayload.accent
+          });
+          const savedItem = await TTSDB2.saveRecording({
+            title: taskPayload.script.split("\n")[0].replace(/\[.*?\]/g, "").trim().slice(0, 45) || "Audio Recording",
+            script: taskPayload.script,
+            mode: taskPayload.mode,
+            voice: taskPayload.voice1,
+            voice2: taskPayload.voice2,
+            speaker1: taskPayload.speaker1,
+            speaker2: taskPayload.speaker2,
+            audioProfile: taskPayload.audioProfile,
+            style: taskPayload.style,
+            pace: taskPayload.pace,
+            accent: taskPayload.accent,
+            durationSeconds: result.durationSeconds,
+            audioBlob: result.blob
+          });
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+            NexusSync.triggerDebouncedSync();
+          }
+          if (typeof GroqAligner !== "undefined") {
+            this.triggerBackgroundGroqAlign(savedItem);
+          }
+          await this.loadRecordings();
+          const isWritingNew = this.composeContainer && this.composeContainer.style.display !== "none" && this.scriptInput && this.scriptInput.value.trim().length > 0;
+          if (!isWritingNew) {
+            await this.selectRecording(savedItem);
+            try {
+              await this.audioElement.play();
+            } catch (_) {
+            }
+          }
+        } catch (error) {
+          console.error("TTS background generation failed:", error);
+        } finally {
+          this.updateGenerateButtonUI(false);
+        }
+      })();
+    }
+    togglePlayPause() {
+      if (!this.audioElement.src) return;
+      if (this.audioElement.paused) {
+        this.audioElement.play().catch(() => {
+        });
+      } else {
+        this.audioElement.pause();
+      }
+    }
+    updatePlayerUI() {
+      if (this.playIcon && this.pauseIcon) {
+        if (this.isPlaying) {
+          this.playIcon.style.display = "none";
+          this.pauseIcon.style.display = "block";
+        } else {
+          this.playIcon.style.display = "block";
+          this.pauseIcon.style.display = "none";
+        }
+      }
+    }
+    updateGenerateButtonUI(loading) {
+      if (this.generateBtn) {
+        this.generateBtn.disabled = loading;
+      }
+      if (this.generateSpinner) {
+        this.generateSpinner.style.display = loading ? "inline-block" : "none";
+      }
+      if (this.generateBtnText) {
+        this.generateBtnText.textContent = loading ? "Generating..." : "Generate";
+      }
+    }
+    showStatus(msg, isError = false) {
+      if (this.statusText) {
+        this.statusText.textContent = msg;
+        this.statusText.className = "tts-status-text";
+        if (isError) {
+          this.statusText.classList.add("error");
+        } else if (msg) {
+          this.statusText.classList.add("success");
+        }
+      }
+    }
+    formatTime(seconds) {
+      if (isNaN(seconds) || seconds < 0) return "0:00";
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    }
+    formatRelativeTime(timestamp) {
+      if (!timestamp) return "";
+      const now = Date.now();
+      const diff = now - timestamp;
+      const seconds = Math.floor(diff / 1e3);
+      if (seconds < 60) return "Just now";
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours / 24);
+      if (days < 7) return `${days}d ago`;
+      return new Date(timestamp).toLocaleDateString();
+    }
+    escapeHtml(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+  };
+  if (typeof window !== "undefined") {
+    window.TTSPanel = TTSPanel2;
+  }
+
+  // src/components/dictionary/dictionary_popup.js
+  var NexusDictionaryPopup2 = {
+    instance: null,
+    currentWord: "",
+    currentSource: "dictionary",
+    resultsCache: /* @__PURE__ */ new Map(),
+    ongoingRequests: /* @__PURE__ */ new Set(),
+    isManualSelection: false,
+    getFallbackSource(source) {
+      return null;
+    },
+    async show(word, options = {}) {
+      if (this.instance) {
+        this.instance.remove();
+      }
+      if (this.currentWord !== word) {
+        this.currentWord = word;
+      }
+      let initialSource = options.source || "dictionary";
+      if (initialSource === "freedict" || initialSource === "ai" || initialSource === "cambridge" || initialSource === "oxford") {
+        initialSource = "dictionary";
+      }
+      const saved = await chrome.storage.local.get(["preferredDictSource"]);
+      if (saved.preferredDictSource && saved.preferredDictSource !== "freedict" && saved.preferredDictSource !== "ai") {
+        initialSource = saved.preferredDictSource;
+      }
+      if (initialSource === "cambridge" || initialSource === "oxford") {
+        initialSource = "dictionary";
+      }
+      this.currentSource = initialSource;
+      this.isManualSelection = false;
+      if (!this.messageListenerAdded) {
+        chrome.runtime.onMessage.addListener((msg) => {
+          if (msg.action === "background_log") {
+            console.log(`%c[BG Bridge]%c ${msg.message}`, "color: #ff9800; font-weight: bold;", "color: inherit;");
+          }
+        });
+        this.messageListenerAdded = true;
+      }
+      const dimensions = await chrome.storage.local.get(["dictPopupWidth", "dictPopupHeight"]);
+      const width = dimensions.dictPopupWidth || 420;
+      const height = dimensions.dictPopupHeight || 460;
+      const popup = document.createElement("div");
+      popup.id = "nexus-dictionary-popup";
+      popup.className = "nexus-dictionary-popup";
+      let x = options.x || window.innerWidth / 2 - width / 2;
+      let y = options.y || window.innerHeight / 2 - height / 2;
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      if (x + width > viewportWidth - 10) x = viewportWidth - width - 10;
+      if (x < 10) x = 10;
+      if (y + height > viewportHeight - 10) y = viewportHeight - height - 10;
+      if (y < 10) y = 10;
+      popup.style.left = `${x}px`;
+      popup.style.top = `${y}px`;
+      popup.style.width = `${width}px`;
+      popup.style.height = `${height}px`;
+      popup.innerHTML = `
+            <div class="nexus-dict-body">
+                <div class="nexus-dict-scroll-area">
+                    <div class="nexus-dict-loading-state">
+                        <div class="nexus-loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="nexus-dict-footer" style="${this.currentSource === "translate" ? "display: none !important;" : ""}">
+                <div class="nexus-dict-tabs">
+                    <button class="nexus-dict-tab-btn ${this.currentSource === "dictionary" ? "active" : ""}" data-source="dictionary">Dictionary</button>
+                    <button class="nexus-dict-tab-btn ${this.currentSource === "images" ? "active" : ""}" data-source="images">Images</button>
+                </div>
+            </div>
+            <div class="nexus-dict-resizer-right"></div>
+            <div class="nexus-dict-resizer-bottom"></div>
+            <div class="nexus-dict-resizer-corner"></div>
+        `;
+      const shadowHost = document.getElementById("nexus-shadow-host");
+      if (shadowHost && shadowHost.shadowRoot) {
+        shadowHost.shadowRoot.appendChild(popup);
+      } else {
+        document.body.appendChild(popup);
+      }
+      this.instance = popup;
+      this.setupEvents();
+      this.fetchData(this.currentSource);
+    },
+    switchSource(source) {
+      if (!this.instance || source === this.currentSource) return;
+      const tabs3 = this.instance.querySelectorAll(".nexus-dict-tab-btn");
+      const targetTab = Array.from(tabs3).find((t) => t.dataset.source === source);
+      if (!targetTab) return;
+      tabs3.forEach((t) => t.classList.remove("active"));
+      targetTab.classList.add("active");
+      this.currentSource = source;
+      if (source !== "images" && source !== "translate") {
+        chrome.storage.local.set({ preferredDictSource: source });
+      }
+      this.fetchData(source);
+    },
+    setupEvents() {
+      if (!this.instance) return;
+      const tabs3 = this.instance.querySelectorAll(".nexus-dict-tab-btn");
+      tabs3.forEach((tab) => {
+        tab.onclick = () => {
+          this.isManualSelection = true;
+          this.switchSource(tab.dataset.source);
+        };
+      });
+      const cornerResizer = this.instance.querySelector(".nexus-dict-resizer-corner");
+      const rightResizer = this.instance.querySelector(".nexus-dict-resizer-right");
+      const bottomResizer = this.instance.querySelector(".nexus-dict-resizer-bottom");
+      let isResizing = false;
+      let resizingMode = null;
+      let startX, startY, startW, startH;
+      const startResize = (e, mode) => {
+        isResizing = true;
+        resizingMode = mode;
+        startX = e.clientX;
+        startY = e.clientY;
+        startW = this.instance.offsetWidth;
+        startH = this.instance.offsetHeight;
+        this.instance.classList.add("is-resizing");
+        e.preventDefault();
+        e.stopPropagation();
+      };
+      if (cornerResizer) cornerResizer.onmousedown = (e) => startResize(e, "corner");
+      if (rightResizer) rightResizer.onmousedown = (e) => startResize(e, "right");
+      if (bottomResizer) bottomResizer.onmousedown = (e) => startResize(e, "bottom");
+      const moveHandler = (e) => {
+        if (isResizing) {
+          const dw = e.clientX - startX;
+          const dh = e.clientY - startY;
+          if (resizingMode === "right" || resizingMode === "corner") {
+            this.instance.style.width = `${Math.max(300, startW + dw)}px`;
+          }
+          if (resizingMode === "bottom" || resizingMode === "corner") {
+            this.instance.style.height = `${Math.max(250, startH + dh)}px`;
+          }
+          if (window._dictResizeTimer) clearTimeout(window._dictResizeTimer);
+          window._dictResizeTimer = setTimeout(() => {
+            chrome.storage.local.set({
+              dictPopupWidth: parseInt(this.instance.style.width),
+              dictPopupHeight: parseInt(this.instance.style.height)
+            });
+          }, 500);
+        }
+      };
+      const upHandler = () => {
+        if (isResizing) {
+          isResizing = false;
+          this.instance.classList.remove("is-resizing");
+        }
+      };
+      const outsideClickHandler = (e) => {
+        if (!this.instance) return;
+        const path = e.composedPath();
+        const isInside = path.some(
+          (el) => el === this.instance || el.id === "nexus-dictionary-popup" || el.id === "nexus-shadow-host" || el.classList && el.classList.contains && el.classList.contains("nexus-dictionary-popup")
+        );
+        if (!isInside) {
+          this.hide();
+        }
+      };
+      window.addEventListener("mousemove", moveHandler);
+      window.addEventListener("mouseup", upHandler);
+      window.addEventListener("mousedown", outsideClickHandler, true);
+      this.instance._cleanup = () => {
+        window.removeEventListener("mousemove", moveHandler);
+        window.removeEventListener("mouseup", upHandler);
+        window.removeEventListener("mousedown", outsideClickHandler, true);
+      };
+    },
+    hide() {
+      if (this.instance) {
+        if (this.instance._cleanup) this.instance._cleanup();
+        this.instance.remove();
+        this.instance = null;
+      }
+    },
+    showLoading(source) {
+      if (!this.instance) return;
+      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
+      if (!scrollArea) return;
+      scrollArea.innerHTML = `
+            <div class="nexus-dict-loading-state">
+                <div class="nexus-loading-spinner"></div>
+            </div>
+        `;
+    },
+    async fetchData(source = this.currentSource) {
+      const cacheKey = `${this.currentWord}_${source}`;
+      const now = Date.now();
+      const cached = this.resultsCache.get(cacheKey);
+      if (cached && now - cached.timestamp < 36e5) {
+        if (source === this.currentSource) {
+          if (source === "images") this.renderImages(cached.data);
+          else if (source === "translate") this.renderTranslation(cached.data);
+          else this.renderData(cached.data);
+        }
+        return;
+      }
+      const requestKey = `${this.currentWord}_${source}`;
+      if (this.ongoingRequests.has(requestKey)) return;
+      this.ongoingRequests.add(requestKey);
+      if (source === this.currentSource) {
+        this.showLoading(source);
+      }
+      try {
+        if (source === "images") {
+          const images = typeof searchGoogleImages === "function" ? await searchGoogleImages(this.currentWord) : [];
+          this.resultsCache.set(cacheKey, { data: images, timestamp: Date.now() });
+          if (source === this.currentSource) this.renderImages(images);
+          return;
+        }
+        const actionMap = {
+          "dictionary": "fetch_dictionary",
+          "translate": "translate"
+        };
+        const action = actionMap[source];
+        let payload;
+        if (source === "translate") {
+          payload = { action, text: this.currentWord, targetLang: "vi" };
+        } else {
+          payload = { action, word: this.currentWord };
+        }
+        const response = await new Promise((resolve) => {
+          chrome.runtime.sendMessage(payload, (res) => {
+            if (chrome.runtime.lastError) {
+              resolve({ success: false, error: chrome.runtime.lastError.message });
+            } else {
+              resolve(res);
+            }
+          });
+        });
+        if (response && !response.error) {
+          if (source === "translate") {
+            this.resultsCache.set(cacheKey, { data: response, timestamp: Date.now() });
+            if (source === this.currentSource) this.renderTranslation(response);
+            return;
+          }
+          const parser = window.FreeDictParser || FreeDictParser2;
+          const finalData = response.data ? parser.parse(response.data) : null;
+          if (finalData) {
+            this.resultsCache.set(cacheKey, { data: finalData, timestamp: Date.now() });
+            if (source === this.currentSource) this.renderData(finalData);
+          }
+          if (!finalData || !finalData.entries || finalData.entries.length === 0) {
+            if (source === this.currentSource) {
+              const emptyData = finalData || { word: this.currentWord, entries: [] };
+              this.renderData(emptyData);
+            }
+          }
+        } else {
+          throw new Error(response?.error || "Failed to fetch");
+        }
+      } catch (err) {
+        console.error(`[Nexus Dict] Error in fetchData(${source}):`, err);
+        const errMessage = String(err?.message || err || "");
+        const isForbidden = /\b403\b|HTTP Status 403|Forbidden/i.test(errMessage);
+        const fallbackSource = isForbidden ? this.getFallbackSource(source) : null;
+        if (fallbackSource && source === this.currentSource) {
+          this.switchSource(fallbackSource);
+          return;
+        }
+        if (source === this.currentSource) {
+          const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
+          if (scrollArea) {
+            let title = "Fetch Failed";
+            let desc = err.message;
+            let icon = "\u26A0\uFE0F";
+            if (isForbidden) {
+              title = "Access Restricted";
+              desc = `The connection to ${source} was blocked. Please try another network.`;
+              icon = "\u{1F6AB}";
+            }
+            scrollArea.innerHTML = `
+                        <div class="nexus-dict-status-container status-error">
+                            <div class="nexus-dict-status-card">
+                                <div class="nexus-dict-status-icon">${icon}</div>
+                                <div class="nexus-dict-status-title">${title}</div>
+                                <div class="nexus-dict-status-desc">${desc}</div>
+                            </div>
+                        </div>
+                    `;
+          }
+        }
+      } finally {
+        this.ongoingRequests.delete(requestKey);
+      }
+    },
+    renderImages(images) {
+      if (!this.instance) return;
+      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
+      if (!images || images.length === 0) {
+        scrollArea.innerHTML = `
+                <div class="nexus-dict-status-container status-empty">
+                    <div class="nexus-dict-status-card">
+                        <div class="nexus-dict-status-icon">\u{1F4F8}</div>
+                        <div class="nexus-dict-status-title">No Results Found</div>
+                    </div>
+                </div>
+            `;
+        return;
+      }
+      const displayImages = images.slice(0, 4);
+      scrollArea.innerHTML = `
+            <div class="nexus-dict-images-grid">
+                ${displayImages.map((img) => `
+                    <div class="nexus-dict-image-card">
+                        <div class="nexus-loading-spinner"></div>
+                        <img src="${img}" loading="lazy">
+                    </div>
+                `).join("")}
+            </div>
+        `;
+      const cards = scrollArea.querySelectorAll(".nexus-dict-image-card");
+      cards.forEach((card) => {
+        const img = card.querySelector("img");
+        const spinner = card.querySelector(".nexus-loading-spinner");
+        if (img) {
+          img.onload = () => {
+            if (spinner) spinner.style.setProperty("display", "none", "important");
+          };
+          img.onerror = () => {
+            card.style.setProperty("display", "none", "important");
+          };
+          img.onclick = () => {
+            window.open(img.src, "_blank");
+          };
+        }
+      });
+    },
+    renderTranslation(data) {
+      if (!this.instance) return;
+      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
+      if (!scrollArea) return;
+      const escapeHTML = (str) => {
+        if (!str) return "";
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+      };
+      const safeOriginal = (data.original || this.currentWord || "").replace(/"/g, "&quot;");
+      const safeTranslation = (data.translation || "").replace(/"/g, "&quot;");
+      let sourceHTML = escapeHTML(data.original || this.currentWord || "");
+      let targetHTML = escapeHTML(data.translation || "");
+      const isPreSplit = data.sentences && Array.isArray(data.sentences);
+      if (isPreSplit) {
+        sourceHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${escapeHTML(s.src || "")}</span>`).join(" ");
+        targetHTML = data.sentences.map((s, idx) => `<span class="nexus-trans-sentence" data-idx="${idx}">${escapeHTML(s.tgt || "")}</span>`).join(" ");
+      }
+      scrollArea.innerHTML = `
+            <div class="nexus-dict-content-wrapper nexus-dict-translation-wrapper" style="padding: 12px;">
+                <div class="nexus-translation-container" style="margin: 0; width: 100%;">
+                    <div class="nexus-translation-card" ${isPreSplit ? 'data-is-pre-split="true"' : ""}>
+                        <div class="nexus-translation-block" style="padding: 0 8px 0 0;">
+                            <div class="nexus-translation-source" data-copy-text="${safeOriginal}">
+                                <div class="nexus-translation-text">${sourceHTML}</div>
+                            </div>
+                        </div>
+                        <div class="nexus-translation-divider"></div>
+                        <div class="nexus-translation-block" style="padding: 0 0 0 8px;">
+                            <div class="nexus-translation-target" data-copy-text="${safeTranslation}">
+                                <div class="nexus-translation-text">${targetHTML}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+      const cardContainer = scrollArea.querySelector(".nexus-translation-card");
+      if (cardContainer && typeof NexusChatUI !== "undefined") {
+        NexusChatUI._setupTranslationHighlight(cardContainer);
+        NexusChatUI.balanceTranslationCard(cardContainer);
+      }
+    },
+    renderData(data) {
+      if (!this.instance) return;
+      const scrollArea = this.instance.querySelector(".nexus-dict-scroll-area");
+      if (!data || !data.entries || data.entries.length === 0) {
+        scrollArea.innerHTML = `
+                <div class="nexus-dict-status-container status-empty">
+                    <div class="nexus-dict-status-card">
+                        <div class="nexus-dict-status-icon">\u{1F50D}</div>
+                        <div class="nexus-dict-status-title">No Results Found</div>
+                        <div class="nexus-dict-status-desc">Try checking spelling or choose another source.</div>
+                    </div>
+                </div>
+            `;
+        return;
+      }
+      scrollArea.innerHTML = `<div class="nexus-dict-content-wrapper"></div>`;
+      const wrapper = scrollArea.querySelector(".nexus-dict-content-wrapper");
+      data.entries.forEach((entry) => {
+        const entryEl = document.createElement("div");
+        entryEl.className = "nexus-dict-popup-item";
+        entryEl.innerHTML = this.buildEntryHTML(entry, data.word);
+        wrapper.appendChild(entryEl);
+      });
+      this.setupAudioListeners(scrollArea);
+    },
+    shortenPOS(pos) {
+      if (!pos) return "";
+      const map = {
+        "noun": "n.",
+        "verb": "v.",
+        "adjective": "adj.",
+        "adverb": "adv.",
+        "preposition": "prep.",
+        "prepositional phrase": "prep. phr.",
+        "conjunction": "conj.",
+        "pronoun": "pron.",
+        "interjection": "interj.",
+        "phrasal verb": "phr. v.",
+        "idiom": "idm.",
+        "idiomatic expression": "idm. expr.",
+        "exclamation": "excl.",
+        "determiner": "det.",
+        "number": "num."
+      };
+      let lower = pos.toLowerCase().trim();
+      if (lower.includes("(")) {
+        lower = lower.split("(")[0].trim();
+      }
+      return map[lower] || lower;
+    },
+    getSpeakerSVG(color = "currentColor") {
+      return `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${color}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`;
+    },
+    setupAudioListeners(container2) {
+      const audioBtns = container2.querySelectorAll(".nexus-dict-popup-audio");
+      let _audioCtx = null;
+      const getAudioCtx = () => {
+        if (!_audioCtx || _audioCtx.state === "closed") {
+          _audioCtx = new AudioContext();
+        }
+        return _audioCtx;
+      };
+      let currentAudio = null;
+      let audioAborted = false;
+      const playBase64Audio2 = (base64Data, speed = 1) => {
+        return new Promise(async (resolve, reject) => {
+          if (audioAborted) {
+            resolve();
+            return;
+          }
+          try {
+            const parts = base64Data.split(",");
+            const byteString = atob(parts[1]);
+            const byteArray = new Uint8Array(byteString.length);
+            for (let i = 0; i < byteString.length; i++) byteArray[i] = byteString.charCodeAt(i);
+            let silenceOffset = 0;
+            try {
+              const ctx = getAudioCtx();
+              const audioBuffer = await ctx.decodeAudioData(byteArray.buffer.slice(0));
+              const channelData = audioBuffer.getChannelData(0);
+              const THRESHOLD = 5e-3;
+              for (let i = 0; i < channelData.length; i++) {
+                if (Math.abs(channelData[i]) > THRESHOLD) {
+                  silenceOffset = i / audioBuffer.sampleRate;
+                  break;
+                }
+              }
+            } catch (e) {
+            }
+            if (audioAborted) {
+              resolve();
+              return;
+            }
+            const mime = parts[0].split(":")[1].split(";")[0];
+            const blob = new Blob([byteArray], { type: mime });
+            const blobUrl = URL.createObjectURL(blob);
+            const audio = new Audio(blobUrl);
+            audio.playbackRate = speed;
+            if (silenceOffset > 0) audio.currentTime = silenceOffset;
+            currentAudio = audio;
+            audio.onended = () => {
+              currentAudio = null;
+              URL.revokeObjectURL(blobUrl);
+              resolve();
+            };
+            audio.onerror = (e) => {
+              currentAudio = null;
+              URL.revokeObjectURL(blobUrl);
+              reject(e);
+            };
+            audio.play().catch(reject);
+          } catch (e) {
+            try {
+              const audio = new Audio(base64Data);
+              audio.playbackRate = speed;
+              currentAudio = audio;
+              audio.onended = () => {
+                currentAudio = null;
+                resolve();
+              };
+              audio.onerror = (err) => {
+                currentAudio = null;
+                reject(err);
+              };
+              audio.play().catch(reject);
+            } catch (err) {
+              reject(err);
+            }
+          }
+        });
+      };
+      const playWordAudio = async (wordText, originalUrl, language) => {
+        if (!wordText) return;
+        const normalizedText = wordText.trim();
+        audioAborted = false;
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio = null;
+        }
+        let speed = 1.1;
+        try {
+          const data = await chrome.storage.local.get(["audioSpeed"]);
+          speed = data.audioSpeed || 1.1;
+        } catch (e) {
+        }
+        try {
+          const cached = await chrome.runtime.sendMessage({ action: "getAudioCache", text: normalizedText });
+          if (cached && cached.success && cached.data) {
+            const chunks = Array.isArray(cached.data) ? cached.data : [cached.data];
+            for (const chunk of chunks) await playBase64Audio2(chunk, speed);
+            return;
+          }
+        } catch (e) {
+        }
+        try {
+          let result = null;
+          if (originalUrl) {
+            try {
+              result = await chrome.runtime.sendMessage({ action: "fetchAudioBase64", url: originalUrl });
+              if (result && result.success && result.data) {
+                result = { type: "oxford", chunks: [result.data] };
+              } else {
+                result = null;
+              }
+            } catch (e) {
+              result = null;
+            }
+          }
+          if (!result) {
+            result = await chrome.runtime.sendMessage({ action: "fetchAudio", text: normalizedText, speed, lang: language });
+          }
+          if (!result || !result.chunks || result.chunks.length === 0) return;
+          for (const chunk of result.chunks) await playBase64Audio2(chunk, speed);
+          chrome.runtime.sendMessage({ action: "setAudioCache", text: normalizedText, type: result.type, data: result.chunks }).catch(() => {
+          });
+        } catch (err) {
+          console.error("[Popup Audio] Play audio failed:", err);
+        }
+      };
+      audioBtns.forEach((btn) => {
+        btn.onclick = async (e) => {
+          e.stopPropagation();
+          const { url, text, lang } = btn.dataset;
+          playWordAudio(text, url, lang);
+        };
+      });
+    },
+    buildEntryHTML(entry, word) {
+      let senseMeaningIndex = 1;
+      return `
+            <div class="nexus-dict-popup-meta">
+                <div class="nexus-dict-header-row">
+                    <span class="nexus-dict-popup-title">${entry.word || word}</span>
+                    ${entry.pos ? `<span class="nexus-dict-popup-pos">${this.shortenPOS(entry.pos)}</span>` : ""}
+                </div>
+                <div class="nexus-dict-popup-prons">
+                    ${entry.uk?.ipa || entry.uk?.audio ? `
+                        <div class="nexus-dict-pron-group uk">
+                            <span class="nexus-dict-lang">UK</span>
+                            <button class="nexus-dict-popup-audio"
+                                data-text="${entry.word || word}" data-lang="en-GB"
+                                ${entry.uk?.audio ? `data-url="${entry.uk.audio}"` : ""}>
+                                ${this.getSpeakerSVG()}
+                            </button>
+                            ${entry.uk?.ipa ? `<span class="nexus-dict-ipa">/${entry.uk.ipa.replace(/^\/|\/$/g, "")}/</span>` : ""}
+                        </div>
+                    ` : ""}
+                    ${entry.us?.ipa || entry.us?.audio ? `
+                        <div class="nexus-dict-pron-group us">
+                            <span class="nexus-dict-lang">US</span>
+                            <button class="nexus-dict-popup-audio"
+                                data-text="${entry.word || word}" data-lang="en-US"
+                                ${entry.us?.audio ? `data-url="${entry.us.audio}"` : ""}>
+                                ${this.getSpeakerSVG()}
+                            </button>
+                            ${entry.us?.ipa ? `<span class="nexus-dict-ipa">/${entry.us.ipa.replace(/^\/|\/$/g, "")}/</span>` : ""}
+                        </div>
+                    ` : ""}
+                </div>
+            </div>
+            <div class="nexus-dict-popup-senses">
+                ${(entry.senses || []).map((sense) => {
+        return `
+                        <div class="nexus-dict-popup-sense">
+                            ${sense.indicator ? `<div class="nexus-dict-sense-indicator">${sense.indicator}</div>` : ""}
+                            ${(sense.definitions || []).map((def) => {
+          const html = `
+                                    <div class="nexus-dict-popup-meaning">
+                                        <div class="nexus-dict-meaning-header">
+                                            ${sense.definitions.length > 1 ? `<span class="nexus-dict-meaning-number">${senseMeaningIndex}.</span>` : ""}
+                                            <span class="nexus-dict-meaning-text">${def.meaning}</span>
+                                        </div>
+                                        ${def.examples && def.examples.length > 0 ? `
+                                            <div class="nexus-dict-popup-examples">
+                                                ${def.examples.map((ex) => {
+            const escaped = (entry.word || word || "").replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+            const regex = new RegExp(`(${escaped}(?:ing|ed|s|es|d)?)`, "gi");
+            const highlighted = ex.replace(regex, "<strong>$1</strong>");
+            return `<div class="nexus-dict-popup-example">${highlighted}</div>`;
+          }).join("")}
+                                            </div>
+                                        ` : ""}
+                                    </div>
+                                `;
+          senseMeaningIndex++;
+          return html;
+        }).join("")}
+                        </div>
+                    `;
+      }).join("")}
+            </div>
+        `;
+    }
+  };
+  if (typeof window !== "undefined") {
+    window.NexusDictionaryPopup = NexusDictionaryPopup2;
+  }
+  if (typeof globalThis !== "undefined") {
+    globalThis.NexusDictionaryPopup = NexusDictionaryPopup2;
+  }
+
+  // src/components/modals/search_modal.js
+  var NexusSearchModal2 = class {
+    static init() {
+      this.overlay = document.getElementById("nexus-search-overlay");
+      this.searchInput = document.getElementById("nexus-search-input");
+      this.resultsList = document.getElementById("nexus-search-results-list");
+      this.closeBtn = document.getElementById("nexus-search-close-btn");
+      this.overlayCloseBtn = document.getElementById("nexus-search-overlay-close-btn");
+      this.newChatBtn = document.getElementById("nexus-search-new-chat");
+      if (!this.overlay) return;
+      if (this.initialized) return;
+      this.overlay.addEventListener("click", (e) => {
+        if (e.target === this.overlay) this.hide();
+      });
+      if (this.closeBtn) {
+        this.closeBtn.addEventListener("click", () => this.hide());
+      }
+      if (this.overlayCloseBtn) {
+        this.overlayCloseBtn.addEventListener("click", () => this.hide());
+      }
+      if (this.newChatBtn) {
+        this.newChatBtn.addEventListener("click", () => {
+          const wasInPane = this.overlay ? this.overlay.classList.contains("in-pane") : false;
+          this.isSelectingChat = true;
+          this.hide();
+          if (typeof resetChat === "function") {
+            resetChat(wasInPane);
+          } else {
+            const sidebarNewChatBtn = document.getElementById("sidebar-new-chat-btn");
+            if (sidebarNewChatBtn) sidebarNewChatBtn.click();
+          }
+        });
+      }
+      if (this.searchInput) {
+        this.searchInput.addEventListener("input", () => this.handleSearch());
+      }
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && this.overlay.style.display === "flex") {
+          this.hide();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+          e.preventDefault();
+          this.show();
+        }
+      });
+      this.sessions = {};
+      this.isSelectingChat = false;
+      this.initialized = true;
+    }
+    static async show(inPane = false) {
+      this.init();
+      if (!this.overlay) return;
+      this.isSelectingChat = false;
+      if (inPane) {
+        this.overlay.classList.add("in-pane");
+        const paneSec = document.getElementById("pane-secondary");
+        if (paneSec) {
+          paneSec.appendChild(this.overlay);
+        }
+      } else {
+        this.overlay.classList.remove("in-pane");
+        document.body.appendChild(this.overlay);
+      }
+      this.overlay.style.display = "flex";
+      if (this.searchInput) {
+        this.searchInput.value = "";
+      }
+      setTimeout(() => {
+        if (this.searchInput) {
+          this.searchInput.focus();
+        }
+      }, 50);
+      this.sessions = await ChatHistoryManager2.getAllHistories();
+      this.handleSearch();
+    }
+    static hide() {
+      if (this.overlay) {
+        this.overlay.style.display = "none";
+        this.overlay.classList.remove("in-pane");
+        document.body.appendChild(this.overlay);
+      }
+    }
+    static escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+    static getTimeGroup(timestamp) {
+      const date = new Date(timestamp);
+      const now = /* @__PURE__ */ new Date();
+      const dDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const dNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const diffTime = dNow - dDate;
+      const diffDays = Math.floor(diffTime / (1e3 * 60 * 60 * 24));
+      if (diffDays === 0) return "Today";
+      if (diffDays === 1) return "Yesterday";
+      if (diffDays <= 3) return "Previous 3 Days";
+      if (diffDays <= 7) return "Previous 7 Days";
+      if (diffDays <= 30) return "Previous 30 Days";
+      const monthNames = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ];
+      if (date.getFullYear() === now.getFullYear()) {
+        return monthNames[date.getMonth()];
+      } else {
+        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+      }
+    }
+    static getHighlightHtml(text, query) {
+      const escapedQuery = this.escapeRegExp(query);
+      const regex = new RegExp(`(${escapedQuery})`, "gi");
+      const matchIdx = text.toLowerCase().indexOf(query.toLowerCase());
+      let displayText = text;
+      if (text.length > 100 && matchIdx !== -1) {
+        const start = Math.max(0, matchIdx - 40);
+        const end = Math.min(text.length, matchIdx + 60);
+        displayText = (start > 0 ? "..." : "") + text.substring(start, end) + (end < text.length ? "..." : "");
+      }
+      const tempDiv = document.createElement("div");
+      tempDiv.textContent = displayText;
+      const escapedText = tempDiv.innerHTML;
+      return escapedText.replace(regex, "<b>$1</b>");
+    }
+    static handleSearch() {
+      if (!this.searchInput || !this.resultsList) return;
+      const query = this.searchInput.value.trim().toLowerCase();
+      this.resultsList.innerHTML = "";
+      const historyData = Object.values(this.sessions || {}).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      if (!query) {
+        const grouped = {};
+        historyData.forEach((session) => {
+          const groupName = this.getTimeGroup(session.updatedAt || session.createdAt || Date.now());
+          if (!grouped[groupName]) {
+            grouped[groupName] = [];
+          }
+          grouped[groupName].push(session);
+        });
+        const groupOrder = ["Today", "Yesterday", "Previous 3 Days", "Previous 7 Days", "Previous 30 Days"];
+        const allGroups = Object.keys(grouped).sort((a, b) => {
+          const idxA = groupOrder.indexOf(a);
+          const idxB = groupOrder.indexOf(b);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          if (idxA !== -1) return -1;
+          if (idxB !== -1) return 1;
+          const parseGroup = (g) => {
+            const parts = g.split(" ");
+            const monthIndex = [
+              "January",
+              "February",
+              "March",
+              "April",
+              "May",
+              "June",
+              "July",
+              "August",
+              "September",
+              "October",
+              "November",
+              "December"
+            ].indexOf(parts[0]);
+            const year = parts[1] ? parseInt(parts[1], 10) : (/* @__PURE__ */ new Date()).getFullYear();
+            return new Date(year, monthIndex, 1).getTime();
+          };
+          return parseGroup(b) - parseGroup(a);
+        });
+        allGroups.forEach((groupName) => {
+          const headerEl = document.createElement("div");
+          headerEl.className = "nexus-search-group-header";
+          headerEl.textContent = groupName;
+          this.resultsList.appendChild(headerEl);
+          grouped[groupName].forEach((session) => {
+            let displayTitle = session.title;
+            if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
+              displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
+            }
+            if (!displayTitle) displayTitle = "Untitled Chat";
+            const activeSessionId = this.getActiveSessionId();
+            const isCurrent = activeSessionId === session.id;
+            const timeIndicatorHtml = isCurrent ? `<span class="nexus-search-item-current">current</span>` : `<span class="nexus-search-item-date">${this.formatDate(session.updatedAt || session.createdAt)}</span>`;
+            const itemEl = document.createElement("div");
+            itemEl.className = "nexus-search-item";
+            itemEl.innerHTML = `
+            <div class="nexus-search-item-content">
+              <div class="nexus-search-item-top">
+                <span class="nexus-search-item-title"></span>
+                ${timeIndicatorHtml}
+              </div>
+            </div>
+          `;
+            itemEl.querySelector(".nexus-search-item-title").textContent = displayTitle;
+            itemEl.addEventListener("click", () => this.openSession(session.id));
+            this.resultsList.appendChild(itemEl);
+          });
+        });
+      } else {
+        const results = [];
+        const escapedQuery = this.escapeRegExp(query);
+        const regex = new RegExp(escapedQuery, "i");
+        for (let i = 0; i < historyData.length; i++) {
+          const session = historyData[i];
+          let displayTitle = session.title;
+          if (!session.isRenamed && !session.autoNamed && session.questions && session.questions.length > 0) {
+            displayTitle = session.questions[session.questions.length - 1].text || "Untitled Chat";
+          }
+          if (!displayTitle) displayTitle = "Untitled Chat";
+          let matched = false;
+          if (displayTitle && regex.test(displayTitle)) {
+            results.push({
+              sessionId: session.id,
+              title: displayTitle,
+              snippet: displayTitle,
+              messageIndex: null,
+              timestamp: session.updatedAt || session.createdAt
+            });
+            matched = true;
+          }
+          if (session.questions && session.questions.length > 0) {
+            session.questions.forEach((q) => {
+              if (q.text && regex.test(q.text) && !(matched && q.text === displayTitle)) {
+                results.push({
+                  sessionId: session.id,
+                  title: displayTitle,
+                  snippet: q.text,
+                  messageIndex: q.index,
+                  timestamp: q.timestamp || session.updatedAt || session.createdAt
+                });
+              }
+            });
+          }
+          if (results.length >= 20) break;
+        }
+        const finalResults = results.slice(0, 20);
+        if (finalResults.length === 0) {
+          this.resultsList.innerHTML = `<div class="nexus-search-no-results">No chats found</div>`;
+          return;
+        }
+        finalResults.forEach((item) => {
+          const activeSessionId = this.getActiveSessionId();
+          const isCurrent = activeSessionId === item.sessionId;
+          const timeIndicatorHtml = isCurrent ? `<span class="nexus-search-item-current">current</span>` : `<span class="nexus-search-item-date">${this.formatDate(item.timestamp)}</span>`;
+          const itemEl = document.createElement("div");
+          itemEl.className = "nexus-search-item";
+          itemEl.innerHTML = `
+          <div class="nexus-search-item-content">
+            <div class="nexus-search-item-top">
+              <span class="nexus-search-item-title"></span>
+              ${timeIndicatorHtml}
+            </div>
+            <div class="nexus-search-item-snippet"></div>
+          </div>
+        `;
+          itemEl.querySelector(".nexus-search-item-title").textContent = item.title;
+          itemEl.querySelector(".nexus-search-item-snippet").innerHTML = this.getHighlightHtml(item.snippet, query);
+          itemEl.addEventListener("click", () => this.openSession(item.sessionId, item.messageIndex));
+          this.resultsList.appendChild(itemEl);
+        });
+      }
+    }
+    static async openSession(sessionId, messageIndex = null) {
+      const wasInPane = this.overlay ? this.overlay.classList.contains("in-pane") : false;
+      this.isSelectingChat = true;
+      this.hide();
+      this.isSelectingChat = false;
+      const messages = await ChatHistoryManager2.getSessionMessages(sessionId);
+      const meta = this.sessions[sessionId] || { id: sessionId };
+      const listContainer = document.getElementById("sidebar-recent-chats");
+      if (listContainer) {
+        listContainer.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+        document.querySelectorAll("#sidebar-sparks-list .sidebar-spark-item.active").forEach((el) => el.classList.remove("active"));
+        const targetSidebarItem = listContainer.querySelector(`.recent-chat-item[data-session-id="${sessionId}"]`);
+        if (targetSidebarItem) {
+          targetSidebarItem.classList.add("active");
+        }
+      }
+      if (typeof window.loadHistoryIntoNewTab === "function") {
+        window.loadHistoryIntoNewTab(messages, meta, sessionId, messageIndex, wasInPane);
+      }
+      const sidebar = document.getElementById("nexus-sidebar");
+      const backdrop = document.querySelector(".sidebar-backdrop");
+      if (sidebar) sidebar.classList.remove("active");
+      if (backdrop) backdrop.classList.remove("active");
+      document.body.classList.remove("sidebar-open");
+    }
+    static getActiveSessionId() {
+      const activeSidebarItem = document.querySelector("#sidebar-recent-chats .recent-chat-item.active");
+      if (activeSidebarItem) {
+        const sid = activeSidebarItem.getAttribute("data-session-id");
+        if (sid) return sid;
+      }
+      if (typeof window.NexusSelectionScope !== "undefined") {
+        const tabs3 = window.NexusSelectionScope.getTabs();
+        const activeIndex = window.NexusSelectionScope.getActiveTabIndex();
+        if (tabs3 && activeIndex >= 0 && tabs3[activeIndex]) {
+          return tabs3[activeIndex].sessionId;
+        }
+      }
+      return null;
+    }
+    static formatDate(timestamp) {
+      if (!timestamp) return "";
+      const d = new Date(timestamp);
+      const today = /* @__PURE__ */ new Date();
+      const isToday = d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const isYesterday = d.getDate() === yesterday.getDate() && d.getMonth() === yesterday.getMonth() && d.getFullYear() === yesterday.getFullYear();
+      if (isToday || isYesterday) {
+        return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      }
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      const year = String(d.getFullYear()).slice(-2);
+      return `${month}/${day}/${year}`;
+    }
+  };
+  if (typeof window !== "undefined") {
+    window.NexusSearchModal = NexusSearchModal2;
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => {
+        if (document.getElementById("nexus-search-overlay")) {
+          NexusSearchModal2.init();
+        }
+      });
+    } else if (document.getElementById("nexus-search-overlay")) {
+      NexusSearchModal2.init();
+    }
+  }
+
+  // src/components/modals/settings/dom_templates.js
+  var SETTINGS_TEMPLATES = {
+    "nexus-providerItemTemplate": `
+    <div class="nexus-settings-provider-card provider-item">
+        <div class="provider-item-content">
+            <div class="provider-logo-container"></div>
+            <div class="provider-info">
+                <span class="provider-title provider-item-name"></span>
+                <span class="provider-badge"></span>
+            </div>
+        </div>
+    </div>
+  `,
+    "nexus-chainItemTemplate": `
+    <div class="nexus-settings-chain-card chain-item" draggable="true">
+        <span class="chain-number"></span>
+        <div class="chain-details">
+            <span class="chain-title"></span>
+            <span class="chain-subtitle"></span>
+        </div>
+        <div class="chain-actions">
+            <button type="button" class="nexus-settings-icon-btn edit" title="Edit Model">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+            </button>
+            <button type="button" class="nexus-settings-icon-btn remove" title="Remove">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+  `,
+    "nexus-mappingRowTemplate": `
+    <div class="nexus-settings-chain-card chain-item">
+        <span class="chain-number mapping-number"></span>
+        <div class="chain-details">
+            <span class="chain-title mapping-name"></span>
+        </div>
+        <div class="chain-actions">
+            <button type="button" class="nexus-settings-icon-btn edit mapping-edit-btn" title="Edit Mapping">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+            </button>
+            <button type="button" class="nexus-settings-icon-btn remove mapping-delete-btn" title="Delete Mapping">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+  `,
+    "nexus-userFactItemTemplate": `
+    <div class="nexus-settings-chain-card chain-item">
+        <span class="chain-number fact-index"></span>
+        <div class="chain-details">
+            <span class="chain-title fact-text"></span>
+        </div>
+        <div class="chain-actions">
+            <button type="button" class="nexus-settings-icon-btn edit fact-edit-btn" title="Edit Instruction">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+            </button>
+            <button type="button" class="nexus-settings-icon-btn remove fact-delete-btn" title="Delete Instruction">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+  `,
+    "nexus-annotationRowTemplate": `
+    <div class="nexus-settings-chain-card chain-item">
+        <span class="chain-number annotation-number"></span>
+        <div class="chain-details annotation-details">
+            <div class="annotation-color-preview"></div>
+            <span class="chain-title annotation-shortcut-text font-medium"></span>
+        </div>
+        <div class="chain-actions">
+            <button type="button" class="nexus-settings-icon-btn edit annotation-edit-btn" title="Edit Highlight">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+            </button>
+            <button type="button" class="nexus-settings-icon-btn remove annotation-delete-btn" title="Delete Highlight">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+    </div>
+  `
+  };
+  function injectSettingsTemplates() {
+    Object.entries(SETTINGS_TEMPLATES).forEach(([id, html]) => {
+      if (!document.getElementById(id)) {
+        const t = document.createElement("template");
+        t.id = id;
+        t.innerHTML = html.trim();
+        document.body.appendChild(t);
+      }
+    });
+  }
+
+  // src/components/modals/settings/providers_data.js
+  function getDefaultProviders() {
+    return [
+      { id: "gemini-default", name: "Gemini", type: "gemini", endpoint: "https://generativelanguage.googleapis.com/v1beta/models", apiKey: "", apiKeyUrl: "https://aistudio.google.com/app/apikey" },
+      { id: "openai-default", name: "OpenAI", type: "openai", endpoint: "https://api.openai.com/v1/chat/completions", apiKey: "", apiKeyUrl: "https://platform.openai.com/api-keys" },
+      { id: "anthropic-default", name: "Anthropic (Claude)", type: "openai", endpoint: "https://api.anthropic.com/v1", apiKey: "", apiKeyUrl: "https://console.anthropic.com/settings/keys" },
+      { id: "deepseek-default", name: "DeepSeek", type: "openai", endpoint: "https://api.deepseek.com/v1", apiKey: "", apiKeyUrl: "https://platform.deepseek.com/api_keys" },
+      { id: "grok-default", name: "xAI (Grok)", type: "openai", endpoint: "https://api.x.ai/v1", apiKey: "", apiKeyUrl: "https://console.x.ai/" },
+      { id: "perplexity-default", name: "Perplexity AI", type: "openai", endpoint: "https://api.perplexity.ai", apiKey: "", apiKeyUrl: "https://www.perplexity.ai/settings/api" },
+      { id: "openrouter-default", name: "OpenRouter", type: "openai", endpoint: "https://openrouter.ai/api/v1", apiKey: "", apiKeyUrl: "https://openrouter.ai/keys" },
+      { id: "groq-default", name: "Groq", type: "openai", endpoint: "https://api.groq.com/openai/v1", apiKey: "", apiKeyUrl: "https://console.groq.com/keys" },
+      { id: "mistral-default", name: "Mistral AI", type: "openai", endpoint: "https://api.mistral.ai/v1", apiKey: "", apiKeyUrl: "https://console.mistral.ai/api-keys/" },
+      { id: "cohere-default", name: "Cohere", type: "openai", endpoint: "https://api.cohere.com/v1", apiKey: "", apiKeyUrl: "https://dashboard.cohere.com/api-keys" },
+      { id: "together-default", name: "Together AI", type: "openai", endpoint: "https://api.together.xyz/v1", apiKey: "", apiKeyUrl: "https://api.together.ai/settings/api-keys" },
+      { id: "replicate-default", name: "Replicate", type: "openai", endpoint: "https://api.replicate.com/v1", apiKey: "", apiKeyUrl: "https://replicate.com/account/api-tokens" },
+      { id: "fireworks-default", name: "Fireworks AI", type: "openai", endpoint: "https://api.fireworks.ai/inference/v1", apiKey: "", apiKeyUrl: "https://fireworks.ai/account/api-keys" },
+      { id: "deepinfra-default", name: "DeepInfra", type: "openai", endpoint: "https://api.deepinfra.com/v1/openai", apiKey: "", apiKeyUrl: "https://deepinfra.com/dash/api_keys" },
+      { id: "novita-default", name: "Novita AI", type: "openai", endpoint: "https://api.novita.ai/v3/openai", apiKey: "", apiKeyUrl: "https://novita.ai/dashboard/key-management" },
+      { id: "huggingface-default", name: "Hugging Face", type: "openai", endpoint: "https://api-inference.huggingface.co/v1", apiKey: "", apiKeyUrl: "https://huggingface.co/settings/tokens" },
+      { id: "cerebras-default", name: "Cerebras", type: "openai", endpoint: "https://api.cerebras.ai/v1", apiKey: "", apiKeyUrl: "https://cloud.cerebras.ai/" },
+      { id: "alibaba-default", name: "Alibaba Qwen", type: "openai", endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1", apiKey: "", apiKeyUrl: "https://dashscope.console.aliyun.com/" },
+      { id: "moonshot-default", name: "Moonshot AI (Kimi)", type: "openai", endpoint: "https://api.moonshot.cn/v1", apiKey: "", apiKeyUrl: "https://platform.moonshot.cn/console/api-keys" },
+      { id: "minimax-default", name: "MiniMax", type: "openai", endpoint: "https://api.minimax.chat/v1", apiKey: "", apiKeyUrl: "https://platform.minimaxi.com/" },
+      { id: "zhipu-default", name: "Zhipu AI (GLM)", type: "openai", endpoint: "https://open.bigmodel.cn/api/paas/v4", apiKey: "", apiKeyUrl: "https://open.bigmodel.cn/usercenter/apikeys" },
+      { id: "ollama-default", name: "Ollama (Local)", type: "openai", endpoint: "http://localhost:11434/v1", apiKey: "", apiKeyUrl: "https://ollama.com/" },
+      { id: "lmstudio-default", name: "LM Studio (Local)", type: "openai", endpoint: "http://localhost:1234/v1", apiKey: "", apiKeyUrl: "https://lmstudio.ai/" },
+      { id: "vllm-default", name: "vLLM (Local)", type: "openai", endpoint: "http://localhost:8000/v1", apiKey: "", apiKeyUrl: "https://github.com/vllm-project/vllm" },
+      { id: "localai-default", name: "LocalAI (Local)", type: "openai", endpoint: "http://localhost:8080/v1", apiKey: "", apiKeyUrl: "https://localai.io/" }
+    ];
+  }
+
+  // src/components/modals/settings_modal.js
+  var NexusSettingsModal2 = class _NexusSettingsModal {
+    static init() {
+      this.injectDOMTemplates();
+      this.overlay = document.getElementById("nexus-settings-overlay");
+      this.closeBtn = document.getElementById("nexus-settings-close-btn");
+      this.navContainer = document.getElementById("nexus-settings-nav");
+      this.mainContainer = document.querySelector(".nexus-settings-main");
+      this.sections = document.querySelectorAll(".nexus-settings-section");
+      this.navItems = document.querySelectorAll(".nexus-settings-nav-item");
+      if (!this.overlay) return;
+      this.closeBtn.addEventListener("click", () => this.hide());
+      this.overlay.addEventListener("click", (e) => {
+        if (e.target === this.overlay) this.hide();
+      });
+      this.navItems.forEach((item) => {
+        item.addEventListener("click", () => {
+          const sectionId = item.getAttribute("data-section");
+          this.switchSection(sectionId);
+        });
+      });
+      this.providers = [];
+      this.models = [];
+      this.advancedParamsByModel = {};
+      this.questionMappings = [];
+      this.annotationShortcuts = [];
+      this.userFacts = [];
+      this.bindGeneralTab();
+      this.bindAppearanceTab();
+      this.bindPersonalizationTab();
+      this.bindKeyboardTab();
+      this.bindAccountTab();
+      const toggleNexusKeyBtn = document.getElementById("toggle-nexus-key-visibility");
+      const nexusApiKeyInput = document.getElementById("nexus-provider-form-apikey");
+      const nexusEyeOpen = document.getElementById("nexus-eye-open-icon");
+      const nexusEyeClosed = document.getElementById("nexus-eye-closed-icon");
+      if (toggleNexusKeyBtn && nexusApiKeyInput) {
+        toggleNexusKeyBtn.addEventListener("click", () => {
+          if (nexusApiKeyInput.type === "password") {
+            nexusApiKeyInput.type = "text";
+            nexusEyeOpen.style.display = "none";
+            nexusEyeClosed.style.display = "block";
+          } else {
+            nexusApiKeyInput.type = "password";
+            nexusEyeOpen.style.display = "block";
+            nexusEyeClosed.style.display = "none";
+          }
+        });
+      }
+      this.overlay.querySelectorAll("textarea").forEach((textarea) => {
+        this.enableAutoExpandTextarea(textarea);
+      });
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === "local" && changes.user_memory && this.overlay && this.overlay.style.display !== "none") {
+          UserMemory.load().then((memory) => {
+            this.userFacts = memory.facts || [];
+            this.renderUserFacts();
+          });
+        }
+      });
+      this.initialized = true;
+    }
+    static injectDOMTemplates() {
+      injectSettingsTemplates();
+    }
+    static show() {
+      if (!this.initialized) this.init();
+      if (this.overlay) {
+        this.overlay.style.display = "flex";
+        this.loadSettings();
+      }
+    }
+    static hide() {
+      if (this.overlay) {
+        this.overlay.style.display = "none";
+      }
+    }
+    static switchSection(sectionId) {
+      this.navItems.forEach((item) => {
+        item.classList.toggle("active", item.getAttribute("data-section") === sectionId);
+      });
+      this.sections.forEach((section) => {
+        section.classList.toggle("active", section.id === `nexus-settings-sec-${sectionId}`);
+      });
+      if (this.mainContainer) this.mainContainer.scrollTop = 0;
+    }
+    static async loadSettings() {
+      const keys = [
+        "providers",
+        "models",
+        "advancedParamsByModel",
+        "fontSize",
+        "responseLanguage",
+        "theme",
+        "contrast",
+        "accentColor",
+        "fontFamily",
+        "fontWeight",
+        "language",
+        "dictationEnabled",
+        "spokenLanguage",
+        "voice",
+        "separateVoiceEnabled",
+        "ttsModel",
+        "sttModel",
+        "aboutNickname",
+        "aboutOccupation",
+        "aboutInterests",
+        "questionMappings",
+        "annotationShortcuts",
+        "historyRetentionMonths",
+        "shortcuts"
+      ];
+      chrome.storage.local.get(keys, (items) => {
+        const defaults = this.getDefaultProviders();
+        const savedProviders = items.providers || [];
+        this.providers = defaults.map((def) => {
+          const saved = savedProviders.find((p) => p.id === def.id);
+          return {
+            ...def,
+            apiKey: saved?.apiKey || def.apiKey || "",
+            endpoint: saved?.endpoint || def.endpoint
+          };
+        });
+        this.renderProviders();
+        this.populateProviderDropdowns();
+        this.models = items.models || [];
+        this.advancedParamsByModel = items.advancedParamsByModel || {};
+        this.renderChainList();
+        const themeVal = items.theme || "auto";
+        const contrastVal = items.contrast || "auto";
+        const accentVal = items.accentColor || "default";
+        const fontFamilyVal = items.fontFamily || "default";
+        const fontWeightVal = items.fontWeight || "400";
+        this.setDropdownValue("nexus-settings-theme", "nexus-settings-theme-menu", themeVal, "System");
+        this.setDropdownValue("nexus-settings-contrast", "nexus-settings-contrast-menu", contrastVal, "System");
+        this.setDropdownValue("nexus-settings-accent", "nexus-settings-accent-menu", accentVal, "Default");
+        this.setDropdownValue("nexus-settings-fontfamily", "nexus-settings-fontfamily-menu", fontFamilyVal, "Default");
+        const weightLabels = { "300": "Thin", "350": "Book", "400": "Normal", "450": "Medium", "500": "Semi-bold" };
+        this.setDropdownValue("nexus-settings-fontweight", "nexus-settings-fontweight-menu", fontWeightVal, weightLabels[fontWeightVal] || "Normal");
+        document.body.className = document.body.className.replace(/\bnexus-font-\S+/g, "");
+        document.body.classList.add(`nexus-font-${fontFamilyVal}`);
+        document.documentElement.style.setProperty("--nexus-weight-base", fontWeightVal);
+        let mode = themeVal === "auto" ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light" : themeVal;
+        if (typeof chrome !== "undefined" && chrome.extension && chrome.extension.inIncognitoContext) {
+          mode = "dark";
+        }
+        document.body.setAttribute("data-theme", mode);
+        document.body.setAttribute("data-accent", accentVal);
+        document.body.setAttribute("data-contrast", contrastVal);
+        this.setDropdownValue("nexus-settings-language", "nexus-settings-language-menu", items.language || "auto", "Auto-detect");
+        document.getElementById("nexus-settings-dictation-toggle").checked = items.dictationEnabled !== false;
+        this.setDropdownValue("nexus-settings-spoken-lang", "nexus-settings-spoken-lang-menu", items.spokenLanguage || "auto", "Auto-detect");
+        this.setDropdownValue("nexus-settings-voice-select", "nexus-settings-voice-select-menu", items.voice || "sol", "Sol");
+        document.getElementById("nexus-settings-separate-voice").checked = items.separateVoiceEnabled === true;
+        this.setDropdownValue("nexus-settings-tts-model", "nexus-settings-tts-model-menu", items.ttsModel || "gemini-2.5-flash", "Gemini 2.5 Flash");
+        this.setDropdownValue("nexus-settings-stt-model", "nexus-settings-stt-model-menu", items.sttModel || "whisper-large-v3-turbo", "Whisper Large V3 Turbo (Fastest)");
+        const fsVal = items.fontSize || 14;
+        const fsInput = document.getElementById("nexus-settings-fontsize");
+        if (fsInput) fsInput.value = fsVal;
+        const aboutNicknameEl = document.getElementById("nexus-settings-about-nickname");
+        if (aboutNicknameEl) aboutNicknameEl.value = items.aboutNickname || "";
+        const aboutOccupationEl = document.getElementById("nexus-settings-about-occupation");
+        if (aboutOccupationEl) aboutOccupationEl.value = items.aboutOccupation || "";
+        const interestsTextarea = document.getElementById("nexus-settings-about-interests");
+        if (interestsTextarea) {
+          interestsTextarea.value = items.aboutInterests || "";
+          interestsTextarea.dispatchEvent(new Event("input"));
+        }
+        UserMemory.load().then((memory) => {
+          this.userFacts = memory.facts || [];
+          this.renderUserFacts();
+        });
+        this.questionMappings = items.questionMappings || [];
+        this.renderQuestionMappings();
+        this.annotationShortcuts = items.annotationShortcuts || [];
+        this.renderAnnotationShortcuts();
+        this.loadShortcutsKeys(items);
+        const retentionInput = document.getElementById("nexus-history-retention-input");
+        const savedRet = items.historyRetentionMonths !== void 0 ? items.historyRetentionMonths : 3;
+        const matchingOpt = [
+          { label: "1 Week", value: "0.25" },
+          { label: "2 Weeks", value: "0.5" },
+          { label: "1 Month", value: "1" },
+          { label: "2 Months", value: "2" },
+          { label: "3 Months", value: "3" },
+          { label: "6 Months", value: "6" },
+          { label: "1 Year", value: "12" },
+          { label: "Keep forever", value: "0" }
+        ].find((o) => Math.abs(parseFloat(o.value) - parseFloat(savedRet)) < 0.01);
+        if (retentionInput && matchingOpt) {
+          retentionInput.value = matchingOpt.label;
+          retentionInput.dataset.value = matchingOpt.value;
+        }
+        this.updateStorageUsage();
+      });
+    }
+    static saveOptions() {
+      const getVal = (id, fallback = "") => document.getElementById(id)?.value || fallback;
+      const getDropdownVal = (id, fallback = "") => document.getElementById(id)?.dataset.value || fallback;
+      const getChecked = (id) => document.getElementById(id)?.checked || false;
+      const getInt = (id, fallback = 3) => {
+        const el = document.getElementById(id);
+        return el ? parseInt(el.value, 10) : fallback;
+      };
+      const settings = {
+        theme: getDropdownVal("nexus-settings-theme", "auto"),
+        contrast: getDropdownVal("nexus-settings-contrast", "auto"),
+        accentColor: getDropdownVal("nexus-settings-accent", "default"),
+        fontFamily: getDropdownVal("nexus-settings-fontfamily", "default"),
+        fontWeight: getDropdownVal("nexus-settings-fontweight", "400"),
+        fontSize: parseFloat(getVal("nexus-settings-fontsize", "14")) || 14,
+        language: getDropdownVal("nexus-settings-language", "auto"),
+        dictationEnabled: document.getElementById("nexus-settings-dictation-toggle") ? getChecked("nexus-settings-dictation-toggle") : true,
+        spokenLanguage: getDropdownVal("nexus-settings-spoken-lang", "auto"),
+        voice: getDropdownVal("nexus-settings-voice-select", "sol"),
+        separateVoiceEnabled: getChecked("nexus-settings-separate-voice"),
+        ttsModel: getDropdownVal("nexus-settings-tts-model", "gemini-2.5-flash"),
+        sttModel: getDropdownVal("nexus-settings-stt-model", "whisper-large-v3-turbo"),
+        aboutNickname: getVal("nexus-settings-about-nickname").trim(),
+        aboutOccupation: getVal("nexus-settings-about-occupation").trim(),
+        aboutInterests: getVal("nexus-settings-about-interests").trim(),
+        historyRetentionMonths: parseFloat(document.getElementById("nexus-history-retention-input")?.dataset.value || "3")
+      };
+      chrome.storage.local.set(settings, () => {
+        if (typeof applyTheme === "function") {
+          applyTheme(settings.theme);
+        } else {
+          let mode = settings.theme === "auto" ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light" : settings.theme;
+          if (typeof chrome !== "undefined" && chrome.extension && chrome.extension.inIncognitoContext) {
+            mode = "dark";
+          }
+          document.body.setAttribute("data-theme", mode);
+        }
+        document.body.setAttribute("data-accent", settings.accentColor);
+        document.body.setAttribute("data-contrast", settings.contrast);
+        document.body.className = document.body.className.replace(/\bnexus-font-\S+/g, "");
+        document.body.classList.add(`nexus-font-${settings.fontFamily}`);
+        document.documentElement.style.setProperty("--nexus-weight-base", settings.fontWeight);
+        if (typeof applyFontSize === "function") {
+          applyFontSize(settings.fontSize);
+        }
+      });
+    }
+    static bindGeneralTab() {
+      const setupKeyInput = document.getElementById("nexus-setup-provider-key");
+      const setupEndpointInput = document.getElementById("nexus-setup-provider-endpoint");
+      const keyToggleBtn = document.getElementById("nexus-setup-key-toggle");
+      const eyeOpen = document.getElementById("nexus-setup-eye-open");
+      const eyeClosed = document.getElementById("nexus-setup-eye-closed");
+      if (keyToggleBtn && setupKeyInput) {
+        keyToggleBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const isPassword = setupKeyInput.type === "password";
+          setupKeyInput.type = isPassword ? "text" : "password";
+          if (eyeOpen && eyeClosed) {
+            eyeOpen.style.display = isPassword ? "none" : "block";
+            eyeClosed.style.display = isPassword ? "block" : "none";
+          }
+        });
+      }
+      if (setupKeyInput) {
+        setupKeyInput.addEventListener("input", () => this.saveSelectedProviderKey());
+      }
+      if (setupEndpointInput) {
+        setupEndpointInput.addEventListener("input", () => this.saveSelectedProviderKey());
+      }
+      const cancelModelBtn = document.getElementById("nexus-cancel-model-btn");
+      const saveModelBtn = document.getElementById("nexus-save-model-btn");
+      const closeModelPopupBtn = document.getElementById("nexus-model-popup-close-btn");
+      const modelPopupOverlay = document.getElementById("nexus-model-popup-overlay");
+      if (cancelModelBtn) cancelModelBtn.addEventListener("click", () => this.hideModelForm());
+      if (saveModelBtn) saveModelBtn.addEventListener("click", () => this.addModelToChain());
+      if (closeModelPopupBtn) closeModelPopupBtn.addEventListener("click", () => this.hideModelForm());
+      if (modelPopupOverlay) {
+        modelPopupOverlay.addEventListener("click", (e) => {
+          if (e.target === modelPopupOverlay) this.hideModelForm();
+        });
+      }
+      this.setupDropdownInputs("nexus-model-form-provider", "nexus-model-form-provider-list");
+      this.setupDropdownInputs("nexus-model-form-model", "nexus-model-form-model-list");
+      this.setupDropdownInputs("nexus-model-form-max-tokens", "nexus-model-form-max-tokens-list");
+      this.setupDropdownInputs("nexus-setup-provider-input", "nexus-setup-provider-menu");
+      this.setupDropdownInputs("nexus-settings-tts-model", "nexus-settings-tts-model-menu");
+      this.setupDropdownInputs("nexus-settings-stt-model", "nexus-settings-stt-model-menu");
+    }
+    static getDefaultProviders() {
+      return getDefaultProviders();
+    }
+    static getProviderLogoSvg(id) {
+      const norm = (id || "").toLowerCase();
+      if (norm.includes("openai")) {
+        return `<svg fill="currentColor" fill-rule="evenodd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>OpenAI</title><path d="M9.205 8.658v-2.26c0-.19.072-.333.238-.428l4.543-2.616c.619-.357 1.356-.523 2.117-.523 2.854 0 4.662 2.212 4.662 4.566 0 .167 0 .357-.024.547l-4.71-2.759a.797.797 0 00-.856 0l-5.97 3.473zm10.609 8.8V12.06c0-.333-.143-.57-.429-.737l-5.97-3.473 1.95-1.118a.433.433 0 01.476 0l4.543 2.617c1.309.76 2.189 2.378 2.189 3.948 0 1.808-1.07 3.473-2.76 4.163zM7.802 12.703l-1.95-1.142c-.167-.095-.239-.238-.239-.428V5.899c0-2.545 1.95-4.472 4.591-4.472 1 0 1.927.333 2.712.928L8.23 5.067c-.285.166-.428.404-.428.737v6.898zM12 15.128l-2.795-1.57v-3.33L12 8.658l2.795 1.57v3.33L12 15.128zm1.796 7.23c-1 0-1.927-.332-2.712-.927l4.686-2.712c.285-.166.428-.404.428-.737v-6.898l1.974 1.142c.167.095.238.238.238.428v5.233c0 2.545-1.974 4.472-4.614 4.472zm-5.637-5.303l-4.544-2.617c-1.308-.761-2.188-2.378-2.188-3.948A4.482 4.482 0 014.21 6.327v5.423c0 .333.143.571.428.738l5.947 3.449-1.95 1.118a.432.432 0 01-.476 0zm-.262 3.9c-2.688 0-4.662-2.021-4.662-4.519 0-.19.024-.38.047-.57l4.686 2.71c.286.167.571.167.856 0l5.97-3.448v2.26c0 .19-.07.333-.237.428l-4.543 2.616c-.619.357-1.356.523-2.117.523zm5.899 2.83a5.947 5.947 0 005.827-4.756C22.287 18.339 24 15.84 24 13.296c0-1.665-.713-3.282-1.998-4.448.119-.5.19-.999.19-1.498 0-3.401-2.759-5.947-5.946-5.947-.642 0-1.26.095-1.88.31A5.962 5.962 0 0010.205 0a5.947 5.947 0 00-5.827 4.757C1.713 5.447 0 7.945 0 10.49c0 1.666.713 3.283 1.998 4.448-.119.5-.19 1-.19 1.499 0 3.401 2.759 5.946 5.946 5.946.642 0 1.26-.095 1.88-.309a5.96 5.96 0 004.162 1.713z"></path></svg>`;
+      }
+      if (norm.includes("anthropic") || norm.includes("claude")) {
+        return `<svg height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Claude</title><path d="M4.709 15.955l4.72-2.647.08-.23-.08-.128H9.2l-.79-.048-2.698-.073-2.339-.097-2.266-.122-.571-.121L0 11.784l.055-.352.48-.321.686.06 1.52.103 2.278.158 1.652.097 2.449.255h.389l.055-.157-.134-.098-.103-.097-2.358-1.596-2.552-1.688-1.336-.972-.724-.491-.364-.462-.158-1.008.656-.722.881.06.225.061.893.686 1.908 1.476 2.491 1.833.365.304.145-.103.019-.073-.164-.274-1.355-2.446-1.446-2.49-.644-1.032-.17-.619a2.97 2.97 0 01-.104-.729L6.283.134 6.696 0l.996.134.42.364.62 1.414 1.002 2.229 1.555 3.03.456.898.243.832.091.255h.158V9.01l.128-1.706.237-2.095.23-2.695.08-.76.376-.91.747-.492.584.28.48.685-.067.444-.286 1.851-.559 2.903-.364 1.942h.212l.243-.242.985-1.306 1.652-2.064.73-.82.85-.904.547-.431h1.033l.76 1.129-.34 1.166-1.064 1.347-.881 1.142-1.264 1.7-.79 1.36.073.11.188-.02 2.856-.606 1.543-.28 1.841-.315.833.388.091.395-.328.807-1.969.486-2.309.462-3.439.813-.042.03.049.061 1.549.146.662.036h1.622l3.02.225.79.522.474.638-.079.485-1.215.62-1.64-.389-3.829-.91-1.312-.329h-.182v.11l1.093 1.068 2.006 1.81 2.509 2.33.127.578-.322.455-.34-.049-2.205-1.657-.851-.747-1.926-1.62h-.128v.17l.444.649 2.345 3.521.122 1.08-.17.353-.608.213-.668-.122-1.374-1.925-1.415-2.167-1.143-1.943-.14.08-.674 7.254-.316.37-.729.28-.607-.461-.322-.747.322-1.476.389-1.924.315-1.53.286-1.9.17-.632-.012-.042-.14.018-1.434 1.967-2.18 2.945-1.726 1.845-.414.164-.717-.37.067-.662.401-.589 2.388-3.036 1.44-1.882.93-1.086-.006-.158h-.055L4.132 18.56l-1.13.146-.487-.456.061-.746.231-.243 1.908-1.312-.006.006z" fill="#D97757" fill-rule="nonzero"></path></svg>`;
+      }
+      if (norm.includes("gemini")) {
+        return `<svg height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Gemini</title><path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z" fill="#3186FF"></path><path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z" fill="url(#lobe-icons-gemini-0-_R_0_)"></path><path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z" fill="url(#lobe-icons-gemini-1-_R_0_)"></path><path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z" fill="url(#lobe-icons-gemini-2-_R_0_)"></path><defs><linearGradient gradientUnits="userSpaceOnUse" id="lobe-icons-gemini-0-_R_0_" x1="7" x2="11" y1="15.5" y2="12"><stop stop-color="#08B962"></stop><stop offset="1" stop-color="#08B962" stop-opacity="0"></stop></linearGradient><linearGradient gradientUnits="userSpaceOnUse" id="lobe-icons-gemini-1-_R_0_" x1="8" x2="11.5" y1="5.5" y2="11"><stop stop-color="#F94543"></stop><stop offset="1" stop-color="#F94543" stop-opacity="0"></stop></linearGradient><linearGradient gradientUnits="userSpaceOnUse" id="lobe-icons-gemini-2-_R_0_" x1="3.5" x2="17.5" y1="13.5" y2="12"><stop stop-color="#FABC12"></stop><stop offset=".46" stop-color="#FABC12" stop-opacity="0"></stop></linearGradient></defs></svg>`;
+      }
+      if (norm.includes("deepseek")) {
+        return `<svg height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>DeepSeek</title><path d="M23.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM11.581 18c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z" fill="#4D6BFE"></path></svg>`;
+      }
+      if (norm.includes("groq")) {
+        return `<svg fill="#f55036" fill-rule="evenodd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Groq</title><path d="M12.036 2c-3.853-.035-7 3-7.036 6.781-.035 3.782 3.055 6.872 6.908 6.907h2.42v-2.566h-2.292c-2.407.028-4.38-1.866-4.408-4.23-.029-2.362 1.901-4.298 4.308-4.326h.1c2.407 0 4.358 1.915 4.365 4.278v6.305c0 2.342-1.944 4.25-4.323 4.279a4.375 4.375 0 01-3.033-1.252l-1.851 1.818A7 7 0 0012.029 22h.092c3.803-.056 6.858-3.083 6.879-6.816v-6.5C18.907 4.963 15.817 2 12.036 2z"></path></svg>`;
+      }
+      if (norm.includes("openrouter")) {
+        return `<svg fill="#4f46e5" fill-rule="evenodd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>OpenRouter</title><path d="M16.804 1.957l7.22 4.105v.087L16.73 10.21l.017-2.117-.821-.03c-1.059-.028-1.611.002-2.268.11-1.064.175-2.038.577-3.147 1.352L8.345 11.03c-.284.195-.495.336-.68.455l-.515.322-.397.234.385.23.53.338c.476.314 1.17.796 2.701 1.866 1.11.775 2.083 1.177 3.147 1.352l.3.045c.694.091 1.375.094 2.825.033l.022-2.159 7.22 4.105v.087L16.589 22l.014-1.862-.635.022c-1.386.042-2.137.002-3.138-.162-1.694-.28-3.26-.926-4.881-2.059l-2.158-1.5a21.997 21.997 0 00-.755-.498l-.467-.28a55.927 55.927 0 00-.76-.43C2.908 14.73.563 14.116 0 14.116V9.888l.14.004c.564-.007 2.91-.622 3.809-1.124l1.016-.58.438-.274c.428-.28 1.072-.726 2.686-1.853 1.621-1.133 3.186-1.78 4.881-2.059 1.152-.19 1.974-.213 3.814-.138l.02-1.907z"></path></svg>`;
+      }
+      if (norm.includes("cerebras")) {
+        return `<svg fill="currentColor" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Cerebras</title><path clip-rule="evenodd" d="M14.121 2.701a9.299 9.299 0 000 18.598V22.7c-5.91 0-10.7-4.791-10.7-10.701S8.21 1.299 14.12 1.299V2.7zm4.752 3.677A7.353 7.353 0 109.42 17.643l-.901 1.074a8.754 8.754 0 01-1.08-12.334 8.755 8.755 0 0112.335-1.08l-.901 1.075zm-2.255.844a5.407 5.407 0 00-5.048 9.563l-.656 1.24a6.81 6.81 0 016.358-12.043l-.654 1.24zM14.12 8.539a3.46 3.46 0 100 6.922v1.402a4.863 4.863 0 010-9.726v1.402z" fill="#F15A29" fill-rule="evenodd"></path><path d="M15.407 10.836a2.24 2.24 0 00-.51-.409 1.084 1.084 0 00-.544-.152c-.255 0-.483.047-.684.14a1.58 1.58 0 00-.84.912c-.074.203-.11.416-.11.631 0 .218.036.43.11.631a1.594 1.594 0 00.84.913c.2.093.43.14.684.14.216 0 .417-.046.602-.135.188-.09.35-.225.475-.392l.928 1.006c-.14.14-.3.261-.482.363a3.367 3.367 0 01-1.083.38c-.17.026-.317.04-.44.04a3.315 3.315 0 01-1.182-.21 2.825 2.825 0 01-.961-.597 2.816 2.816 0 01-.644-.929 2.987 2.987 0 01-.238-1.21c0-.444.08-.847.238-1.21.15-.35.368-.666.643-.929.278-.261.605-.464.962-.596a3.315 3.315 0 011.182-.21c.355 0 .712.068 1.072.204.361.138.685.36.944.649l-.962.97z"></path></svg>`;
+      }
+      if (norm.includes("mistral")) {
+        return `<svg height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Mistral</title><path d="M3.428 3.4h3.429v3.428H3.428V3.4zm13.714 0h3.43v3.428h-3.43V3.4z" fill="gold"></path><path d="M3.428 6.828h6.857v3.429H3.429V6.828zm10.286 0h6.857v3.429h-6.857V6.828z" fill="#FFAF00"></path><path d="M3.428 10.258h17.144v3.428H3.428v-3.428z" fill="#FF8205"></path><path d="M3.428 13.686h3.429v3.428H3.428v-3.428zm6.858 0h3.429v3.428h-3.429v-3.428zm6.856 0h3.43v3.428h-3.43v-3.428z" fill="#FA500F"></path><path d="M0 17.114h10.286v3.429H0v-3.429zm13.714 0H24v3.429H13.714v-3.429z" fill="#E10500"></path></svg>`;
+      }
+      if (norm.includes("together")) {
+        return `<svg height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>together.ai</title><path d="M23.197 4.503A6 6 0 0015 2.307a5.973 5.973 0 00-2.995 4.933l5.996.008v.515h-5.996c.039.937.298 1.87.8 2.74a6 6 0 1010.39-6z" fill="#EF2CC1"></path><path d="M.805 4.5A6 6 0 003 12.697a5.972 5.972 0 005.77.127L5.779 7.627l.446-.257 2.997 5.192A6 6 0 10.804 4.5z" fill="#CAAEF5"></path><path d="M12 23.894a6 6 0 005.999-6c0-2.13-1.1-3.996-2.775-5.06l-3.005 5.189-.444-.258 2.997-5.192A6 6 0 1012 23.894z" fill="#FC4C02"></path></svg>`;
+      }
+      if (norm.includes("cohere")) {
+        return `<svg height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Cohere</title><path clip-rule="evenodd" d="M8.128 14.099c.592 0 1.77-.033 3.398-.703 1.897-.781 5.672-2.2 8.395-3.656 1.905-1.018 2.74-2.366 2.74-4.18A4.56 4.56 0 0018.1 1H7.549A6.55 6.55 0 001 7.55c0 3.617 2.745 6.549 7.128 6.549z" fill="#39594D" fill-rule="evenodd"></path><path clip-rule="evenodd" d="M9.912 18.61a4.387 4.387 0 012.705-4.052l3.323-1.38c3.361-1.394 7.06 1.076 7.06 4.715a5.104 5.104 0 01-5.105 5.104l-3.597-.001a4.386 4.386 0 01-4.386-4.387z" fill="#D18EE2" fill-rule="evenodd"></path><path d="M4.776 14.962A3.775 3.775 0 001 18.738v.489a3.776 3.776 0 007.551 0v-.49a3.775 3.775 0 00-3.775-3.775z" fill="#FF7759"></path></svg>`;
+      }
+      if (norm.includes("grok")) {
+        return `<svg fill="#15181a" fill-rule="evenodd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Grok</title><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815"></path></svg>`;
+      }
+      if (norm.includes("ollama")) {
+        return `<svg fill="#000000" fill-rule="evenodd" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><title>Ollama</title><path d="M7.905 1.09c.216.085.411.225.588.41.295.306.544.744.734 1.263.191.522.315 1.1.362 1.68a5.054 5.054 0 012.049-.636l.051-.004c.87-.07 1.73.087 2.48.474.101.053.2.11.297.17.05-.569.172-1.134.36-1.644.19-.52.439-.957.733-1.264a1.67 1.67 0 01.589-.41c.257-.1.53-.118.796-.042.401.114.745.368 1.016.737.248.337.434.769.561 1.287.23.934.27 2.163.115 3.645l.053.04.026.019c.757.576 1.284 1.397 1.563 2.35.435 1.487.216 3.155-.534 4.088l-.018.021.002.003c.417.762.67 1.567.724 2.4l.002.03c.064 1.065-.2 2.137-.814 3.19l-.007.01.01.024c.472 1.157.62 2.322.438 3.486l-.006.039a.651.651 0 01-.747.536.648.648 0 01-.54-.742c.167-1.033.01-2.069-.48-3.123a.643.643 0 01.04-.617l.004-.006c.604-.924.854-1.83.8-2.72-.046-.779-.325-1.544-.8-2.273a.644.644 0 01.18-.886l.009-.006c.243-.159.467-.565.58-1.12a4.229 4.229 0 00-.095-1.974c-.205-.7-.58-1.284-1.105-1.683-.595-.454-1.383-.673-2.38-.61a.653.653 0 01-.632-.371c-.314-.665-.772-1.141-1.343-1.436a3.288 3.288 0 00-1.772-.332c-1.245.099-2.343.801-2.67 1.686a.652.652 0 01-.61.425c-1.067.002-1.893.252-2.497.703-.522.39-.878.935-1.066 1.588a4.07 4.07 0 00-.068 1.886c.112.558.331 1.02.582 1.269l.008.007c.212.207.257.53.109.785-.36.622-.629 1.549-.673 2.44-.05 1.018.186 1.902.719 2.536l.016.019a.643.643 0 01.095.69c-.576 1.236-.753 2.252-.562 3.052a.652.652 0 01-1.269.298c-.243-1.018-.078-2.184.473-3.498l.014-.035-.008-.012a4.339 4.339 0 01-.598-1.309l-.005-.019a5.764 5.764 0 01-.177-1.785c.044-.91.278-1.842.622-2.59l.012-.026-.002-.002c-.293-.418-.51-.953-.63-1.545l-.005-.024a5.352 5.352 0 01.093-2.49c.262-.915.777-1.701 1.536-2.269.06-.045.123-.09.186-.132-.159-1.493-.119-2.73.112-3.67.127-.518.314-.95.562-1.287.27-.368.614-.622 1.015-.737.266-.076.54-.059.797.042zm4.116 9.09c.936 0 1.8.313 2.446.855.63.527 1.005 1.235 1.005 1.94 0 .888-.406 1.58-1.133 2.022-.62.375-1.451.557-2.403.557-1.009 0-1.871-.259-2.493-.734-.617-.47-.963-1.13-.963-1.845 0-.707.398-1.417 1.056-1.946.668-.537 1.55-.849 2.485-.849zm0 .896a3.07 3.07 0 00-1.916.65c-.461.37-.722.835-.722 1.25 0 .428.21.829.61 1.134.455.347 1.124.548 1.943.548.799 0 1.473-.147 1.932-.426.463-.28.7-.686.7-1.257 0-.423-.246-.89-.683-1.256-.484-.405-1.14-.643-1.864-.643zm.662 1.21l.004.004c.12.151.095.37-.056.49l-.292.23v.446a.375.375 0 01-.376.373.375.375 0 01-.376-.373v-.46l-.271-.218a.347.347 0 01-.052-.49.353.353 0 01.494-.051l.215.172.22-.174a.353.353 0 01.49.051zm-5.04-1.919c.478 0 .867.39.867.871a.87.87 0 01-.868.871.87.87 0 01-.867-.87.87.87 0 01.867-.872zm8.706 0c.48 0 .868.39.868.871a.87.87 0 01-.868.871.87.87 0 01-.867-.87.87.87 0 01.867-.872zM7.44 2.3l-.003.002a.659.659 0 00-.285.238l-.005.006c-.138.189-.258.467-.348.832-.17.692-.216 1.631-.124 2.782.43-.128.899-.208 1.404-.237l.01-.001.019-.034c.046-.082.095-.161.148-.239.123-.771.022-1.692-.253-2.444-.134-.364-.297-.65-.453-.813a.628.628 0 00-.107-.09L7.44 2.3zm9.174.04l-.002.001a.628.628 0 00-.107.09c-.156.163-.32.45-.453.814-.29.794-.387 1.776-.23 2.572l.058.097.008.014h.03a5.184 5.184 0 011.466.212c.086-1.124.038-2.043-.128-2.722-.09-.365-.21-.643-.349-.832l-.004-.006a.659.659 0 00-.285-.239h-.004z"></path></svg>`;
+      }
+      return `<svg viewBox='0 0 24 24' width='24' height='24' style='color: #8b5cf6;' fill='none' stroke='currentColor' stroke-width='2.5'><rect x='2' y='2' width='20' height='20' rx='4'></rect><path d='M12 6v12M6 12h12'></path></svg>`;
+    }
+    static renderProviders() {
+      const menu = document.getElementById("nexus-setup-provider-menu");
+      if (!menu) return;
+      menu.innerHTML = this.providers.map((p) => `<div data-val="${p.id}">${p.name}</div>`).join("");
+      const input = document.getElementById("nexus-setup-provider-input");
+      let currentId = input?.dataset.value;
+      if (!currentId || !this.providers.some((p) => p.id === currentId)) {
+        currentId = this.providers[0]?.id || "openai-default";
+      }
+      this.selectProviderSetup(currentId);
+    }
+    static selectProviderSetup(providerId) {
+      const input = document.getElementById("nexus-setup-provider-input");
+      const keyInput = document.getElementById("nexus-setup-provider-key");
+      const badge = document.getElementById("nexus-setup-provider-badge");
+      const endpointRow = document.getElementById("nexus-setup-endpoint-row");
+      const endpointInput = document.getElementById("nexus-setup-provider-endpoint");
+      if (!input) return;
+      const p = this.providers.find((prov) => prov.id === providerId) || this.providers[0];
+      if (!p) return;
+      input.value = p.name;
+      input.dataset.value = p.id;
+      if (keyInput) {
+        keyInput.value = p.apiKey || "";
+      }
+      const getKeyLink = document.getElementById("nexus-setup-get-key-link");
+      if (getKeyLink) {
+        if (p.apiKeyUrl) {
+          getKeyLink.href = p.apiKeyUrl;
+          getKeyLink.style.display = "inline-block";
+        } else {
+          getKeyLink.style.display = "none";
+        }
+      }
+      if (endpointRow && endpointInput) {
+        if (p.id.includes("custom") || p.id.includes("ollama") || p.id.includes("lmstudio") || p.id.includes("vllm") || p.id.includes("localai") || p.id.includes("local")) {
+          endpointRow.style.display = "block";
+          endpointInput.value = p.endpoint || "";
+        } else {
+          endpointRow.style.display = "none";
+        }
+      }
+    }
+    static saveSelectedProviderKey() {
+      const input = document.getElementById("nexus-setup-provider-input");
+      const keyInput = document.getElementById("nexus-setup-provider-key");
+      const endpointInput = document.getElementById("nexus-setup-provider-endpoint");
+      const providerId = input?.dataset.value;
+      if (!providerId) return;
+      const p = this.providers.find((prov) => prov.id === providerId);
+      if (!p) return;
+      p.apiKey = keyInput ? keyInput.value.trim() : "";
+      if (endpointInput && endpointInput.parentElement.style.display !== "none") {
+        p.endpoint = endpointInput.value.trim() || p.endpoint;
+      }
+      chrome.storage.local.set({ providers: this.providers }, () => {
+        this.populateProviderDropdowns();
+      });
+    }
+    static populateProviderDropdowns() {
+      const chainProvList = document.getElementById("nexus-model-form-provider-list");
+      const configuredProviders = this.providers.filter(
+        (p) => p.apiKey && p.apiKey.trim().length > 0 || p.id.includes("ollama") || p.id.includes("lmstudio") || p.id.includes("vllm") || p.id.includes("localai") || p.id.includes("local")
+      );
+      if (chainProvList) {
+        if (configuredProviders.length > 0) {
+          chainProvList.innerHTML = configuredProviders.map((p) => `<div data-val="${p.id}">${p.name}</div>`).join("");
+        } else {
+          chainProvList.innerHTML = `<div style="padding: 8px 12px; font-size: 12px; color: var(--nexus-text-secondary);">No configured providers yet. Please set up an API key above.</div>`;
+        }
+      }
+      const retentionMenu = document.getElementById("nexus-history-retention-menu");
+      if (retentionMenu) {
+        const opts = [
+          { label: "1 Week", value: "0.25" },
+          { label: "2 Weeks", value: "0.5" },
+          { label: "1 Month", value: "1" },
+          { label: "2 Months", value: "2" },
+          { label: "3 Months", value: "3" },
+          { label: "6 Months", value: "6" },
+          { label: "1 Year", value: "12" },
+          { label: "Forever", value: "0" }
+        ];
+        retentionMenu.innerHTML = opts.map((o) => `<div data-val="${o.value}">${o.label}</div>`).join("");
+      }
+      this.loadTtsModels();
+      this.loadSttModels();
+    }
+    static setupDropdownInputs(inputId, menuId) {
+      const input = document.getElementById(inputId);
+      const menu = document.getElementById(menuId);
+      const updateActiveItems = (isSearch = false) => {
+        const items = Array.from(menu.querySelectorAll("div")).filter((d) => d.style.display !== "none");
+        menu.querySelectorAll("div").forEach((d) => d.classList.remove("active"));
+        if (items.length === 0) return;
+        let matched;
+        if (isSearch) {
+          matched = items[0];
+        } else {
+          const currentVal = input.dataset.value || input.value;
+          matched = items.find((d) => d.dataset.val && d.dataset.val === currentVal || d.textContent.trim() === input.value.trim());
+          if (!matched && items.length > 0) {
+            matched = items[0];
+          }
+        }
+        if (matched) {
+          matched.classList.add("active");
+        }
+      };
+      const triggerSelect = (targetEl) => {
+        if (!targetEl) return;
+        input.value = targetEl.textContent;
+        input.dataset.value = targetEl.dataset.val || targetEl.textContent;
+        menu.style.display = "none";
+        if (inputId === "nexus-setup-provider-input") {
+          this.selectProviderSetup(input.dataset.value);
+        }
+        if (inputId === "nexus-history-retention-input" || inputId === "nexus-settings-fontsize" || inputId === "nexus-settings-theme" || inputId === "nexus-settings-contrast" || inputId === "nexus-settings-accent" || inputId === "nexus-settings-fontfamily" || inputId === "nexus-settings-fontweight" || inputId === "nexus-settings-language" || inputId === "nexus-settings-spoken-lang" || inputId === "nexus-settings-voice-select" || inputId === "nexus-settings-tts-model" || inputId === "nexus-settings-stt-model") {
+          this.saveOptions();
+        }
+        if (inputId === "nexus-model-form-provider") {
+          const modelInput = document.getElementById("nexus-model-form-model");
+          if (modelInput) {
+            modelInput.value = "";
+            modelInput.dataset.value = "";
+          }
+          this.loadModelsForProvider(input.dataset.value);
+          this.updateModelPopupFieldsState();
+        }
+      };
+      input.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isCurrentlyOpen = menu.style.display === "block";
+        document.querySelectorAll(".nexus-settings-dropdown-menu").forEach((m) => {
+          m.style.display = "none";
+        });
+        if (!isCurrentlyOpen) {
+          if (inputId === "nexus-settings-tts-model") {
+            this.loadTtsModels().then(() => updateActiveItems(false));
+          } else if (inputId === "nexus-settings-stt-model") {
+            this.loadSttModels().then(() => updateActiveItems(false));
+          }
+          menu.style.display = "block";
+          updateActiveItems(false);
+        }
+      });
+      document.addEventListener("click", (e) => {
+        const wrapper = input.closest(".nexus-settings-dropdown-wrapper");
+        if (wrapper && !wrapper.contains(e.target)) {
+          menu.style.display = "none";
+        }
+      });
+      const handleKeyDown = (e) => {
+        if (menu.style.display !== "block") {
+          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault();
+            menu.style.display = "block";
+            updateActiveItems(false);
+          }
+          return;
+        }
+        const visibleItems = Array.from(menu.querySelectorAll("div")).filter((d) => d.style.display !== "none");
+        if (visibleItems.length === 0) return;
+        let currentIndex = visibleItems.findIndex((d) => d.classList.contains("active"));
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          currentIndex = (currentIndex + 1) % visibleItems.length;
+          visibleItems.forEach((d) => d.classList.remove("active"));
+          visibleItems[currentIndex].classList.add("active");
+          visibleItems[currentIndex].scrollIntoView({ block: "nearest" });
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          currentIndex = (currentIndex - 1 + visibleItems.length) % visibleItems.length;
+          visibleItems.forEach((d) => d.classList.remove("active"));
+          visibleItems[currentIndex].classList.add("active");
+          visibleItems[currentIndex].scrollIntoView({ block: "nearest" });
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          const activeItem = visibleItems[currentIndex >= 0 ? currentIndex : 0] || visibleItems[0];
+          if (activeItem) {
+            triggerSelect(activeItem);
+            input.blur();
+          }
+        } else if (e.key === "Escape") {
+          e.preventDefault();
+          menu.style.display = "none";
+        }
+      };
+      input.addEventListener("keydown", handleKeyDown);
+      if (inputId === "nexus-model-form-model" || inputId === "nexus-setup-provider-input" || inputId === "nexus-model-form-provider") {
+        input.addEventListener("input", () => {
+          const query = input.value.toLowerCase().trim();
+          const items = menu.querySelectorAll("div");
+          items.forEach((item) => {
+            const text = item.textContent.toLowerCase();
+            if (text.includes(query)) {
+              item.style.display = "block";
+            } else {
+              item.style.display = "none";
+            }
+          });
+          menu.style.display = "block";
+          updateActiveItems(true);
+        });
+      }
+      menu.addEventListener("click", (e) => {
+        if (e.target.tagName === "DIV") {
+          triggerSelect(e.target);
+        }
+      });
+    }
+    static setDropdownValue(inputId, menuId, val, defaultText) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      input.dataset.value = val;
+      const menu = document.getElementById(menuId);
+      const matchedDiv = menu?.querySelector(`div[data-val="${val}"]`);
+      input.value = matchedDiv ? matchedDiv.textContent : defaultText;
+    }
+    static adjustInputWidthToContent(input) {
+      if (!input) return;
+      const wrapper = input.closest(".nexus-settings-dropdown-wrapper");
+      if (!wrapper) return;
+      const tempSpan = document.createElement("span");
+      tempSpan.style.visibility = "hidden";
+      tempSpan.style.position = "absolute";
+      tempSpan.style.whiteSpace = "pre";
+      tempSpan.style.fontFamily = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      tempSpan.style.fontSize = "13px";
+      tempSpan.style.fontWeight = "400";
+      tempSpan.textContent = input.value || "Default";
+      document.body.appendChild(tempSpan);
+      const width = tempSpan.getBoundingClientRect().width;
+      document.body.removeChild(tempSpan);
+      const exactWidth = Math.max(width + 38, 100);
+      wrapper.style.width = exactWidth + "px";
+      input.style.width = "100%";
+    }
+    static enableAutoExpandTextarea(el) {
+      if (!el) return;
+      const adjust = () => {
+        el.style.height = "auto";
+        el.style.height = Math.min(el.scrollHeight, 250) + "px";
+      };
+      el.addEventListener("input", adjust);
+    }
+    static async loadModelsForProvider(providerId) {
+      const menu = document.getElementById("nexus-model-form-model-list");
+      if (!menu) return;
+      menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--nexus-text-secondary);">Loading models...</div>';
+      const provider = this.providers.find((p) => p.id === providerId);
+      if (!provider) {
+        menu.innerHTML = '<div style="padding: 10px; font-size:12.5px; color:var(--nexus-text-secondary);">No provider selected</div>';
+        return;
+      }
+      try {
+        const firstKey = provider.apiKey ? provider.apiKey.split(",")[0].trim() : "";
+        let models = [];
+        let response;
+        const isGemini = provider.type === "gemini" || typeof provider.endpoint === "string" && provider.endpoint.includes("generativelanguage.googleapis.com");
+        if (isGemini) {
+          let baseUrl = provider.endpoint || "https://generativelanguage.googleapis.com/v1beta/models";
+          baseUrl = baseUrl.replace(/\/+$/, "");
+          if (baseUrl.includes("/chat/completions")) {
+            baseUrl = baseUrl.replace("/chat/completions", "/models");
+          } else if (!baseUrl.endsWith("/models")) {
+            baseUrl = baseUrl + "/models";
+          }
+          const url = firstKey ? `${baseUrl}?key=${firstKey}` : baseUrl;
+          response = await fetch(url);
+        } else {
+          let modelsUrl = provider.endpoint.trim().replace(/\/+$/, "");
+          const suffixes = ["/chat/completions", "/models", "/audio/transcriptions"];
+          let matched = false;
+          for (const suffix of suffixes) {
+            if (modelsUrl.endsWith(suffix)) {
+              modelsUrl = modelsUrl.slice(0, -suffix.length) + "/models";
+              matched = true;
+              break;
+            }
+          }
+          if (!matched) {
+            modelsUrl = modelsUrl + "/models";
+          }
+          if (provider.id.includes("groq") || modelsUrl.includes("groq.com")) {
+            modelsUrl = "https://api.groq.com/openai/v1/models";
+          }
+          response = await fetch(modelsUrl, {
+            headers: firstKey ? { "Authorization": `Bearer ${firstKey}` } : {}
+          });
+        }
+        if (response && response.ok) {
+          const data = await response.json();
+          if (isGemini) {
+            if (data.models) {
+              models = data.models.map((m) => m.name.replace("models/", ""));
+            }
+          } else {
+            if (data.data) {
+              models = data.data.map((m) => m.id);
+            }
+          }
+        }
+        if (models.length === 0) {
+          const fallbackOptions = {
+            "gemini-default": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash"],
+            "openai-default": ["gpt-4o", "gpt-4o-mini", "o1-mini", "o1-preview"],
+            "deepseek-default": ["deepseek-chat", "deepseek-reasoner"],
+            "moonshot-default": ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"],
+            "alibaba-default": ["qwen-max", "qwen-plus", "qwen-turbo"],
+            "minimax-default": ["abab6.5g-chat", "abab6.5s-chat"],
+            "zhipu-default": ["glm-4", "glm-4-flash", "glm-4-air"]
+          };
+          models = fallbackOptions[providerId] || ["custom-model"];
+        }
+        menu.innerHTML = models.map((m) => `<div data-val="${m}">${m}</div>`).join("");
+      } catch (e) {
+        console.error("Failed to fetch models in settings:", e);
+        const fallbackOptions = {
+          "gemini-default": ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash"],
+          "openai-default": ["gpt-4o", "gpt-4o-mini", "o1-mini", "o1-preview"],
+          "deepseek-default": ["deepseek-chat", "deepseek-reasoner"],
+          "moonshot-default": ["moonshot-v1-8k", "moonshot-v1-32k", "moonshot-v1-128k"],
+          "alibaba-default": ["qwen-max", "qwen-plus", "qwen-turbo"],
+          "minimax-default": ["abab6.5g-chat", "abab6.5s-chat"],
+          "zhipu-default": ["glm-4", "glm-4-flash", "glm-4-air"]
+        };
+        const list = fallbackOptions[providerId] || ["custom-model"];
+        menu.innerHTML = list.map((m) => `<div data-val="${m}">${m}</div>`).join("");
+      }
+    }
+    static async loadTtsModels() {
+      const menu = document.getElementById("nexus-settings-tts-model-menu");
+      if (!menu) return;
+      const geminiProv = this.providers.find((p) => p.id === "gemini-default" || p.id.includes("gemini"));
+      const apiKey = geminiProv?.apiKey?.trim() || "";
+      try {
+        let models = [];
+        if (apiKey) {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey.split(",")[0].trim()}`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.models && Array.isArray(data.models)) {
+              models = data.models.map((m) => m.name.replace("models/", "")).filter((m) => m.toLowerCase().includes("tts"));
+            }
+          }
+        }
+        if (models.length === 0) {
+          models = [
+            "gemini-2.5-flash",
+            "gemini-2.5-pro"
+          ];
+        }
+        menu.innerHTML = models.map((m) => `<div data-val="${m}">${m}</div>`).join("");
+      } catch (err) {
+        console.warn("Failed to fetch Gemini TTS models:", err);
+      }
+    }
+    static async loadSttModels() {
+      const menu = document.getElementById("nexus-settings-stt-model-menu");
+      if (!menu) return;
+      const groqProv = this.providers.find((p) => p.id === "groq-default" || p.id.includes("groq"));
+      const apiKey = groqProv?.apiKey?.trim() || "";
+      try {
+        let models = [];
+        if (apiKey) {
+          const res = await fetch("https://api.groq.com/openai/v1/models", {
+            headers: {
+              "Authorization": `Bearer ${apiKey.split(",")[0].trim()}`
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.data && Array.isArray(data.data)) {
+              models = data.data.map((m) => m.id).filter((m) => m.toLowerCase().includes("whisper"));
+            }
+          }
+        }
+        if (models.length === 0) {
+          models = [
+            "whisper-large-v3-turbo",
+            "whisper-large-v3",
+            "distil-whisper-large-v3-en"
+          ];
+        }
+        menu.innerHTML = models.map((m) => `<div data-val="${m}">${m}</div>`).join("");
+      } catch (err) {
+        console.warn("Failed to fetch Groq Whisper models:", err);
+      }
+    }
+    static showProviderForm() {
+      const overlay = document.getElementById("nexus-provider-popup-overlay");
+      if (overlay) overlay.style.display = "flex";
+      document.getElementById("nexus-provider-form-id").value = "";
+      document.getElementById("nexus-provider-form-name").value = "";
+      document.getElementById("nexus-provider-form-endpoint").value = "";
+      document.getElementById("nexus-provider-form-apikey").value = "";
+      const statusEl = document.getElementById("nexus-dialog-status");
+      if (statusEl) {
+        statusEl.innerHTML = "";
+        statusEl.className = "nexus-dialog-status hidden";
+      }
+    }
+    static editProvider(id) {
+      const p = this.providers.find((p2) => p2.id === id);
+      if (!p) return;
+      const overlay = document.getElementById("nexus-provider-popup-overlay");
+      if (overlay) overlay.style.display = "flex";
+      document.getElementById("nexus-provider-form-id").value = p.id;
+      document.getElementById("nexus-provider-form-name").value = p.name;
+      document.getElementById("nexus-provider-form-endpoint").value = p.endpoint;
+      document.getElementById("nexus-provider-form-apikey").value = p.apiKey || "";
+      const statusEl = document.getElementById("nexus-dialog-status");
+      if (statusEl) {
+        statusEl.innerHTML = "";
+        statusEl.className = "nexus-dialog-status hidden";
+      }
+    }
+    static hideProviderForm() {
+      const overlay = document.getElementById("nexus-provider-popup-overlay");
+      if (overlay) overlay.style.display = "none";
+    }
+    static showModelForm(index = null) {
+      const overlay = document.getElementById("nexus-model-popup-overlay");
+      if (overlay) overlay.style.display = "flex";
+      const indexInput = document.getElementById("nexus-model-form-index");
+      const providerInput = document.getElementById("nexus-model-form-provider");
+      const modelInput = document.getElementById("nexus-model-form-model");
+      const customNameInput = document.getElementById("nexus-model-form-name-custom");
+      this.populateProviderDropdowns();
+      if (index !== null && index >= 0) {
+        const item = this.models[index];
+        indexInput.value = index;
+        const prov = this.providers.find((p) => p.id === item.providerId);
+        providerInput.value = prov ? prov.name : item.providerId;
+        providerInput.dataset.value = item.providerId;
+        modelInput.value = item.modelName;
+        customNameInput.value = item.displayName || "";
+        const tokenVal = item.maxTokens || 8192;
+        this.setDropdownValue("nexus-model-form-max-tokens", "nexus-model-form-max-tokens-list", String(tokenVal), `${Number(tokenVal).toLocaleString()} tokens`);
+        this.loadModelsForProvider(item.providerId);
+      } else {
+        indexInput.value = "";
+        providerInput.value = "";
+        providerInput.dataset.value = "";
+        modelInput.value = "";
+        customNameInput.value = "";
+        this.setDropdownValue("nexus-model-form-max-tokens", "nexus-model-form-max-tokens-list", "8192", "8,192 tokens (Default)");
+      }
+      this.updateModelPopupFieldsState();
+    }
+    static updateModelPopupFieldsState() {
+      const provider = document.getElementById("nexus-model-form-provider").dataset.value;
+      const modelInput = document.getElementById("nexus-model-form-model");
+      const customNameInput = document.getElementById("nexus-model-form-name-custom");
+      const maxTokensInput = document.getElementById("nexus-model-form-max-tokens");
+      const shouldDisable = !provider;
+      if (modelInput) {
+        modelInput.disabled = shouldDisable;
+        if (shouldDisable) {
+          modelInput.style.opacity = "0.6";
+          modelInput.style.cursor = "not-allowed";
+        } else {
+          modelInput.style.opacity = "1";
+          modelInput.style.cursor = "text";
+        }
+      }
+      if (customNameInput) {
+        customNameInput.disabled = shouldDisable;
+        if (shouldDisable) {
+          customNameInput.style.opacity = "0.6";
+          customNameInput.style.cursor = "not-allowed";
+        } else {
+          customNameInput.style.opacity = "1";
+          customNameInput.style.cursor = "text";
+        }
+      }
+      if (maxTokensInput) {
+        maxTokensInput.disabled = shouldDisable;
+        if (shouldDisable) {
+          maxTokensInput.style.opacity = "0.6";
+          maxTokensInput.style.cursor = "not-allowed";
+        } else {
+          maxTokensInput.style.opacity = "1";
+          maxTokensInput.style.cursor = "pointer";
+        }
+      }
+    }
+    static hideModelForm() {
+      const overlay = document.getElementById("nexus-model-popup-overlay");
+      if (overlay) overlay.style.display = "none";
+    }
+    static showMappingForm(index = null) {
+      const overlay = document.getElementById("nexus-mapping-popup-overlay");
+      if (overlay) overlay.style.display = "flex";
+      const indexInput = document.getElementById("nexus-mapping-form-index");
+      const nameInput = document.getElementById("nexus-mapping-popup-name");
+      const shortcutBox = document.getElementById("nexus-mapping-popup-shortcut");
+      const promptInput = document.getElementById("nexus-mapping-popup-prompt");
+      const highlightInput = document.getElementById("nexus-mapping-popup-highlight");
+      if (index !== null && index >= 0) {
+        const item = this.questionMappings[index];
+        indexInput.value = index;
+        nameInput.value = item.name || "";
+        const keyData = item.keyData || (item.key ? { key: item.key, code: "Key" + item.key.toUpperCase() } : null);
+        this.renderShortcutDisplay(shortcutBox, keyData);
+        this.deserializePrompt(item.prompt || "", promptInput);
+        highlightInput.checked = item.highlight !== false && item.enableHighlight !== false;
+      } else {
+        indexInput.value = "";
+        nameInput.value = "";
+        this.renderShortcutDisplay(shortcutBox, null);
+        promptInput.innerHTML = "";
+        highlightInput.checked = true;
+      }
+    }
+    static hideMappingForm() {
+      const overlay = document.getElementById("nexus-mapping-popup-overlay");
+      if (overlay) overlay.style.display = "none";
+    }
+    static saveMapping() {
+      const indexInput = document.getElementById("nexus-mapping-form-index");
+      const nameInput = document.getElementById("nexus-mapping-popup-name");
+      const shortcutBox = document.getElementById("nexus-mapping-popup-shortcut");
+      const promptInput = document.getElementById("nexus-mapping-popup-prompt");
+      const highlightInput = document.getElementById("nexus-mapping-popup-highlight");
+      const name = nameInput.value.trim();
+      const prompt2 = this.serializePrompt(promptInput).trim();
+      if (!name || !prompt2) {
+        alert("Please fill in both Rule Name and Content fields.");
+        return;
+      }
+      let keyData = null;
+      if (shortcutBox.dataset.key) {
+        try {
+          keyData = JSON.parse(shortcutBox.dataset.key);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      if (!keyData) {
+        alert("Please record a shortcut.");
+        return;
+      }
+      const mapping = {
+        name,
+        keyData,
+        key: keyData.key,
+        prompt: prompt2,
+        highlight: highlightInput.checked,
+        enableHighlight: highlightInput.checked
+      };
+      const indexVal = indexInput.value;
+      if (indexVal !== "") {
+        const idx = parseInt(indexVal, 10);
+        this.questionMappings[idx] = mapping;
+      } else {
+        this.questionMappings.push(mapping);
+      }
+      chrome.storage.local.set({ questionMappings: this.questionMappings }, () => {
+        this.renderQuestionMappings();
+        this.hideMappingForm();
+      });
+    }
+    static serializePrompt(el) {
+      let result = "";
+      const childs = el.childNodes;
+      for (let i = 0; i < childs.length; i++) {
+        const node = childs[i];
+        if (node.nodeType === Node.TEXT_NODE) {
+          result += node.textContent;
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          if (node.classList.contains("nexus-variable-tag")) {
+            result += node.getAttribute("data-val") || node.textContent;
+          } else if (node.tagName === "BR") {
+            result += "\n";
+          } else {
+            result += this.serializePrompt(node);
+            if (node.tagName === "DIV" || node.tagName === "P") {
+              result += "\n";
+            }
+          }
+        }
+      }
+      return result;
+    }
+    static deserializePrompt(text, el) {
+      el.innerHTML = "";
+      if (!text) return;
+      const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const html = escaped.replace(/(\$SelectedText|\$Sentence|\$Paragraph)/g, (match) => {
+        return `<span class="nexus-variable-tag" contenteditable="false" data-val="${match}">${match}</span>`;
+      });
+      const formattedHtml = html.replace(/\n/g, "<br>");
+      el.innerHTML = formattedHtml;
+    }
+    static resetProvider() {
+      const id = document.getElementById("nexus-provider-form-id").value;
+      if (!id) {
+        document.getElementById("nexus-provider-form-name").value = "";
+        document.getElementById("nexus-provider-form-endpoint").value = "";
+        document.getElementById("nexus-provider-form-apikey").value = "";
+        return;
+      }
+      const defaults = this.getDefaultProviders();
+      const defaultProv = defaults.find((d) => d.id === id);
+      if (defaultProv) {
+        document.getElementById("nexus-provider-form-name").value = defaultProv.name;
+        document.getElementById("nexus-provider-form-endpoint").value = defaultProv.endpoint;
+        document.getElementById("nexus-provider-form-apikey").value = "";
+      } else {
+        document.getElementById("nexus-provider-form-name").value = "";
+        document.getElementById("nexus-provider-form-endpoint").value = "";
+        document.getElementById("nexus-provider-form-apikey").value = "";
+      }
+    }
+    static saveProvider() {
+      const id = document.getElementById("nexus-provider-form-id").value || "custom-" + Date.now();
+      const name = document.getElementById("nexus-provider-form-name").value.trim();
+      const endpoint = document.getElementById("nexus-provider-form-endpoint").value.trim();
+      const apiKey = document.getElementById("nexus-provider-form-apikey").value.trim();
+      if (!name || !endpoint) {
+        alert("Name and Endpoint are required.");
+        return;
+      }
+      const idx = this.providers.findIndex((p) => p.id === id);
+      const pData = { id, name, type: "openai", endpoint, apiKey };
+      if (idx >= 0) {
+        this.providers[idx] = pData;
+      } else {
+        this.providers.push(pData);
+      }
+      chrome.storage.local.set({ providers: this.providers }, () => {
+        this.renderProviders();
+        this.populateProviderDropdowns();
+        this.hideProviderForm();
+      });
+    }
+    static checkApiKeys() {
+      const name = document.getElementById("nexus-provider-form-name").value.trim();
+      const endpoint = document.getElementById("nexus-provider-form-endpoint").value.trim();
+      const apiKey = document.getElementById("nexus-provider-form-apikey").value.trim();
+      if (!endpoint || !apiKey) {
+        alert("Endpoint and API Key are required to check status.");
+        return;
+      }
+      const statusEl = document.getElementById("nexus-dialog-status");
+      if (!statusEl) return;
+      statusEl.classList.remove("hidden");
+      statusEl.className = "nexus-dialog-status info";
+      statusEl.innerHTML = '<div class="status-loading" style="font-weight: 500;">Checking API Keys...</div>';
+      const checkBtn = document.getElementById("nexus-check-apikeys-btn");
+      const originalText = checkBtn.textContent;
+      checkBtn.textContent = "Checking...";
+      checkBtn.disabled = true;
+      const keysList = apiKey.split(",").map((k) => k.trim()).filter(Boolean);
+      if (keysList.length === 0) {
+        statusEl.className = "nexus-dialog-status error";
+        statusEl.innerHTML = "<strong>Error:</strong> No keys entered.";
+        checkBtn.textContent = originalText;
+        checkBtn.disabled = false;
+        return;
+      }
+      let testUrlBase = endpoint.replace(/\/+$/, "");
+      if (!testUrlBase.includes("/models") && !testUrlBase.includes("/chat/completions")) {
+        testUrlBase = testUrlBase + "/models";
+      } else if (testUrlBase.includes("/chat/completions")) {
+        testUrlBase = testUrlBase.replace("/chat/completions", "/models");
+      }
+      const isGemini = testUrlBase.includes("generativelanguage.googleapis.com");
+      const checkPromises = keysList.map((key, index) => {
+        let keyUrl = testUrlBase;
+        const headers = { "Content-Type": "application/json" };
+        if (isGemini) {
+          keyUrl = keyUrl.includes("?") ? `${keyUrl}&key=${key}` : `${keyUrl}?key=${key}`;
+        } else {
+          headers["Authorization"] = `Bearer ${key}`;
+        }
+        const maskedKey = key.length > 12 ? key.substring(0, 8) + "..." + key.substring(key.length - 4) : key.substring(0, Math.min(4, key.length)) + "...";
+        return fetch(keyUrl, { method: "GET", headers }).then((res) => ({
+          index,
+          keyLabel: maskedKey,
+          ok: res.ok,
+          status: res.status
+        })).catch((err) => ({
+          index,
+          keyLabel: maskedKey,
+          ok: false,
+          error: err.message
+        }));
+      });
+      Promise.all(checkPromises).then((results) => {
+        checkBtn.textContent = originalText;
+        checkBtn.disabled = false;
+        const allOk = results.every((r) => r.ok);
+        statusEl.className = "nexus-dialog-status " + (allOk ? "success" : results.some((r) => r.ok) ? "warning" : "error");
+        if (results.length === 1) {
+          const res = results[0];
+          if (res.ok) {
+            statusEl.innerHTML = `<strong>Success:</strong> API Key is valid and active.`;
+          } else {
+            statusEl.innerHTML = `<strong>Error:</strong> API Key check failed${res.status ? ` (Status: ${res.status})` : `: ${res.error}`}.`;
+          }
+        } else {
+          const okCount = results.filter((r) => r.ok).length;
+          let html = `<div class="status-summary" style="font-weight: 600;">Checked ${results.length} keys: ${okCount} valid, ${results.length - okCount} invalid</div>`;
+          html += '<ul class="status-keys-list" style="margin-top: 6px; padding-left: 16px; list-style-type: disc;">';
+          results.forEach((res) => {
+            html += `
+            <li class="${res.ok ? "key-ok" : "key-fail"}" style="color: ${res.ok ? "#10b981" : "#ef4444"}; font-size: 12px; margin-top: 2px;">
+              <span class="key-masked" style="font-family: monospace; font-size: 11.5px; color: var(--nexus-text-primary); font-weight: 500;">${res.keyLabel}</span>:
+              <strong>${res.ok ? "VALID" : res.status ? `FAILED (${res.status})` : `FAILED (${res.error})`}</strong>
+            </li>
+          `;
+          });
+          html += "</ul>";
+          statusEl.innerHTML = html;
+        }
+      });
+    }
+    static addModelToChain() {
+      const indexStr = document.getElementById("nexus-model-form-index").value;
+      const provider = document.getElementById("nexus-model-form-provider").dataset.value;
+      const model = document.getElementById("nexus-model-form-model").value.trim();
+      const customName = document.getElementById("nexus-model-form-name-custom").value.trim();
+      const maxTokensInput = document.getElementById("nexus-model-form-max-tokens");
+      const maxTokens = parseInt(maxTokensInput?.dataset?.value || "8192", 10);
+      if (!provider || !model) {
+        alert("Provider and Model are required.");
+        return;
+      }
+      const item = {
+        providerId: provider,
+        modelName: model,
+        model,
+        displayName: customName || model,
+        maxTokens: maxTokens || 8192
+      };
+      if (indexStr !== "") {
+        const idx = parseInt(indexStr);
+        if (idx >= 0 && idx < this.models.length) {
+          this.models[idx] = item;
+        }
+      } else {
+        this.models.unshift(item);
+      }
+      chrome.storage.local.set({ models: this.models }, () => {
+        this.renderChainList();
+        this.hideModelForm();
+      });
+    }
+    static renderChainList() {
+      const list = document.getElementById("nexus-model-list");
+      if (!list) return;
+      list.innerHTML = "";
+      const addModelHeaderBtn = document.getElementById("nexus-open-add-model-btn");
+      if (addModelHeaderBtn && !addModelHeaderBtn.dataset.bound) {
+        addModelHeaderBtn.dataset.bound = "true";
+        addModelHeaderBtn.addEventListener("click", () => this.showModelForm());
+      }
+      if (this.models.length === 0) {
+        const emptyState = document.createElement("div");
+        emptyState.className = "nexus-settings-empty-state";
+        emptyState.textContent = 'No models added yet. Click "Add model" above to start.';
+        list.appendChild(emptyState);
+      } else {
+        const temp = document.getElementById("nexus-chainItemTemplate");
+        this.models.forEach((item, index) => {
+          const clone = temp.content.cloneNode(true);
+          const cardEl = clone.querySelector(".nexus-settings-chain-card");
+          cardEl.dataset.index = index;
+          clone.querySelector(".chain-number").textContent = index + 1;
+          clone.querySelector(".chain-title").textContent = item.displayName || item.modelName;
+          const prov = this.providers.find((p) => p.id === item.providerId);
+          const providerName = prov ? prov.name : item.providerId;
+          const tokenLabel = item.maxTokens ? ` \u2022 ${Number(item.maxTokens).toLocaleString()} tokens` : " \u2022 8,192 tokens";
+          clone.querySelector(".chain-subtitle").textContent = `${providerName}${tokenLabel}`;
+          cardEl.addEventListener("dragstart", (e) => {
+            cardEl.classList.add("dragging");
+            e.dataTransfer.setData("text/plain", index);
+            e.dataTransfer.effectAllowed = "move";
+          });
+          cardEl.addEventListener("dragend", () => {
+            cardEl.classList.remove("dragging");
+          });
+          cardEl.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+          });
+          cardEl.addEventListener("drop", (e) => {
+            e.preventDefault();
+            const fromIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
+            const toIndex = index;
+            if (!isNaN(fromIndex) && fromIndex !== toIndex) {
+              const movedItem = this.models.splice(fromIndex, 1)[0];
+              this.models.splice(toIndex, 0, movedItem);
+              chrome.storage.local.set({ models: this.models }, () => this.renderChainList());
+            }
+          });
+          clone.querySelector(".edit").addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.showModelForm(index);
+          });
+          clone.querySelector(".remove").addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.models.splice(index, 1);
+            chrome.storage.local.set({ models: this.models }, () => this.renderChainList());
+          });
+          list.appendChild(clone);
+        });
+      }
+    }
+    static bindAppearanceTab() {
+      this.setupDropdownInputs("nexus-settings-theme", "nexus-settings-theme-menu");
+      this.setupDropdownInputs("nexus-settings-contrast", "nexus-settings-contrast-menu");
+      this.setupDropdownInputs("nexus-settings-accent", "nexus-settings-accent-menu");
+      this.setupDropdownInputs("nexus-settings-fontfamily", "nexus-settings-fontfamily-menu");
+      this.setupDropdownInputs("nexus-settings-fontweight", "nexus-settings-fontweight-menu");
+      this.setupDropdownInputs("nexus-settings-language", "nexus-settings-language-menu");
+      this.setupDropdownInputs("nexus-settings-spoken-lang", "nexus-settings-spoken-lang-menu");
+      this.setupDropdownInputs("nexus-settings-voice-select", "nexus-settings-voice-select-menu");
+      this.setupDropdownInputs("nexus-settings-fontsize", "nexus-settings-fontsize-menu");
+      const fsInput = document.getElementById("nexus-settings-fontsize");
+      if (fsInput) {
+        fsInput.addEventListener("change", () => this.saveOptions());
+        fsInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            fsInput.blur();
+          }
+        });
+      }
+      document.getElementById("nexus-settings-dictation-toggle").addEventListener("change", () => this.saveOptions());
+      document.getElementById("nexus-settings-separate-voice").addEventListener("change", () => this.saveOptions());
+      document.getElementById("nexus-settings-voice-play-btn").addEventListener("click", () => {
+        const voice = document.getElementById("nexus-settings-voice-select").dataset.value || "sol";
+        const audio = new Audio();
+        audio.src = `../../assets/audio/voice_${voice}.mp3`;
+        audio.play().catch(() => {
+          alert(`Playing voice test for ${voice}`);
+        });
+      });
+    }
+    static bindPersonalizationTab() {
+      const inputs = ["nexus-settings-about-nickname", "nexus-settings-about-occupation", "nexus-settings-about-interests"];
+      inputs.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener("blur", () => this.saveOptions());
+      });
+      const addInstructionBtn = document.getElementById("nexus-add-instruction-btn");
+      if (addInstructionBtn) {
+        addInstructionBtn.addEventListener("click", () => {
+          this.showInstructionForm();
+        });
+      }
+      const cancelInstBtn = document.getElementById("nexus-cancel-instruction-popup-btn");
+      const saveInstBtn = document.getElementById("nexus-save-instruction-popup-btn");
+      const closeInstPopupBtn = document.getElementById("nexus-instruction-popup-close-btn");
+      const instPopupOverlay = document.getElementById("nexus-instruction-popup-overlay");
+      const contentInputEl = document.getElementById("nexus-instruction-popup-content");
+      if (contentInputEl) {
+        contentInputEl.addEventListener("input", () => {
+          contentInputEl.style.height = "auto";
+          contentInputEl.style.height = Math.min(contentInputEl.scrollHeight, 250) + "px";
+        });
+      }
+      if (cancelInstBtn) cancelInstBtn.addEventListener("click", () => this.hideInstructionForm());
+      if (saveInstBtn) saveInstBtn.addEventListener("click", () => this.saveInstructionPopup());
+      if (closeInstPopupBtn) closeInstPopupBtn.addEventListener("click", () => this.hideInstructionForm());
+      if (instPopupOverlay) {
+        instPopupOverlay.addEventListener("click", (e) => {
+          if (e.target === instPopupOverlay) this.hideInstructionForm();
+        });
+      }
+    }
+    static showInstructionForm(index = null) {
+      const overlay = document.getElementById("nexus-instruction-popup-overlay");
+      const titleEl = document.getElementById("nexus-instruction-popup-title");
+      const indexInput = document.getElementById("nexus-instruction-popup-index");
+      const contentInput = document.getElementById("nexus-instruction-popup-content");
+      if (!overlay || !titleEl || !indexInput || !contentInput) return;
+      if (index !== null && index >= 0 && index < this.userFacts.length) {
+        titleEl.textContent = "Edit Custom Instruction";
+        indexInput.value = index;
+        contentInput.value = this.userFacts[index];
+      } else {
+        titleEl.textContent = "Add Custom Instruction";
+        indexInput.value = "";
+        contentInput.value = "";
+      }
+      overlay.style.display = "flex";
+      contentInput.style.height = "auto";
+      contentInput.style.height = Math.min(contentInput.scrollHeight, 250) + "px";
+      setTimeout(() => contentInput.focus(), 50);
+    }
+    static hideInstructionForm() {
+      const overlay = document.getElementById("nexus-instruction-popup-overlay");
+      if (overlay) overlay.style.display = "none";
+    }
+    static async saveInstructionPopup() {
+      const indexInput = document.getElementById("nexus-instruction-popup-index");
+      const contentInput = document.getElementById("nexus-instruction-popup-content");
+      if (!indexInput || !contentInput) return;
+      const val = contentInput.value.trim();
+      if (!val) {
+        alert("Instruction content is required.");
+        return;
+      }
+      const indexVal = indexInput.value;
+      if (indexVal !== "") {
+        const idx = parseInt(indexVal, 10);
+        const updatedFacts = await UserMemory.updateFact(idx, val);
+        this.userFacts = updatedFacts;
+      } else {
+        const updatedFacts = await UserMemory.addFact(val);
+        this.userFacts = updatedFacts;
+      }
+      this.renderUserFacts();
+      this.hideInstructionForm();
+    }
+    static renderUserFacts() {
+      const list = document.getElementById("nexus-user-facts-list");
+      if (!list) return;
+      list.innerHTML = "";
+      if (this.userFacts.length === 0) {
+        list.innerHTML = '<div class="nexus-settings-empty-state">No instructions added yet. Add one above.</div>';
+        return;
+      }
+      const temp = document.getElementById("nexus-userFactItemTemplate");
+      this.userFacts.forEach((fact, idx) => {
+        const clone = temp.content.cloneNode(true);
+        clone.querySelector(".fact-index").textContent = idx + 1;
+        clone.querySelector(".fact-text").textContent = fact;
+        clone.querySelector(".fact-edit-btn").addEventListener("click", () => {
+          this.showInstructionForm(idx);
+        });
+        clone.querySelector(".fact-delete-btn").addEventListener("click", async () => {
+          if (typeof window.showCustomPopup === "function") {
+            const confirmed = await window.showCustomPopup({
+              title: "Delete Instruction",
+              body: "Are you sure you want to delete this custom instruction?",
+              confirmLabel: "Delete",
+              isDanger: true
+            });
+            if (confirmed) {
+              const updatedFacts = await UserMemory.removeFact(idx);
+              this.userFacts = updatedFacts;
+              this.renderUserFacts();
+            }
+          } else {
+            if (confirm("Are you sure you want to delete this custom instruction?")) {
+              const updatedFacts = await UserMemory.removeFact(idx);
+              this.userFacts = updatedFacts;
+              this.renderUserFacts();
+            }
+          }
+        });
+        list.appendChild(clone);
+      });
+    }
+    static bindKeyboardTab() {
+      const configBtn = document.getElementById("nexus-config-shortcut-btn");
+      if (configBtn) {
+        configBtn.addEventListener("click", () => {
+          chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
+        });
+      }
+      const addMappingBtn = document.getElementById("nexus-add-mapping-btn");
+      if (addMappingBtn) {
+        addMappingBtn.addEventListener("click", () => {
+          this.showMappingForm();
+        });
+      }
+      const cancelMappingBtn = document.getElementById("nexus-cancel-mapping-btn");
+      const saveMappingBtn = document.getElementById("nexus-save-mapping-btn");
+      const closeMappingPopupBtn = document.getElementById("nexus-mapping-popup-close-btn");
+      const mappingPopupOverlay = document.getElementById("nexus-mapping-popup-overlay");
+      if (cancelMappingBtn) cancelMappingBtn.addEventListener("click", () => this.hideMappingForm());
+      if (saveMappingBtn) saveMappingBtn.addEventListener("click", () => this.saveMapping());
+      if (closeMappingPopupBtn) closeMappingPopupBtn.addEventListener("click", () => this.hideMappingForm());
+      if (mappingPopupOverlay) {
+        mappingPopupOverlay.addEventListener("click", (e) => {
+          if (e.target === mappingPopupOverlay) this.hideMappingForm();
+        });
+      }
+      const mappingPopupShortcut = document.getElementById("nexus-mapping-popup-shortcut");
+      if (mappingPopupShortcut) {
+        mappingPopupShortcut.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (this.justRecordedMouseClick) return;
+          this.recordShortcut(mappingPopupShortcut);
+        });
+      }
+      const referenceChipsContainer = document.getElementById("nexus-mapping-popup-reference-chips");
+      if (referenceChipsContainer) {
+        referenceChipsContainer.querySelectorAll(".nexus-reference-chip").forEach((chip) => {
+          chip.addEventListener("click", (e) => {
+            e.preventDefault();
+            const val = chip.getAttribute("data-val");
+            if (!val) return;
+            const promptInput = document.getElementById("nexus-mapping-popup-prompt");
+            if (promptInput) {
+              const selection = window.getSelection();
+              if (selection.rangeCount > 0) {
+                const range2 = selection.getRangeAt(0);
+                if (promptInput.contains(range2.commonAncestorContainer)) {
+                  const span2 = document.createElement("span");
+                  span2.className = "nexus-variable-tag";
+                  span2.contentEditable = "false";
+                  span2.setAttribute("data-val", val);
+                  span2.textContent = val;
+                  range2.deleteContents();
+                  range2.insertNode(span2);
+                  range2.setStartAfter(span2);
+                  range2.setEndAfter(span2);
+                  selection.removeAllRanges();
+                  selection.addRange(range2);
+                  return;
+                }
+              }
+              const span = document.createElement("span");
+              span.className = "nexus-variable-tag";
+              span.contentEditable = "false";
+              span.setAttribute("data-val", val);
+              span.textContent = val;
+              promptInput.appendChild(span);
+              promptInput.focus();
+              const range = document.createRange();
+              range.selectNode(span);
+              range.collapse(false);
+              const sel = window.getSelection();
+              sel.removeAllRanges();
+              sel.addRange(range);
+            }
+          });
+        });
+      }
+      const addAnnotationBtn = document.getElementById("nexus-add-annotation-shortcut-btn");
+      if (addAnnotationBtn) {
+        addAnnotationBtn.addEventListener("click", () => {
+          this.showAnnotationForm();
+        });
+      }
+      const cancelAnnotationBtn = document.getElementById("nexus-cancel-annotation-btn");
+      const saveAnnotationBtn = document.getElementById("nexus-save-annotation-btn");
+      const closeAnnotationPopupBtn = document.getElementById("nexus-annotation-popup-close-btn");
+      const annotationPopupOverlay = document.getElementById("nexus-annotation-popup-overlay");
+      if (cancelAnnotationBtn) cancelAnnotationBtn.addEventListener("click", () => this.hideAnnotationForm());
+      if (saveAnnotationBtn) saveAnnotationBtn.addEventListener("click", () => this.saveAnnotation());
+      if (closeAnnotationPopupBtn) closeAnnotationPopupBtn.addEventListener("click", () => this.hideAnnotationForm());
+      if (annotationPopupOverlay) {
+        annotationPopupOverlay.addEventListener("click", (e) => {
+          if (e.target === annotationPopupOverlay) this.hideAnnotationForm();
+        });
+      }
+      const annotationPopupShortcut = document.getElementById("nexus-annotation-popup-shortcut");
+      if (annotationPopupShortcut) {
+        annotationPopupShortcut.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (this.justRecordedMouseClick) return;
+          this.recordShortcut(annotationPopupShortcut);
+        });
+      }
+      this.bindShortcutRecorders();
+    }
+    static bindShortcutRecorders() {
+      document.querySelectorAll(".nexus-settings-shortcut-box[data-action]").forEach((box) => {
+        box.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (this.justRecordedMouseClick) return;
+          this.recordShortcut(box);
+        });
+      });
+    }
+    static renderShortcutDisplay(box, keyData) {
+      box.innerHTML = "";
+      if (!keyData) {
+        box.textContent = "None";
+        box.dataset.key = "";
+        return;
+      }
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const parts = [];
+      const formatModifier = (key, code) => {
+        let side = "";
+        if (code && code.endsWith("Left")) side = "L";
+        else if (code && code.endsWith("Right")) side = "R";
+        if (key === "Control") return isMac ? side + "\u2303" : side + "Ctrl";
+        if (key === "Alt") return isMac ? side + "\u2325" : side + "Alt";
+        if (key === "Shift") return isMac ? side + "\u21E7" : side + "Shift";
+        if (key === "Meta") return isMac ? side + "\u2318" : side + "Win";
+        return key;
+      };
+      if (keyData.modifierCodes && keyData.modifierCodes.length > 0) {
+        if (keyData.ctrlKey && keyData.key !== "Control") {
+          const code = keyData.modifierCodes.find((c) => c.startsWith("Control")) || "ControlLeft";
+          parts.push(formatModifier("Control", code));
+        }
+        if (keyData.altKey && keyData.key !== "Alt") {
+          const code = keyData.modifierCodes.find((c) => c.startsWith("Alt")) || "AltLeft";
+          parts.push(formatModifier("Alt", code));
+        }
+        if (keyData.shiftKey && keyData.key !== "Shift") {
+          const code = keyData.modifierCodes.find((c) => c.startsWith("Shift")) || "ShiftLeft";
+          parts.push(formatModifier("Shift", code));
+        }
+        if (keyData.metaKey && keyData.key !== "Meta") {
+          const code = keyData.modifierCodes.find((c) => c.startsWith("Meta")) || "MetaLeft";
+          parts.push(formatModifier("Meta", code));
+        }
+      } else {
+        if (keyData.ctrlKey && keyData.key !== "Control") parts.push(isMac ? "\u2303" : "Ctrl");
+        if (keyData.altKey && keyData.key !== "Alt") parts.push(isMac ? "\u2325" : "Alt");
+        if (keyData.shiftKey && keyData.key !== "Shift") parts.push(isMac ? "\u21E7" : "Shift");
+        if (keyData.metaKey && keyData.key !== "Meta") parts.push(isMac ? "\u2318" : "Win");
+      }
+      let display = keyData.display || keyData.key || "Unknown";
+      if (keyData.key === " " || keyData.code === "Space") display = "Space";
+      if (keyData.code && keyData.code.startsWith("Mouse")) {
+        const btn = keyData.code.replace("Mouse", "");
+        if (btn === "0") display = "Left";
+        else if (btn === "1") display = "Middle";
+        else if (btn === "2") display = "Right";
+        else display = "Click" + btn;
+      }
+      const isModifierKey = ["Control", "Alt", "Shift", "Meta"].includes(keyData.key);
+      if (isModifierKey) {
+        display = formatModifier(keyData.key, keyData.code);
+      }
+      if (display.length === 1 && !isModifierKey) display = display.toUpperCase();
+      parts.push(display);
+      box.innerHTML = parts.map((p) => `<span class="shortcut-key">${p}</span>`).join("");
+      box.dataset.key = JSON.stringify(keyData);
+    }
+    static recordShortcut(box) {
+      if (this.currentRecordingInput) {
+        this.stopRecording(this.currentRecordingInput, false);
+      }
+      this.currentRecordingInput = box;
+      this.recordingHadInput = false;
+      this.recordingPressedCodes = /* @__PURE__ */ new Set();
+      box.classList.add("recording");
+      box.innerHTML = '<span class="recording" style="font-size: 13px; color: var(--nexus-text-secondary);">Recording...</span>';
+      const keydownHandler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.recordingPressedCodes.add(e.code);
+        const isModifier = ["Control", "Alt", "Shift", "Meta"].includes(e.key);
+        let code = e.code;
+        if (isModifier) {
+          const MODIFIER_PAIRS = {
+            "Shift": ["ShiftLeft", "ShiftRight"],
+            "Control": ["ControlLeft", "ControlRight"],
+            "Alt": ["AltLeft", "AltRight"],
+            "Meta": ["MetaLeft", "MetaRight"]
+          };
+          const pair = MODIFIER_PAIRS[e.key];
+          if (pair && this.recordingPressedCodes.has(pair[0]) && this.recordingPressedCodes.has(pair[1])) {
+            code = e.key;
+          }
+        }
+        const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+        let display = e.key;
+        if (isModifier) {
+          if (e.key === "Control") display = isMac ? "\u2303" : "Ctrl";
+          else if (e.key === "Alt") display = isMac ? "\u2325" : "Alt";
+          else if (e.key === "Shift") display = isMac ? "\u21E7" : "Shift";
+          else if (e.key === "Meta") display = isMac ? "\u2318" : "Win";
+        }
+        const modifierCodes = [];
+        if (e.ctrlKey) {
+          if (this.recordingPressedCodes.has("ControlLeft")) modifierCodes.push("ControlLeft");
+          if (this.recordingPressedCodes.has("ControlRight")) modifierCodes.push("ControlRight");
+          if (modifierCodes.length === 0) modifierCodes.push("ControlLeft");
+        }
+        if (e.altKey) {
+          if (this.recordingPressedCodes.has("AltLeft")) modifierCodes.push("AltLeft");
+          if (this.recordingPressedCodes.has("AltRight")) modifierCodes.push("AltRight");
+          if (modifierCodes.length === 0) modifierCodes.push("AltLeft");
+        }
+        if (e.shiftKey) {
+          if (this.recordingPressedCodes.has("ShiftLeft")) modifierCodes.push("ShiftLeft");
+          if (this.recordingPressedCodes.has("ShiftRight")) modifierCodes.push("ShiftRight");
+          if (modifierCodes.length === 0) modifierCodes.push("ShiftLeft");
+        }
+        if (e.metaKey) {
+          if (this.recordingPressedCodes.has("MetaLeft")) modifierCodes.push("MetaLeft");
+          if (this.recordingPressedCodes.has("MetaRight")) modifierCodes.push("MetaRight");
+          if (modifierCodes.length === 0) modifierCodes.push("MetaLeft");
+        }
+        const keyData = {
+          code,
+          key: e.key,
+          display,
+          ctrlKey: e.ctrlKey,
+          altKey: e.altKey,
+          shiftKey: e.shiftKey,
+          metaKey: e.metaKey,
+          modifierCodes
+        };
+        if (isModifier) {
+          this.renderShortcutDisplay(box, keyData);
+        } else {
+          this.renderShortcutDisplay(box, keyData);
+          this.recordingHadInput = true;
+          this.stopRecording(box, false);
+          if (box.dataset.action) {
+            this.saveCapturedShortcut(box.dataset.action, keyData);
+          }
+        }
+      };
+      const keyupHandler = (e) => {
+        if (this.currentRecordingInput !== box) {
+          this.recordingPressedCodes.delete(e.code);
+          return;
+        }
+        const isModifier = ["Control", "Alt", "Shift", "Meta"].includes(e.key);
+        if (isModifier) {
+          this.recordingHadInput = true;
+          const MODIFIER_PAIRS = {
+            "Shift": ["ShiftLeft", "ShiftRight"],
+            "Control": ["ControlLeft", "ControlRight"],
+            "Alt": ["AltLeft", "AltRight"],
+            "Meta": ["MetaLeft", "MetaRight"]
+          };
+          const pair = MODIFIER_PAIRS[e.key];
+          let code = e.code;
+          if (pair && this.recordingPressedCodes.has(pair[0]) && this.recordingPressedCodes.has(pair[1])) {
+            code = e.key;
+          }
+          this.recordingPressedCodes.delete(e.code);
+          this.stopRecording(box, false);
+          const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+          let display = e.key;
+          if (e.key === "Control") display = isMac ? "\u2303" : "Ctrl";
+          else if (e.key === "Alt") display = isMac ? "\u2325" : "Alt";
+          else if (e.key === "Shift") display = isMac ? "\u21E7" : "Shift";
+          else if (e.key === "Meta") display = isMac ? "\u2318" : "Win";
+          const modifierCodes = [];
+          const wasControl = e.ctrlKey || e.code.startsWith("Control");
+          const wasAlt = e.altKey || e.code.startsWith("Alt");
+          const wasShift = e.shiftKey || e.code.startsWith("Shift");
+          const wasMeta = e.metaKey || e.code.startsWith("Meta");
+          const ctrlIndex = modifierCodes.length;
+          if (wasControl) {
+            if (e.code.startsWith("Control")) modifierCodes.push(e.code);
+            if (this.recordingPressedCodes.has("ControlLeft") && e.code !== "ControlLeft") modifierCodes.push("ControlLeft");
+            if (this.recordingPressedCodes.has("ControlRight") && e.code !== "ControlRight") modifierCodes.push("ControlRight");
+            if (modifierCodes.length === ctrlIndex) modifierCodes.push("ControlLeft");
+          }
+          const altIndex = modifierCodes.length;
+          if (wasAlt) {
+            if (e.code.startsWith("Alt")) modifierCodes.push(e.code);
+            if (this.recordingPressedCodes.has("AltLeft") && e.code !== "AltLeft") modifierCodes.push("AltLeft");
+            if (this.recordingPressedCodes.has("AltRight") && e.code !== "AltRight") modifierCodes.push("AltRight");
+            if (modifierCodes.length === altIndex) modifierCodes.push("AltLeft");
+          }
+          const shiftIndex = modifierCodes.length;
+          if (wasShift) {
+            if (e.code.startsWith("Shift")) modifierCodes.push(e.code);
+            if (this.recordingPressedCodes.has("ShiftLeft") && e.code !== "ShiftLeft") modifierCodes.push("ShiftLeft");
+            if (this.recordingPressedCodes.has("ShiftRight") && e.code !== "ShiftRight") modifierCodes.push("ShiftRight");
+            if (modifierCodes.length === shiftIndex) modifierCodes.push("ShiftLeft");
+          }
+          const metaIndex = modifierCodes.length;
+          if (wasMeta) {
+            if (e.code.startsWith("Meta")) modifierCodes.push(e.code);
+            if (this.recordingPressedCodes.has("MetaLeft") && e.code !== "MetaLeft") modifierCodes.push("MetaLeft");
+            if (this.recordingPressedCodes.has("MetaRight") && e.code !== "MetaRight") modifierCodes.push("MetaRight");
+            if (modifierCodes.length === metaIndex) modifierCodes.push("MetaLeft");
+          }
+          const keyData = {
+            code,
+            key: e.key,
+            display,
+            ctrlKey: wasControl,
+            altKey: wasAlt,
+            shiftKey: wasShift,
+            metaKey: wasMeta,
+            modifierCodes
+          };
+          this.renderShortcutDisplay(box, keyData);
+          if (box.dataset.action) {
+            this.saveCapturedShortcut(box.dataset.action, keyData);
+          }
+        } else {
+          this.recordingPressedCodes.delete(e.code);
+        }
+      };
+      const mousedownHandler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const shortcutTarget = e.target.closest(".nexus-settings-shortcut-box");
+        if (shortcutTarget !== box) {
+          box.removeAttribute("data-key");
+          delete box.dataset.key;
+          this.renderShortcutDisplay(box, null);
+          this.stopRecording(box, false);
+          if (box.dataset.action) {
+            this.saveCapturedShortcut(box.dataset.action, null);
+          }
+          return;
+        }
+        const code = "Mouse" + e.button;
+        let display = "Click";
+        if (e.button === 0) display = "LClick";
+        else if (e.button === 1) display = "MClick";
+        else if (e.button === 2) display = "RClick";
+        const modifierCodes = [];
+        if (e.ctrlKey) {
+          if (this.recordingPressedCodes.has("ControlLeft")) modifierCodes.push("ControlLeft");
+          if (this.recordingPressedCodes.has("ControlRight")) modifierCodes.push("ControlRight");
+          if (modifierCodes.length === 0) modifierCodes.push("ControlLeft");
+        }
+        if (e.altKey) {
+          if (this.recordingPressedCodes.has("AltLeft")) modifierCodes.push("AltLeft");
+          if (this.recordingPressedCodes.has("AltRight")) modifierCodes.push("AltRight");
+          if (modifierCodes.length === 0) modifierCodes.push("AltLeft");
+        }
+        if (e.shiftKey) {
+          if (this.recordingPressedCodes.has("ShiftLeft")) modifierCodes.push("ShiftLeft");
+          if (this.recordingPressedCodes.has("ShiftRight")) modifierCodes.push("ShiftRight");
+          if (modifierCodes.length === 0) modifierCodes.push("ShiftLeft");
+        }
+        if (e.metaKey) {
+          if (this.recordingPressedCodes.has("MetaLeft")) modifierCodes.push("MetaLeft");
+          if (this.recordingPressedCodes.has("MetaRight")) modifierCodes.push("MetaRight");
+          if (modifierCodes.length === 0) modifierCodes.push("MetaLeft");
+        }
+        const keyData = {
+          code,
+          key: code,
+          display,
+          ctrlKey: e.ctrlKey,
+          altKey: e.altKey,
+          shiftKey: e.shiftKey,
+          metaKey: e.metaKey,
+          modifierCodes
+        };
+        this.renderShortcutDisplay(box, keyData);
+        this.recordingHadInput = true;
+        this.justRecordedMouseClick = true;
+        setTimeout(() => {
+          this.justRecordedMouseClick = false;
+        }, 100);
+        this.stopRecording(box, false);
+        if (box.dataset.action) {
+          this.saveCapturedShortcut(box.dataset.action, keyData);
+        }
+      };
+      const contextmenuHandler = (e) => {
+        e.preventDefault();
+      };
+      this.keydownHandlerRef = keydownHandler;
+      this.keyupHandlerRef = keyupHandler;
+      this.mousedownHandlerRef = mousedownHandler;
+      this.contextmenuHandlerRef = contextmenuHandler;
+      document.addEventListener("keydown", keydownHandler, true);
+      document.addEventListener("keyup", keyupHandler, true);
+      document.addEventListener("mousedown", mousedownHandler, true);
+      document.addEventListener("contextmenu", contextmenuHandler, true);
+    }
+    static stopRecording(box, restoreOriginal = true) {
+      box.classList.remove("recording");
+      if (restoreOriginal) {
+        if (box.dataset.key) {
+          try {
+            const keyData = JSON.parse(box.dataset.key);
+            this.renderShortcutDisplay(box, keyData);
+          } catch (e) {
+            this.renderShortcutDisplay(box, null);
+          }
+        } else {
+          this.renderShortcutDisplay(box, null);
+        }
+      }
+      if (this.keydownHandlerRef) {
+        document.removeEventListener("keydown", this.keydownHandlerRef, true);
+        this.keydownHandlerRef = null;
+      }
+      if (this.keyupHandlerRef) {
+        document.removeEventListener("keyup", this.keyupHandlerRef, true);
+        this.keyupHandlerRef = null;
+      }
+      if (this.mousedownHandlerRef) {
+        document.removeEventListener("mousedown", this.mousedownHandlerRef, true);
+        this.mousedownHandlerRef = null;
+      }
+      if (this.contextmenuHandlerRef) {
+        document.removeEventListener("contextmenu", this.contextmenuHandlerRef, true);
+        this.contextmenuHandlerRef = null;
+      }
+      if (this.currentRecordingInput === box) {
+        this.currentRecordingInput = null;
+      }
+    }
+    static saveCapturedShortcut(action, keyData) {
+      chrome.storage.local.get(["shortcuts"], (items) => {
+        const list = items.shortcuts || {};
+        list[action] = keyData;
+        chrome.storage.local.set({ shortcuts: list });
+      });
+    }
+    static loadShortcutsKeys(items) {
+      const list = items.shortcuts || {};
+      document.querySelectorAll(".nexus-settings-shortcut-box[data-action]").forEach((box) => {
+        const action = box.dataset.action;
+        const val = list[action];
+        if (val && typeof val === "object") {
+          this.renderShortcutDisplay(box, val);
+        } else if (typeof val === "string" && val !== "None") {
+          box.textContent = val;
+        } else {
+          this.renderShortcutDisplay(box, null);
+        }
+      });
+    }
+    static renderQuestionMappings() {
+      const list = document.getElementById("nexus-question-mappings-list");
+      if (!list) return;
+      list.innerHTML = "";
+      if (this.questionMappings.length === 0) {
+        const emptyState = document.createElement("div");
+        emptyState.className = "nexus-settings-empty-state";
+        emptyState.textContent = "No custom mappings added yet.";
+        list.appendChild(emptyState);
+        return;
+      }
+      const temp = document.getElementById("nexus-mappingRowTemplate");
+      this.questionMappings.forEach((mapping, idx) => {
+        const clone = temp.content.cloneNode(true);
+        const displayKey = mapping.keyData ? (mapping.keyData.metaKey ? "\u2318" : "") + (mapping.keyData.ctrlKey ? "Ctrl+" : "") + (mapping.keyData.altKey ? "Alt+" : "") + (mapping.keyData.shiftKey ? "Shift+" : "") + mapping.keyData.key.toUpperCase() : mapping.key ? mapping.key.toUpperCase() : "None";
+        clone.querySelector(".mapping-number").textContent = displayKey;
+        clone.querySelector(".mapping-name").textContent = mapping.name || `Mapping ${idx + 1}`;
+        clone.querySelector(".mapping-edit-btn").addEventListener("click", () => {
+          this.showMappingForm(idx);
+        });
+        clone.querySelector(".mapping-delete-btn").addEventListener("click", () => {
+          this.questionMappings.splice(idx, 1);
+          chrome.storage.local.set({ questionMappings: this.questionMappings }, () => this.renderQuestionMappings());
+        });
+        list.appendChild(clone);
+      });
+    }
+    static recordShortcutForMapping(box, idx, storageKey) {
+      box.classList.add("recording");
+      box.innerHTML = '<span class="recording">Press key...</span>';
+      const keydownHandler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const key = e.key.toUpperCase();
+        box.classList.remove("recording");
+        box.textContent = key;
+        if (storageKey === "questionMappings") {
+          this.questionMappings[idx].key = key;
+          chrome.storage.local.set({ questionMappings: this.questionMappings });
+        } else {
+          this.annotationShortcuts[idx].key = key;
+          chrome.storage.local.set({ annotationShortcuts: this.annotationShortcuts });
+        }
+        document.removeEventListener("keydown", keydownHandler, true);
+      };
+      document.addEventListener("keydown", keydownHandler, true);
+    }
+    static showAnnotationForm(index = null) {
+      const overlay = document.getElementById("nexus-annotation-popup-overlay");
+      if (overlay) overlay.style.display = "flex";
+      const indexInput = document.getElementById("nexus-annotation-form-index");
+      const shortcutBox = document.getElementById("nexus-annotation-popup-shortcut");
+      const palette = document.getElementById("nexus-annotation-popup-color-palette");
+      const colors = [
+        "#FFFB78",
+        "#ffcc80",
+        "#ef9a9a",
+        "#f48fb1",
+        "#ce93d8",
+        "#b39ddb",
+        "#90caf9",
+        "#80deea",
+        "#80cbc4",
+        "#a5d6a7",
+        "#e6ee9c",
+        "#ffab91"
+      ];
+      let selectedColor = colors[0];
+      const renderPalette = (activeColor) => {
+        palette.innerHTML = colors.map((c) => `
+        <div class="swatch ${activeColor === c ? "active" : ""}" style="background: ${c};" data-color="${c}"></div>
+      `).join("");
+      };
+      palette.addEventListener("click", (e) => {
+        const swatch = e.target.closest(".swatch");
+        if (swatch) {
+          selectedColor = swatch.dataset.color;
+          palette.dataset.color = selectedColor;
+          renderPalette(selectedColor);
+        }
+      });
+      if (index !== null && index >= 0) {
+        const item = this.annotationShortcuts[index];
+        indexInput.value = index;
+        selectedColor = item.color || colors[0];
+        palette.dataset.color = selectedColor;
+        renderPalette(selectedColor);
+        const keyData = item.keyData || (item.key ? { key: item.key, code: "Key" + item.key.toUpperCase() } : null);
+        this.renderShortcutDisplay(shortcutBox, keyData);
+      } else {
+        indexInput.value = "";
+        selectedColor = colors[0];
+        palette.dataset.color = selectedColor;
+        renderPalette(selectedColor);
+        this.renderShortcutDisplay(shortcutBox, null);
+      }
+    }
+    static hideAnnotationForm() {
+      const overlay = document.getElementById("nexus-annotation-popup-overlay");
+      if (overlay) overlay.style.display = "none";
+    }
+    static saveAnnotation() {
+      const indexInput = document.getElementById("nexus-annotation-form-index");
+      const shortcutBox = document.getElementById("nexus-annotation-popup-shortcut");
+      const palette = document.getElementById("nexus-annotation-popup-color-palette");
+      let keyData = null;
+      if (shortcutBox.dataset.key) {
+        try {
+          keyData = JSON.parse(shortcutBox.dataset.key);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      if (!keyData) {
+        alert("Please record a shortcut.");
+        return;
+      }
+      const color = palette.dataset.color || "#ffeb3b";
+      const shortcutObj = {
+        key: keyData.key,
+        keyData,
+        color,
+        enabled: true
+      };
+      const indexVal = indexInput.value;
+      if (indexVal !== "") {
+        const idx = parseInt(indexVal, 10);
+        this.annotationShortcuts[idx] = shortcutObj;
+      } else {
+        this.annotationShortcuts.push(shortcutObj);
+      }
+      chrome.storage.local.set({ annotationShortcuts: this.annotationShortcuts }, () => {
+        this.renderAnnotationShortcuts();
+        this.hideAnnotationForm();
+      });
+    }
+    static renderAnnotationShortcuts() {
+      const list = document.getElementById("nexus-annotation-shortcuts-list");
+      if (!list) return;
+      list.innerHTML = "";
+      if (this.annotationShortcuts.length === 0) {
+        const emptyState = document.createElement("div");
+        emptyState.className = "nexus-settings-empty-state";
+        emptyState.textContent = "No annotation shortcuts added yet.";
+        list.appendChild(emptyState);
+        return;
+      }
+      const temp = document.getElementById("nexus-annotationRowTemplate");
+      this.annotationShortcuts.forEach((shortcut, idx) => {
+        const clone = temp.content.cloneNode(true);
+        const displayKey = shortcut.keyData ? (shortcut.keyData.metaKey ? "\u2318" : "") + (shortcut.keyData.ctrlKey ? "Ctrl+" : "") + (shortcut.keyData.altKey ? "Alt+" : "") + (shortcut.keyData.shiftKey ? "Shift+" : "") + shortcut.keyData.key.toUpperCase() : shortcut.key ? shortcut.key.toUpperCase() : "None";
+        clone.querySelector(".annotation-number").textContent = displayKey;
+        const preview = clone.querySelector(".annotation-color-preview");
+        if (preview) preview.style.backgroundColor = shortcut.color;
+        clone.querySelector(".annotation-shortcut-text").textContent = "Highlight";
+        clone.querySelector(".annotation-edit-btn").addEventListener("click", () => {
+          this.showAnnotationForm(idx);
+        });
+        clone.querySelector(".annotation-delete-btn").addEventListener("click", () => {
+          this.annotationShortcuts.splice(idx, 1);
+          chrome.storage.local.set({ annotationShortcuts: this.annotationShortcuts }, () => this.renderAnnotationShortcuts());
+        });
+        list.appendChild(clone);
+      });
+    }
+    static bindAccountTab() {
+      const googleLoginBtn = document.getElementById("nexus-google-login-btn");
+      if (googleLoginBtn) {
+        googleLoginBtn.addEventListener("click", async () => {
+          try {
+            googleLoginBtn.disabled = true;
+            const originalHTML = googleLoginBtn.innerHTML;
+            googleLoginBtn.innerHTML = "Signing In...";
+            if (typeof NexusAuth !== "undefined") {
+              await NexusAuth.login();
+              if (typeof NexusSync !== "undefined") {
+                try {
+                  await NexusSync.syncData();
+                } catch (syncErr) {
+                  console.error("Initial sync failed:", syncErr);
+                }
+              }
+            }
+            googleLoginBtn.innerHTML = originalHTML;
+          } catch (e) {
+            console.error(e);
+            alert("Sign in failed: " + e.message);
+            googleLoginBtn.innerHTML = "Sign In";
+          } finally {
+            googleLoginBtn.disabled = false;
+          }
+        });
+      }
+      const googleLogoutBtn = document.getElementById("nexus-google-logout-btn");
+      if (googleLogoutBtn) {
+        googleLogoutBtn.addEventListener("click", async () => {
+          if (typeof NexusAuth !== "undefined") {
+            await NexusAuth.logout();
+          }
+        });
+      }
+      const syncBtn = document.getElementById("nexus-sync-btn");
+      if (syncBtn) {
+        syncBtn.addEventListener("click", async () => {
+          syncBtn.disabled = true;
+          const originalHTML = syncBtn.innerHTML;
+          syncBtn.innerHTML = "Syncing...";
+          try {
+            if (typeof NexusSync !== "undefined") {
+              await NexusSync.syncUp();
+              _NexusSettingsModal.updateStorageUsage();
+            }
+          } catch (e) {
+            alert("Sync failed: " + e.message);
+          } finally {
+            syncBtn.innerHTML = originalHTML;
+            syncBtn.disabled = false;
+          }
+        });
+      }
+      const authLoggedOut = document.getElementById("nexus-auth-logged-out");
+      const authLoggedIn = document.getElementById("nexus-auth-logged-in");
+      const userAvatar = document.getElementById("nexus-user-avatar");
+      const userName = document.getElementById("nexus-user-name");
+      const userEmail = document.getElementById("nexus-user-email");
+      const syncStatus = document.getElementById("nexus-sync-status");
+      function updateAuthUI(isAuthenticated, user) {
+        if (isAuthenticated && user) {
+          if (authLoggedOut) authLoggedOut.classList.add("hidden");
+          if (authLoggedIn) authLoggedIn.classList.remove("hidden");
+          if (userAvatar) userAvatar.src = user.picture || "../../assets/icons/avatar.png";
+          if (userName) userName.textContent = user.name || "User Profile";
+          if (userEmail) userEmail.textContent = user.email || "";
+        } else {
+          if (authLoggedOut) authLoggedOut.classList.remove("hidden");
+          if (authLoggedIn) authLoggedIn.classList.add("hidden");
+        }
+        _NexusSettingsModal.updateCloudSyncDashboard();
+      }
+      if (typeof NexusAuth !== "undefined") {
+        NexusAuth.addListener(updateAuthUI);
+        if (NexusAuth.isAuthenticated) {
+          updateAuthUI(true, NexusAuth.user);
+        }
+      }
+      if (typeof NexusSync !== "undefined") {
+        NexusSync.addListener((status, timestamp) => {
+          if (syncStatus && status) {
+            if (timestamp) {
+              const timeStr = new Date(timestamp).toLocaleString();
+              syncStatus.textContent = `Last synced: ${timeStr}`;
+            } else {
+              syncStatus.textContent = status;
+            }
+          }
+          _NexusSettingsModal.updateCloudSyncDashboard();
+        });
+        if (typeof NexusAuth !== "undefined" && NexusAuth.isAuthenticated) {
+          NexusSync.getLastSyncTime().then((time) => {
+            if (syncStatus && time !== "Never") {
+              syncStatus.textContent = `Last synced: ${time}`;
+            }
+          });
+        }
+      }
+      document.getElementById("nexus-export-settings-btn").addEventListener("click", async () => {
+        try {
+          let exportData;
+          if (typeof NexusSync !== "undefined" && typeof NexusSync.gatherLocalData === "function") {
+            exportData = await NexusSync.gatherLocalData();
+          } else {
+            exportData = await new Promise((resolve) => chrome.storage.local.get(null, resolve));
+          }
+          const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `nexus_backup_${Date.now()}.json`;
+          a.click();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          console.error("Export failed:", err);
+          alert("Failed to export data.");
+        }
+      });
+      const fileInput2 = document.getElementById("nexus-import-settings-file");
+      document.getElementById("nexus-import-settings-btn").addEventListener("click", () => fileInput2.click());
+      fileInput2.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+          try {
+            const data = JSON.parse(evt.target.result);
+            if (!data || typeof data !== "object") throw new Error("Invalid format");
+            if (typeof NexusSync !== "undefined" && typeof NexusSync.persistMergedData === "function") {
+              const sessionsObj = data.nexus_chat_sessions || {};
+              await NexusSync.persistMergedData(data, sessionsObj, []);
+            } else {
+              await new Promise((resolve) => {
+                chrome.storage.local.clear(() => {
+                  chrome.storage.local.set(data, resolve);
+                });
+              });
+            }
+            alert("Backup data successfully imported!");
+            this.loadSettings();
+            _NexusSettingsModal.updateStorageUsage();
+            const scope = window.NexusSelectionScope;
+            if (scope) {
+              scope.renderRecentChatsSidebar();
+            }
+          } catch (err) {
+            console.error("Import failed:", err);
+            alert("Invalid JSON backup file.");
+          } finally {
+            fileInput2.value = "";
+          }
+        };
+        reader.readAsText(file);
+      });
+      document.getElementById("nexus-delete-all-btn").addEventListener("click", async () => {
+        if (typeof window.showCustomPopup === "function") {
+          const confirmed = await window.showCustomPopup({
+            title: "Delete All History",
+            body: "Are you sure you want to delete your entire chat history? This action cannot be reversed.",
+            confirmLabel: "Delete",
+            isDanger: true
+          });
+          if (confirmed) {
+            if (typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.clearAllHistory) {
+              await ChatHistoryManager.clearAllHistory();
+              _NexusSettingsModal.updateStorageUsage();
+              const scope = window.NexusSelectionScope;
+              if (scope) {
+                scope.renderRecentChatsSidebar();
+                scope.resetChat(false);
+                scope.resetChat(true);
+              }
+            }
+          }
+        } else {
+          if (confirm("Are you sure you want to delete your entire chat history? This action cannot be reversed.")) {
+            if (typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.clearAllHistory) {
+              await ChatHistoryManager.clearAllHistory();
+              _NexusSettingsModal.updateStorageUsage();
+              const scope = window.NexusSelectionScope;
+              if (scope) {
+                scope.renderRecentChatsSidebar();
+                scope.resetChat(false);
+                scope.resetChat(true);
+              }
+            }
+          }
+        }
+      });
+      this.setupDropdownInputs("nexus-history-retention-input", "nexus-history-retention-menu");
+    }
+    static updateStorageUsage() {
+      const textEl = document.getElementById("nexus-storage-usage-text");
+      if (!textEl) return;
+      chrome.storage.local.get(null, async (items) => {
+        const now = Date.now();
+        const expiredImgKeys = [];
+        Object.keys(items).forEach((key) => {
+          if (key.startsWith("nexus_img_cache_") || key.startsWith("nexus_img_query_")) {
+            const item = items[key];
+            if (item && item.timestamp && now - item.timestamp > 1 * 24 * 60 * 60 * 1e3) {
+              expiredImgKeys.push(key);
+              delete items[key];
+            }
+          }
+        });
+        let audioChanged = false;
+        const audioCache = items["audio_cache"];
+        if (audioCache && audioCache.entries) {
+          const AUDIO_EXPIRATION = 1 * 24 * 60 * 60 * 1e3;
+          Object.keys(audioCache.entries).forEach((key) => {
+            const entry = audioCache.entries[key];
+            const entryTimestamp = entry.timestamp || audioCache.lastUpdate;
+            if (entryTimestamp && now - entryTimestamp > AUDIO_EXPIRATION) {
+              delete audioCache.entries[key];
+              audioChanged = true;
+            }
+          });
+          if (audioChanged) {
+            chrome.storage.local.set({ audio_cache: audioCache });
+          }
+        }
+        if (expiredImgKeys.length > 0) {
+          chrome.storage.local.remove(expiredImgKeys);
+        }
+        let dbSize = await NexusChatDB.getStorageUsage();
+        let configSize = 0;
+        let cacheSize = 0;
+        Object.keys(items).forEach((key) => {
+          if (key === "attachments") {
+            chrome.storage.local.remove("attachments");
+            return;
+          }
+          const isAnkiKey = key.startsWith("rot_") || [
+            "nexusTemplatesV3",
+            "nexusBatchHistoryV3",
+            "lastUsedGenAIModel",
+            "lastUsedBatchSize",
+            "lastUsedDeck",
+            "lastUsedTemplateId",
+            "ankiQuickNoteContent"
+          ].includes(key);
+          if (isAnkiKey) return;
+          const valueStr = JSON.stringify(items[key]);
+          const sizeBytes = valueStr ? valueStr.length : 0;
+          if (key === "nexus_chat_sessions" || key.startsWith("nexus_session_") || key.startsWith("nexus_history_")) {
+            return;
+          } else if (key.startsWith("spotlight_history_") || key === "audio_cache" || key.startsWith("nexus_img_cache_") || key.startsWith("nexus_img_query_") || key.startsWith("yt_transcript_")) {
+            cacheSize += sizeBytes;
+          } else {
+            configSize += sizeBytes;
+          }
+        });
+        chrome.runtime.sendMessage({ action: "get_stored_files" }, async (response) => {
+          let filesSize = 0;
+          let audioDbSize = 0;
+          let imageDbSize = 0;
+          if (response && response.success) {
+            if (Array.isArray(response.files)) {
+              filesSize = response.files.reduce((acc, f) => acc + (f.size || 0), 0);
+            }
+            audioDbSize = response.audioDbSize || 0;
+            imageDbSize = response.imageDbSize || 0;
+          }
+          const totalCacheSize = cacheSize + audioDbSize + imageDbSize;
+          const totalBytes = dbSize + filesSize + configSize + totalCacheSize;
+          const fmt = (bytes) => {
+            if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+            if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+            return `${bytes} B`;
+          };
+          textEl.textContent = fmt(totalBytes);
+          const dbSizeEl = document.getElementById("nexus-storage-db-size");
+          const configSizeEl = document.getElementById("nexus-storage-config-size");
+          const cacheSizeEl = document.getElementById("nexus-storage-cache-size");
+          if (dbSizeEl) dbSizeEl.textContent = fmt(dbSize + filesSize);
+          if (configSizeEl) configSizeEl.textContent = fmt(configSize);
+          if (cacheSizeEl) cacheSizeEl.textContent = fmt(totalCacheSize);
+          if (totalBytes > 0) {
+            const dbPct = ((dbSize + filesSize) / totalBytes * 100).toFixed(2);
+            const configPct = (configSize / totalBytes * 100).toFixed(2);
+            const cachePct = (totalCacheSize / totalBytes * 100).toFixed(2);
+            const barDb = document.getElementById("nexus-storage-bar-db");
+            const barConfig = document.getElementById("nexus-storage-bar-config");
+            const barCache = document.getElementById("nexus-storage-bar-cache");
+            requestAnimationFrame(() => {
+              if (barDb) barDb.style.width = `${dbPct}%`;
+              if (barConfig) barConfig.style.width = `${configPct}%`;
+              if (barCache) barCache.style.width = `${cachePct}%`;
+            });
+          }
+          const sessionsListEl = document.getElementById("nexus-storage-sessions-list");
+          if (sessionsListEl) {
+            const sessionsMetadata = await NexusChatDB.getAllSessions();
+            const sessionList = [];
+            for (const sessionId of Object.keys(sessionsMetadata)) {
+              const meta = sessionsMetadata[sessionId];
+              if (!meta) continue;
+              const sessionMessages = await NexusChatDB.getMessages(sessionId);
+              const messagesStr = sessionMessages ? JSON.stringify(sessionMessages) : "";
+              const metaStr = JSON.stringify(meta);
+              const messagesKeyStr = JSON.stringify(sessionId + "_messages");
+              const metaKeyStr = JSON.stringify(sessionId);
+              const dbBytes = (messagesKeyStr.length + messagesStr.length + metaKeyStr.length + metaStr.length) * 2;
+              let sessionFilesSize = 0;
+              if (response && response.success && Array.isArray(response.files)) {
+                sessionFilesSize = response.files.filter((f) => f.sessionId === sessionId).reduce((acc, f) => acc + (f.size || 0), 0);
+              }
+              const totalSessionBytes = dbBytes + sessionFilesSize;
+              sessionList.push({
+                id: sessionId,
+                title: meta.title || "Untitled Chat",
+                timestamp: meta.updatedAt || meta.createdAt || meta.timestamp || Date.now(),
+                size: totalSessionBytes
+              });
+            }
+            sessionList.sort((a, b) => b.size - a.size);
+            const top10 = sessionList.slice(0, 10);
+            if (top10.length === 0) {
+              sessionsListEl.innerHTML = '<p class="desc-small italic" style="padding: 12px; text-align: center; color: var(--nexus-text-muted);">No chat sessions found.</p>';
+            } else {
+              sessionsListEl.innerHTML = "";
+              top10.forEach((session) => {
+                const itemEl = document.createElement("div");
+                itemEl.className = "nexus-storage-session-item";
+                itemEl.dataset.sessionId = session.id;
+                const formattedDate = new Date(session.timestamp).toLocaleDateString(void 0, {
+                  month: "short",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit"
+                });
+                const formattedSize = fmt(session.size);
+                itemEl.innerHTML = `
+                <div class="nexus-storage-session-info">
+                  <span class="nexus-storage-session-title" title="${session.title}">${session.title}</span>
+                  <span class="nexus-storage-session-date">${formattedDate}</span>
+                </div>
+                <div class="nexus-storage-session-right">
+                  <span class="nexus-storage-session-size">${formattedSize}</span>
+                  <button type="button" class="nexus-storage-session-delete" title="Delete Chat Thread">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                  </button>
+                </div>
+              `;
+                const deleteBtn = itemEl.querySelector(".nexus-storage-session-delete");
+                if (deleteBtn) {
+                  deleteBtn.addEventListener("click", async (e) => {
+                    e.stopPropagation();
+                    if (typeof window.showCustomPopup === "function") {
+                      const confirmed = await window.showCustomPopup({
+                        title: "Delete Chat",
+                        body: `Are you sure you want to delete the chat thread "${session.title}"?`,
+                        confirmLabel: "Delete",
+                        isDanger: true
+                      });
+                      if (confirmed) {
+                        if (typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.deleteChat) {
+                          await ChatHistoryManager.deleteChat(session.id);
+                          _NexusSettingsModal.updateStorageUsage();
+                          const scope = window.NexusSelectionScope;
+                          if (scope) {
+                            scope.renderRecentChatsSidebar();
+                            const tabsList = scope.getTabs();
+                            const activeIdx = scope.getActiveTabIndex();
+                            if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
+                              scope.resetChat();
+                            }
+                          }
+                        }
+                      }
+                    } else {
+                      if (confirm(`Are you sure you want to delete the chat thread "${session.title}"?`)) {
+                        if (typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.deleteChat) {
+                          await ChatHistoryManager.deleteChat(session.id);
+                          _NexusSettingsModal.updateStorageUsage();
+                          const scope = window.NexusSelectionScope;
+                          if (scope) {
+                            scope.renderRecentChatsSidebar();
+                            const tabsList = scope.getTabs();
+                            const activeIdx = scope.getActiveTabIndex();
+                            if (tabsList && activeIdx !== -1 && tabsList[activeIdx] && tabsList[activeIdx].sessionId === session.id) {
+                              scope.resetChat();
+                            }
+                          }
+                        }
+                      }
+                    }
+                  });
+                }
+                itemEl.addEventListener("click", async () => {
+                  const sid = session.id;
+                  _NexusSettingsModal.hide();
+                  if (window.NexusViewManager) {
+                    window.NexusViewManager.switchView("chat", { sid });
+                  }
+                  const messages = typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.getSessionMessages ? await ChatHistoryManager.getSessionMessages(sid) : await NexusChatDB.getMessages(sid);
+                  const allSessions = typeof ChatHistoryManager !== "undefined" && ChatHistoryManager.getAllHistories ? await ChatHistoryManager.getAllHistories() : await NexusChatDB.getAllSessions();
+                  const meta = allSessions[sid] || { id: sid, title: session.title };
+                  const listContainer = document.getElementById("sidebar-recent-chats");
+                  if (listContainer) {
+                    listContainer.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+                    document.querySelectorAll("#sidebar-sparks-list .sidebar-spark-item.active").forEach((el) => el.classList.remove("active"));
+                    const targetSidebarItem = listContainer.querySelector(`.recent-chat-item[data-session-id="${sid}"]`);
+                    if (targetSidebarItem) {
+                      targetSidebarItem.classList.add("active");
+                    }
+                  }
+                  if (typeof window.loadHistoryIntoNewTab === "function") {
+                    window.loadHistoryIntoNewTab(messages, meta, sid);
+                  }
+                  const sidebar = document.getElementById("nexus-sidebar");
+                  const backdrop = document.querySelector(".sidebar-backdrop");
+                  if (sidebar) sidebar.classList.remove("active");
+                  if (backdrop) backdrop.classList.remove("active");
+                  document.body.classList.remove("sidebar-open");
+                });
+                sessionsListEl.appendChild(itemEl);
+              });
+            }
+          }
+        });
+      });
+      this.updateCloudSyncDashboard();
+    }
+    static updateCloudSyncDashboard() {
+      const sizeEl = document.getElementById("nexus-cloud-stat-size");
+      const md5El = document.getElementById("nexus-cloud-stat-md5");
+      const timeEl = document.getElementById("nexus-cloud-stat-time");
+      const relativeEl = document.getElementById("nexus-cloud-stat-relative");
+      const itemsEl = document.getElementById("nexus-cloud-stat-items");
+      const breakdownEl = document.getElementById("nexus-cloud-stat-breakdown");
+      const mediaEl = document.getElementById("nexus-cloud-stat-media");
+      const mediaSubEl = document.getElementById("nexus-cloud-stat-media-sub");
+      if (!sizeEl) return;
+      if (typeof NexusAuth !== "undefined" && !NexusAuth.isAuthenticated) {
+        sizeEl.textContent = "\u2014";
+        if (md5El) md5El.textContent = "Not connected";
+        timeEl.textContent = "Not signed in";
+        if (relativeEl) relativeEl.textContent = "Sign in to sync";
+        if (itemsEl) itemsEl.textContent = "\u2014";
+        if (breakdownEl) breakdownEl.textContent = "\u2014";
+        if (mediaEl) mediaEl.textContent = "\u2014";
+        if (mediaSubEl) mediaSubEl.textContent = "\u2014";
+        return;
+      }
+      chrome.storage.local.get(["last_sync_time", "last_sync_size", "last_sync_md5", "last_cloud_stats", "nexus_highlights", "drive_uploaded_blobs"], async (res) => {
+        if (res.last_sync_size) {
+          const bytes = parseInt(res.last_sync_size, 10);
+          if (!isNaN(bytes)) {
+            if (bytes < 1024) sizeEl.textContent = `${bytes} B`;
+            else if (bytes < 1024 * 1024) sizeEl.textContent = `${(bytes / 1024).toFixed(1)} KB`;
+            else sizeEl.textContent = `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+          } else {
+            sizeEl.textContent = "\u2014";
+          }
+        } else {
+          sizeEl.textContent = "0 KB";
+        }
+        if (md5El) {
+          if (res.last_sync_md5) {
+            md5El.textContent = `MD5: ${res.last_sync_md5.slice(0, 8)}...`;
+            md5El.title = `Full Checksum: ${res.last_sync_md5}`;
+          } else {
+            md5El.textContent = "Gzip Compressed";
+          }
+        }
+        if (res.last_sync_time) {
+          const date = new Date(res.last_sync_time);
+          timeEl.textContent = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          if (relativeEl) {
+            const diffMin = Math.floor((Date.now() - res.last_sync_time) / 6e4);
+            let relText = "Just now";
+            if (diffMin >= 1 && diffMin < 60) relText = `${diffMin}m ago`;
+            else if (diffMin >= 60 && diffMin < 1440) relText = `${Math.floor(diffMin / 60)}h ago`;
+            else if (diffMin >= 1440) relText = date.toLocaleDateString();
+            relativeEl.textContent = `${relText} \xB7 In sync`;
+          }
+        } else {
+          timeEl.textContent = "Never";
+          if (relativeEl) relativeEl.textContent = "No backup yet";
+        }
+        try {
+          const cloudStats = res.last_cloud_stats || null;
+          let sessionCount = 0;
+          let noteCount = 0;
+          let highlightCount = 0;
+          if (cloudStats) {
+            sessionCount = cloudStats.chatsCount || 0;
+            noteCount = cloudStats.notesCount || 0;
+            highlightCount = cloudStats.highlightsCount || 0;
+          } else if (res.last_sync_time) {
+            if (typeof NexusChatDB !== "undefined") {
+              const sessions = await NexusChatDB.getAllSessions().catch(() => ({}));
+              sessionCount = Object.keys(sessions || {}).length;
+            }
+            if (typeof NotesManager !== "undefined") {
+              const notes = await NotesManager.getNotes().catch(() => []);
+              noteCount = notes.length;
+            }
+            if (Array.isArray(res.nexus_highlights)) {
+              highlightCount = res.nexus_highlights.length;
+            }
+          }
+          if (itemsEl) {
+            itemsEl.textContent = `${sessionCount} ${sessionCount === 1 ? "chat" : "chats"}`;
+          }
+          if (breakdownEl) {
+            if (highlightCount > 0) {
+              breakdownEl.textContent = `${noteCount} notes \xB7 ${highlightCount} hl`;
+            } else {
+              breakdownEl.textContent = `${noteCount} ${noteCount === 1 ? "note" : "notes"}`;
+            }
+          }
+        } catch (e) {
+          if (itemsEl) itemsEl.textContent = "Active";
+        }
+        try {
+          const cloudStats = res.last_cloud_stats || null;
+          let ttsCount = 0;
+          let attCount = 0;
+          if (cloudStats) {
+            ttsCount = cloudStats.ttsCount || 0;
+            attCount = cloudStats.attachmentsCount || 0;
+          } else {
+            const uploadedBlobs = res.drive_uploaded_blobs || [];
+            attCount = uploadedBlobs.filter((n) => n.startsWith("att_") || n.startsWith("blob_att_")).length;
+            ttsCount = uploadedBlobs.filter((n) => n.startsWith("tts_")).length;
+          }
+          if (mediaEl) {
+            mediaEl.textContent = `${ttsCount} TTS ${ttsCount === 1 ? "audio" : "audios"}`;
+          }
+          if (mediaSubEl) {
+            mediaSubEl.textContent = `${attCount} ${attCount === 1 ? "attachment" : "attachments"}`;
+          }
+        } catch (e) {
+        }
+      });
+    }
+  };
+  document.addEventListener("DOMContentLoaded", () => {
+    NexusSettingsModal2.init();
+  });
+  if (typeof globalThis !== "undefined") {
+    globalThis.NexusSettingsModal = NexusSettingsModal2;
+  }
+
+  // src/components/sparks/default_sparks.js
+  var DEFAULT_SPARKS = {
+    "spark_ielts_writing_task1": {
+      name: "IELTS Writing Task 1 Tutor",
+      description: "Friendly tutor for IELTS Writing Task 1. Practice reports, vocabulary, and grammar.",
+      instructions: `You are a highly supportive, expert IELTS Writing Task 1 Tutor, operating with the analytical precision of an official IELTS Examiner to guide the user toward a perfect Band 9.0 score.
+Your role is to help the user learn and improve in a completely natural, conversational, and direct manner. You can converse in the user's preferred language (e.g., Vietnamese or English) naturally when providing feedback or explanations. Avoid using any fixed templates, rigid assessment headers, or pre-defined response categories (such as grading grids, score estimates, or structured lists of corrections) unless the user explicitly requests a formal evaluation. Converse like a seasoned, friendly teacher, pointing out errors naturally and injecting professional expertise seamlessly into your feedback.
+CLASSIFICATION REQUIREMENT:
+When the user shares a task 1 topic, prompt, or chart, you must automatically classify it and print a short tag line at the very beginning of your response:
+Task Type: [Chart | Process | Map] | Topic: [Energy & Environment | Employment & Labor | Economy & Spending | Demographics & Population | Education & Leisure | Industrial Manufacturing | Natural Life Cycles | Town & Island Development | Building & Facility Layout | Other]
+To push the user toward the maximum band score, you must meticulously audit their writing against the official core grading criteria within your natural conversation:
+1. TASK ACHIEVEMENT (TA):
+- Immediately check for a clear, high-level Overview. If an overview is missing or poorly written (e.g., merely listing data points without capturing general trends, main changes, or key stages), flag it immediately, as TA will be capped at Band 5.
+- Ensure the user systematically selects and reports the "key features" rather than trying to describe every single data point, which signals a lack of data-filtering skills (Band 6 mistake).
+- Remind them never to include personal opinions, explanations, or external causes for the data (e.g., explaining WHY a line dropped).
+2. COHERENCE & COHESION (CC):
+- Audit paragraph organization. Ensure the response logically sequences information into a clean 4-paragraph structure (Introduction -> Overview -> Body 1 -> Body 2) or integrates the overview into the intro.
+- Look out for "mechanical cohesive devices" (e.g., overusing 'Firstly', 'Moreover', 'In addition' at the start of every sentence). Guide the user to use natural, integrated linkers, complex sentence structures, or referential pronouns ('this trend', 'the former', 'which') to achieve a Band 8+ smooth flow.
+- Ensure logical comparison groups (e.g., grouping by similar trends, highest/lowest fields, or distinct time periods) instead of a chaotic, unstructured stream of numbers.
+3. LEXICAL RESOURCE (LR):
+- Check for precise paraphrasing of the prompt in the Introduction. Ban repetitive copying of words directly from the prompt.
+- Assess trend and data vocabulary accuracy. Provide sophisticated alternatives to generic words (e.g., upgrade "went up rapidly" to "experienced a sharp incline" or "surged"). Ensure correct usage of specialized map/process terminology if applicable.
+4. GRAMMATICAL RANGE & ACCURACY (GRA):
+- Closely audit tense consistency based on the chart's timeline (Past, Present, or Future projections).
+- Catch subtle grammar traps that destroy accuracy scores: incorrect prepositions for data tracking ("stood at", "increased by", "dropped to", "remained steady at"), subject-verb agreement, and pluralization errors.
+- Actively prompt the user to mix simple and complex sentence forms naturally without sacrificing clarity.
+FEEDBACK PROTOCOL:
+- Read the user's input.
+- Praise strong points briefly to maintain motivation.
+- Correct errors inline or through clear contextual examples.
+- Offer "Before vs. After" transformations directly inside your dialogue to demonstrate how a Band 6.5 sentence can be elevated to a Band 9.0 level.`
+    },
+    "spark_ielts_writing_task2": {
+      name: "IELTS Writing Task 2 Tutor",
+      description: "Academic Essay Tutor focused on Task Response (TR), bulletproof logic, preemptive examiner defense, and natural English.",
+      instructions: `You are a highly supportive, expert Writing Tutor specializing in IELTS Writing Task 2 and Academic essays. Your mission is to teach, guide, brainstorm, and evaluate essays focusing strictly on Task Response (TR), Bulletproof Logic (Flaw Anticipation & Preemptive Defense), deep structural elaboration, and simple, natural, accessible English (Band 8.0 to 8.5 Examiner Standards).
+---
+### I. CORE PHILOSOPHY: PLAIN, NATURAL ENGLISH & PERSUASIVE REASONING
+High IELTS band scores come from ironclad logical explanations, preempting examiner counter-arguments, and relatable real-world mechanisms, NOT from memorizing difficult GRE or SAT vocabulary.
+- Prioritize clarity, natural everyday collocations, and persuasive, airtight reasoning.
+- THE DEVIL'S ADVOCATE FILTER (EXAMINER SCRUTINY): Every argument must anticipate and block obvious counter-questions or extreme misinterpretations (for example, if arguing for free time, explicitly clarify that free time means self-directed, healthy play rather than passive screen addiction; if arguing for art classes, clarify that creative classes prioritize personal enjoyment over stressful formal test scores).
+- STRICT BAN ON PRETENTIOUS JARGON: NEVER use heavy, convoluted, or unnatural buzzwords.
+  * Avoid: escalating deficit, bureaucratic inertia, plague public-sector projects, administrative bottlenecks, private capital infusions, transit-oriented suburban developments, agility.
+  * Prefer natural alternatives: housing shortage, slow government procedures, tight municipal budgets, private investment, apartments near bus and train lines, speed and efficiency, solving the housing crisis.
+---
+### II. ESSAY ARCHITECTURE & LOGICAL RIGOR
+#### 1. Introduction (Strictly 2 sentences: Short, Ultra-Generic, ZERO Body Spoilers):
+- Sentence 1 (Concise Paraphrase): Clean, natural paraphrase of the prompt in one brief sentence.
+- Sentence 2 (Zero-Spoiler Thesis): State the overall stance clearly in purely structural terms. NEVER include topic-specific adjectives or category previews (such as financial, logistical, academic, psychological, or physical).
+  * Incorrect (Mild spoiler / reveals body categories): While programs offer skills, I believe making them mandatory creates financial and practical problems that outweigh advantages.
+  * Correct (Zero-Spoiler & Ultra-Generic): People hold differing views regarding whether all students should complete overseas study or work experience. While these programs offer certain benefits, I believe that making them mandatory produces far more drawbacks than advantages.
+#### 2. Body Paragraphs (Deep, Substantial & Fully Elaborated):
+Body paragraphs must never be brief, rushed, or superficial. Develop each supporting point thoroughly with depth, contrast, and real-world mechanisms:
+- Topic Sentence: Clear, direct overarching claim of the paragraph.
+- Dual-Element Topic Symmetry: When a prompt contains two elements (for example, studying abroad OR doing a work placement), address and balance both components symmetrically across body paragraphs.
+- Supporting Points (Develop each point fully through the 4-Step Airtight Engine):
+  1. Core Mechanism & Characterization: Explain the fundamental nature, operational traits, or contrast with conventional settings (for instance, creative subjects rely on self-expression and open-ended imagination rather than rigid theoretical rules and standardized grading).
+  2. Preemptive Defense & Scope Limiting: Block examiner counter-arguments by clarifying intent or ruling out negative extremes (for instance, because these classes prioritize personal enjoyment over formal test scores, children can experiment with new ideas without fear of failure; or this does not mean allowing unrestricted screen time on digital devices, but rather offering the space for self-directed outdoor play and reading).
+  3. Relatable Real-World Scenario & Comparison: Ground the point in specific target groups and contrasting situations (especially students who struggle with abstract theory like math or science; or instead of turning after-school hours into another demanding obligation).
+  4. Chained Impact & Cumulative Outcome: Trace the direct result into lasting personal, emotional, or social growth (this allows them to uncover latent strengths, which in turn rebuilds authentic self-worth and emotional resilience).
+- The Outweigh Weighing Mechanism (For Outweigh/Direct Stance Essays): When arguing that one side trumps the other, include a clear comparative clause showing why the chosen side takes precedence (for instance: Because forcing heavy expenses or poor-quality placements cancels out any real skill growth, the disadvantages are far more significant).
+#### 3. Conclusion (1 to 2 sentences):
+Crisp, elegant reaffirmation of the overarching stance without introducing new facts or repeating entire lists of arguments.
+- NO TECHNICAL AUDIT OR WORD COUNT METRICS: NEVER output word counts, section breakdowns, or mechanical grading grids in your responses unless the user explicitly requests them.
+---
+### III. IDEA GENERATION & PREEMPTIVE DEFENSE TOOLKIT
+#### 1. Characterization (Answering HOW and WHY deeply):
+Break down the subject (Person, Object, Action, or Trend) by its intrinsic traits and operational requirements:
+- Linking Verbs for Inherent Nature: require, demand, offer, contain, rely heavily on, characterized by.
+- Scope Limiting (Target Group Precision): Replace vague words like "people" or "users" with targeted subgroups:
+  * Pattern: especially [subgroup] who [specific trait]
+  * Examples: especially young professionals who face intense career competition; particularly low-income households that have limited savings; especially teenagers who lack self-control and emotional maturity.
+#### 2. Absolute Qualifier & Discipline Asymmetry Tool:
+When a prompt contains absolute universal terms (such as "all", "every", "only", "must", or "mandatory"):
+- Highlight the flaw of one-size-fits-all enforcement by contrasting applied fields against theoretical fields.
+- Contrast disciplines where the policy fits (for example, applied fields like business, engineering, and marketing) against disciplines where universal enforcement is unnecessary or disruptive (for example, theoretical physics, pure mathematics, and classical literature).
+#### 3. Preemptive Defense Sentence Stems (Fortifying Arguments):
+Weave these simple, natural defensive patterns into body paragraphs to make them impossible for examiners to fault:
+- Distinction of Priority or Setting: Because these activities prioritize [personal enjoyment/creative expression] over [formal test scores/rigid metrics], [group] can [action] without [fear of failure/excessive pressure].
+- Exclusion of Negative Extremes: This does not mean [allowing harmful/passive habit, e.g., excessive screen time], but rather [giving them the space/autonomy to pursue self-directed, healthy activities].
+- Mitigation of Burden: Rather than turning [leisure hours] into another burdensome obligation, [unstructured time] grants [individuals] the autonomy to recover mentally at their own pace.
+- Direct Outweigh Comparison: Because [core drawback/harm] fundamentally undermines any [expected benefit], the disadvantages take clear precedence over the advantages.
+- Contextual Qualification: While critics may argue that [counter-argument], this risk is minimized when [condition or proper guidance].
+#### 4. Macro A-B-C Root Framework (Diverse Angles for Any Topic):
+- Macro A: Universal Root Causes (Why problems happen):
+  * Poverty & Inequality: Low disposable income, financial vulnerability, lack of safety nets.
+  * Modern Lifestyle Pressures: Hectic work schedules, long commuting times, intense academic competition, heavy coursework.
+  * Human Psychology & Consumerism: Craving for instant gratification, social comparison (peer pressure/vanity), fear of missing out (FOMO).
+  * Public vs. Private Tradeoffs: Limited municipal budgets and slow bureaucracy vs. private profit-driven incentives.
+  * Technological Acceleration: Addictive algorithms, convenience displacing physical effort.
+- Macro B: Multi-tiered Impacts (Tracer of Consequences):
+  * Individual Level: Physical health (sedentary habits, obesity), mental health (burnout, loneliness, anxiety, emotional recovery, autonomy), soft skills (empathy, active listening, teamwork, patience).
+  * Community & Family Level: Weaker family bonding, office productivity, workplace morale, social isolation.
+  * Macro / Societal Level: Public healthcare costs, government debt burdens, environmental damage, talent retention.
+- Macro C: Actionable Power Levers (How to solve problems):
+  * Legal & Regulatory Lever: Enforce zoning laws, mandate safety standards, impose fines, set quotas.
+  * Financial & Incentive Lever: Subsidies, tax discounts, low-interest loans, targeted funding for public transit and infrastructure.
+  * Educational & Collaborative Lever: Public-Private Partnerships (PPP), school curriculum integration, community volunteering programs.
+#### 5. Relatable, Concrete Noun Triads (Specification):
+Substantiate abstract ideas with 2 to 3 everyday concrete details:
+- Avoid abstract "basic amenities" -> Prefer concrete "grocery stores, local schools, and bus stops"
+- Avoid abstract "academic pressure" -> Prefer concrete "heavy coursework, regular mock tests, and university entrance exams"
+- Avoid abstract "digital communication tools" -> Prefer concrete "instant messaging apps, video calls, and social media updates"
+---
+### IV. TUTORING & AUDITING PROTOCOL
+When interacting with the user (brainstorming, evaluating outlines, or refining essays):
+1. Direct Assessment First: Acknowledge and validate the user's ideas, highlighting their strong points in Task Response and Characterization.
+2. Examiner Trap & Preemptive Defense:
+   - Proactively identify 1 to 2 potential counter-arguments or edge cases that an examiner might question.
+   - Provide concrete preemptive defense sentences in simple, plain English to block those logical gaps completely.
+3. Full Fortified Model: Present the complete outline or essay integrating both the core mechanisms and the defensive sentences seamlessly. Ensure the Introduction is short and ultra-generic (zero point spoilers), while the Body paragraphs are deep, substantial, and thoroughly developed.
+4. Clear & Accessible Language: Keep all English models and collocations natural, plain, and easy to understand (accessible Band 8.0 to 8.5 standard).
+5. Language Protocol: Match the user's communication language (such as Vietnamese or English) for explanations, critiques, and feedback; generate all sample sentences, outlines, and essays in clear, authentic academic English.`
+    },
+    "spark_qa_assistant": {
+      name: "QA Assistant",
+      description: "Global E-Commerce & Omnichannel Expert, BA & QA Lead.",
+      instructions: '# Global E-Commerce & Omnichannel Expert AI\n**Tone/Format**: Efficient (Concise and plain). Answer directly and as briefly as possible with minimal text. Avoid verbose formatting, unnecessary bold headings, or decorative lists/tables unless absolutely required to answer the query. No greetings, introductions, or conversational fillers; start answering the question immediately. Match the user\'s language (Vietnamese/English).\n\n# 1. Architecture\n- **Layers**: Adobe Experience Manager (AEM) for frontend CMS & DAM via JCR (CRXDE Lite); SAP Commerce Cloud (Hybris) for catalog/OMS via OCC REST APIs; SAP S/4HANA (N-ERP) for financials (FI Documents) and billing.\n- **Integration**: Day CQ Commerce Factory for Hybris via OSGi services (com.adobe.cq.commerce.hybris.impl.HybrisServiceFactory), adapting resources (`Resource.adaptTo()`) using `cq:commerceProvider=hybris`.\n\n# 2. Business Domains & Rules\n- **CMS/PDP**: Unified GNB/SSO. Split Buy/Split Feature PDP (carrier, trade-in, tiered config); Marketing PDP (campaigns, continuous scroll); Standard PDP (Mass/Mainstream SKUs).\n- **Stores**: B2C eStore (Guest/registered); EPP (corporate tiers); F&F (friends/family); B2B SME (domain-matching configurations like `@testsupermarket.com` audited in Hybris Backoffice); EA (Endless Aisle via O2O Cockpit).\n- **PCM**: Staged vs. Online Catalog Versions. Variant Product (`TokoVariant`, variant/SKU) vs. Base Product (`TokoProduct`, parent). Sync types: Full, Incremental, Super. References: `AVAILABLE_SERVICE`, `CONSISTS_OF` (F-Codes), `SELECTION_OF_GIFT`.\n- **Pricing & Promotions**: Tier Price (`modelCode`, `Price`, `Minqtd`, `Price type` = `SPECIAL`). Promotion Splitting: `Item Discount = (Total Promotion Discount / Total Cart Value) * Original Item Price`. Rule Execution: use `Rule Executed` on lower rule targeting higher rule as block. BOGO/FOC selection: `Cheapest` / `Most Expensive` inside `productPromotionRuleGroup`.\n\n# 3. Order Flow & ERP Integration\n- **Journey**: Cart -> SSO/Guest Checkout -> Delivery Address -> Vertex/Cybersource -> Confirmation.\n- **WAIT_FOR_CHECK_EXTERNAL**: Order held awaiting external validation (Fraud, Trade-In, SME approvals, insurance). Released manually via Backoffice Fraud Reports, or bypassed in sandbox via simulated API callbacks (Postman) to proceed to `Waiting For Send Financial`.\n- **N-ERP**: Advances to `Waiting For Transfer` -> S/4HANA. fulfillment via T-codes: `VA03` (Order verification), DO/GI creation, `ZLEZ59040` (capture Serial/IMEI). Hybris sync via `bulkFetchConsignmentUpdateJob` / interface SD10304.\n- **Returns**: RSO allows partial unit reduction via quantity dropdowns. Final `Refund Amount` dynamically deducts vouchers and base store configs like `Refund delivery cost`.\n\n# 4. Smart Ring Journey\n- **Sizing Kit**: AEM order with "Don\'t know size" splits order: drops Ring to pending, ships zero-cost kit (types `YF01`/`YFT1`, item `YF0K` where `Y500 = 0`). Size submission in "My Account" releases stock and ships hardware.\n- **Returns**: Cancellation before size confirmation does not require kit return. Full return after ring delivery requires ring return (subject to `Restocking Fee`), kit remains with user.\n\n# 5. Testing & Environment\n- **BVT**: Pipeline check validating: Home (200 OK) -> SSO -> Solr Search -> PDP -> Cart -> Checkout -> Confirmation. Failure triggers automatic rollback.\n- **Environments**: SIT (OCC, AEM adapter, S/4HANA middleware contracts) and Regression. Production strictly off-limits. Validate on staging instances.\n- **Consultation Mindset**: Use general knowledge of headless microservices, robust async integration, dispatcher/CDN caching, and automation when queries exceed these specs.'
+    },
+    "spark_ielts_reading_assistant": {
+      name: "IELTS Reading Assistant",
+      description: "Translate, explain vocabulary/grammar, and pinpoint exactly where answers are located in IELTS Reading.",
+      instructions: `You are a highly supportive, expert IELTS Reading Assistant. Your mission is to help the user master IELTS Reading.
+**Strict Tone/Format (CRITICAL)**: 
+- Answer directly, naturally, and precisely. Keep responses clear, focused, and plain without unnecessary fluff or conversational fillers.
+- Avoid greetings/introductions; start answering immediately.
+- Respond in Vietnamese, keeping original English quotes and key terms intact.
+- **Formatting & Phonetics Rule**: 
+  * Always use **exact British English (UK) IPA** based strictly on Oxford/Cambridge dictionaries (e.g., post-apocalyptic: /\u02CCp\u0259\u028Ast.\u0259\u02CCp\u0252k.\u0259\u02C8l\u026Ap.t\u026Ak/, totalitarian: /t\u0259\u028A\u02CCt\xE6l\u0259\u02C8te\u0259ri\u0259n/). Pay strict attention to accurate vowel qualities (e.g. /\u0252/, /\u0251\u02D0/, /e\u0259/) and do not reduce stressed/secondary vowels to weak schwa (/\u0259/).
+  * Never wrap pronunciation keys or IPA (e.g. /.../) in backticks (\`) or code blocks (<code>). Keep them as plain text.
+---
+### CORE CAPABILITIES
+1. TRANSLATION & PARAGRAPH ANALYSIS
+- When asked to translate/explain a sentence or summarize/explain paragraphs:
+  * Do NOT use bullet points, bold lists of "N\u1ED9i dung ch\xEDnh" / "T\u1EEB kh\xF3a n\u1ED5i b\u1EADt", or brief bulleted summaries.
+  * Write a full, smooth, cohesive narrative paragraph for each section/paragraph.
+  * Start each paragraph by connecting it with the previous content (e.g., "\u0110o\u1EA1n \u0111\u1EA7u gi\u1EDBi thi\u1EC7u...", "Sau khi m\xF4 t\u1EA3..., \u0111o\u1EA1n n\xE0y gi\u1EA3i th\xEDch...", "Sau khi tr\xECnh b\xE0y..., \u0111o\u1EA1n n\xE0y ph\xE2n t\xEDch...").
+  * Explain in detail what the paragraph is about, including background context, key events, mechanisms, examples, and the progression of ideas in natural, continuous prose.
+  * Adapt naturally: Provide natural Vietnamese translation and structural breakdown when specific sentences are requested.
+2. VOCABULARY & COLLOCATIONS
+- When user asks about a word or phrase:
+  * Provide British (UK) IPA pronunciation, word class, Vietnamese meaning, and relevant synonyms/collocations.
+  * Adapt naturally: If reading passage context is provided in the prompt/conversation, explain its specific meaning in that passage. If only isolated words are given without a passage, explain its general definition and typical usage context without forcing a fixed template.
+3. ANSWER CHECKING & EVIDENCE LOCATION
+- When checking answers:
+  * Confirm/identify the correct choice directly.
+  * Quote the exact English evidence sentence and pinpoint its location if available.
+  * Briefly show keyword mapping and explain other choices only if necessary.`
+    }
+  };
+
+  // src/components/sparks/sparks.js
+  var SPARKS_KEY = "nexus_sparks";
+  async function sparksLoad() {
+    const res = await chrome.storage.local.get([SPARKS_KEY, "sparks", "lumina_sparks"]);
+    let sparks = res[SPARKS_KEY] || res["sparks"] || res["lumina_sparks"];
+    if (!sparks) {
+      sparks = {};
+      for (const [id, defSpark] of Object.entries(DEFAULT_SPARKS)) {
+        sparks[id] = {
+          id,
+          name: defSpark.name,
+          description: defSpark.description || "",
+          instructions: defSpark.instructions,
+          avatar: null,
+          knowledgeFiles: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        };
+      }
+      await sparksSave(sparks);
+    } else if (!res[SPARKS_KEY]) {
+      await sparksSave(sparks);
+    }
+    return sparks;
+  }
+  async function sparksSave(sparks) {
+    await chrome.storage.local.set({ [SPARKS_KEY]: sparks });
+    if (typeof sidebarSparksRenderList2 === "function") {
+      sidebarSparksRenderList2();
+    }
+  }
+  async function sparksSaveOrder(orderedIds) {
+    const sparks = await sparksLoad();
+    orderedIds.forEach((id, index) => {
+      if (sparks[id]) {
+        sparks[id].order = index;
+        sparks[id].updatedAt = Date.now();
+      }
+    });
+    await chrome.storage.local.set({ [SPARKS_KEY]: sparks });
+  }
+  async function sparksDelete(id) {
+    const sparks = await sparksLoad();
+    if (sparks[id]) {
+      delete sparks[id];
+      await sparksSave(sparks);
+    }
+  }
+  function sparksNewId() {
+    return "spark_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+  }
+  function sparksOpenPage() {
+    if (typeof window.NexusViewManager !== "undefined") {
+      window.NexusViewManager.switchView("sparks");
+    }
+    sparksRenderList2();
+    document.getElementById("sidebar-sparks-btn")?.classList.add("active");
+    document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+  }
+  function sparksClosePage2() {
+    if (typeof window.NexusViewManager !== "undefined") {
+      window.NexusViewManager.switchView("chat");
+    }
+    document.getElementById("sidebar-sparks-btn")?.classList.remove("active");
+    document.getElementById("sparks-editor-overlay")?.remove();
+  }
+  async function sparksRenderList2() {
+    const body = document.getElementById("sparks-page-body");
+    const sparks = await sparksLoad();
+    const list = Object.values(sparks).filter((s) => s && !s.isDeleted).sort((a, b) => {
+      const orderA = a.order !== void 0 ? a.order : 99999;
+      const orderB = b.order !== void 0 ? b.order : 99999;
+      if (orderA !== orderB) return orderA - orderB;
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+    if (list.length === 0) {
+      body.innerHTML = `
+            <div class="sparks-empty">
+                <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="4" y="6" width="6" height="4" rx="2"/>
+                    <rect x="14" y="6" width="6" height="8" rx="3"/>
+                    <rect x="4" y="14" width="6" height="6" rx="3"/>
+                    <rect x="14" y="18" width="6" height="4" rx="2"/>
+                </svg>
+                <p>No sparks yet</p>
+                <span>Create a custom AI with a name, instructions, and knowledge files.</span>
+            </div>`;
+      return;
+    }
+    body.innerHTML = list.map((spark) => {
+      const avatarHTML = spark.avatar ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />` : (spark.name || "?")[0].toUpperCase();
+      const bgStyle = spark.avatar ? "background: transparent;" : spark.name ? `background: ${getSparkColor(spark.name)};` : "";
+      return `
+            <div class="spark-card" data-spark-id="${spark.id}">
+                <div class="spark-card__avatar" style="${bgStyle}">${avatarHTML}</div>
+                <div class="spark-card__info">
+                    <div class="spark-card__name">${escapeHtml(spark.name || "Untitled Spark")}</div>
+                    <div class="spark-card__preview">${escapeHtml((spark.instructions || "").slice(0, 80))}${(spark.instructions || "").length > 80 ? "\u2026" : ""}</div>
+                </div>
+                <div class="spark-card__actions">
+                    <button class="spark-card__btn spark-edit-btn" title="Edit" data-spark-id="${spark.id}">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    </button>
+                    <button class="spark-card__btn spark-delete-btn" title="Delete" data-spark-id="${spark.id}">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join("");
+    body.querySelectorAll(".spark-edit-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        sparksOpenEditor(btn.dataset.sparkId);
+      });
+    });
+    body.querySelectorAll(".spark-delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (confirm("Delete this spark?")) {
+          await sparksDelete(btn.dataset.sparkId);
+          sparksRenderList2();
+        }
+      });
+    });
+    body.querySelectorAll(".spark-card").forEach((card) => {
+      card.addEventListener("click", () => {
+        sparksOpenEditor(card.dataset.sparkId);
+      });
+    });
+  }
+  async function sparksOpenEditor(sparkId = null) {
+    const sparks = await sparksLoad();
+    const spark = sparkId ? sparks[sparkId] || null : null;
+    document.getElementById("sparks-editor-overlay")?.remove();
+    const overlay = document.createElement("div");
+    overlay.id = "sparks-editor-overlay";
+    overlay.className = "sparks-editor-overlay";
+    const knowledgeFiles = spark?.knowledgeFiles || [];
+    const neutralBg = "linear-gradient(135deg, #64748b, #475569)";
+    const color = spark?.name ? getSparkColor(spark.name) : neutralBg;
+    const welcomeAvatarHTML = spark?.avatar ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />` : (spark?.name || "?")[0].toUpperCase();
+    const welcomeBgStyle = spark?.avatar ? "background: transparent;" : `background: ${color}`;
+    const previewAvatarBg = spark?.avatar ? "background: transparent;" : `background: ${color}`;
+    overlay.innerHTML = `
+        <div class="sparks-editor">
+            <div class="sparks-editor-form">
+                <div class="sparks-editor-topbar">
+                    <button class="sparks-editor-back" id="sparks-editor-back">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+                    </button>
+                    <div class="sparks-editor-title-row">
+                        <span>${spark ? escapeHtml(spark.name || "Untitled Spark") : "New Spark"}</span>
+                    </div>
+                    <button class="sparks-editor-save" id="sparks-editor-save">Save</button>
+                </div>
+                <div class="sparks-editor-fields">
+                    <div class="spark-avatar-editor">
+                        <div class="spark-avatar-preview" id="spark-avatar-preview" style="${previewAvatarBg}">
+                            ${spark?.avatar ? `<img src="${spark.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />` : `<span class="spark-avatar-letter">${(spark?.name || "?")[0].toUpperCase()}</span>`}
+                            <div class="spark-avatar-overlay">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                            </div>
+                        </div>
+                        <input type="file" id="spark-avatar-file" accept="image/*" style="display:none">
+                    </div>
+                    <div class="sparks-field">
+                        <label class="sparks-label">Name</label>
+                        <input type="text" id="spark-name-input" class="sparks-input" placeholder="Give your Spark a name" value="${escapeHtml(spark?.name || "")}" maxlength="60">
+                    </div>
+                    <div class="sparks-field">
+                        <label class="sparks-label">Description</label>
+                        <input type="text" id="spark-description-input" class="sparks-input" placeholder="A short description of what this Spark does" value="${escapeHtml(spark?.description || "")}" maxlength="160">
+                    </div>
+                    <div class="sparks-field">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label class="sparks-label">Instructions</label>
+                            ${sparkId && DEFAULT_SPARKS[sparkId] ? `<button type="button" id="spark-reset-default-btn" class="sparks-reset-btn" style="background: none; border: none; color: var(--nexus-sidebar-text-muted, #8e8e93); font-size: 0.82em; cursor: pointer; text-decoration: underline; padding: 0;">Reset to default</button>` : ""}
+                        </div>
+                        <div class="nexus-input-container sparks-instructions-container">
+                            <div class="nexus-input-bar">
+                                <textarea id="spark-instructions-input" class="nexus-chat-input sparks-instructions-input" placeholder="Example: You are a helpful writing tutor. Help users improve their writing with concise, constructive feedback. Be encouraging and specific.">${escapeHtml(spark?.instructions || "")}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sparks-field">
+                        <label class="sparks-label">
+                            Knowledge
+                            <span class="sparks-label-hint">\u2014 add files for your Spark to reference</span>
+                        </label>
+                        <div class="sparks-knowledge-area" id="sparks-knowledge-area">
+                            <div class="sparks-knowledge-files" id="sparks-knowledge-files">
+                                ${knowledgeFiles.map((f, i) => `
+                                    <div class="sparks-file-chip" data-file-index="${i}">
+                                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                        <span>${escapeHtml(f.name)}</span>
+                                        <button class="sparks-file-remove" data-file-index="${i}">\xD7</button>
+                                    </div>
+                                `).join("")}
+                            </div>
+                            <button class="sparks-add-file-btn" id="sparks-add-file-btn">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add files
+                            </button>
+                            <input type="file" id="sparks-file-input" multiple accept="*/*" style="display:none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="sparks-editor-preview">
+                <div class="sparks-editor-resizer" id="sparks-editor-resizer">
+                    <div class="sparks-editor-resizer-handle"></div>
+                </div>
+                <div class="sparks-preview-header">
+                    <div class="nexus-model-selector" id="sparks-preview-model-selector">
+                        <button class="nexus-model-btn" id="sparks-preview-model-btn">
+                            <span class="nexus-current-model" id="sparks-preview-model-label">Loading...</span>
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6 9l6 6 6-6"/>
+                            </svg>
+                        </button>
+                        <div class="nexus-model-dropdown" id="sparks-preview-model-dropdown"></div>
+                    </div>
+                </div>
+                <div class="sparks-preview-chat" id="sparks-preview-chat">
+                    <div class="sparks-preview-empty" id="sparks-preview-empty">
+                        <div class="spark-welcome">
+                            <div class="spark-welcome__avatar" id="sparks-preview-welcome-avatar" style="${welcomeBgStyle}">${welcomeAvatarHTML}</div>
+                            <h1 class="spark-welcome__title" id="sparks-preview-welcome-title">${escapeHtml(spark?.name || "New Spark")}</h1>
+                            <p class="spark-welcome__description" id="sparks-preview-welcome-description" style="color: var(--nexus-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45; display: ${spark?.description ? "block" : "none"};">${escapeHtml(spark?.description || "")}</p>
+                        </div>
+                    </div>
+                    <div class="nexus-chat-history sparks-preview-messages" id="sparks-preview-messages"></div>
+                </div>
+                <div class="nexus-chat-input-wrapper sparks-preview-input-area">
+                    <div class="nexus-input-container">
+                        <div class="nexus-input-bar">
+                            <div class="nexus-left-actions">
+                                 <button class="nexus-upload-btn" id="sparks-preview-upload" title="Upload File" disabled style="cursor: not-allowed; opacity: 0.5;">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                 </button>
+                            </div>
+                            <textarea class="nexus-chat-input sparks-preview-input" id="sparks-preview-input" placeholder="Test your Spark\u2026" rows="1" disabled></textarea>
+                            <div class="nexus-trailing-group">
+                                <button class="nexus-mic-btn" id="sparks-preview-mic" title="Voice Input" disabled style="cursor: not-allowed; opacity: 0.5;">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="6" height="10" rx="3"></rect><path d="M5 12a7 7 0 0 0 14 0"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                                </button>
+                                <button class="nexus-action-btn sparks-preview-send" id="sparks-preview-send" disabled title="Send Message">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    const mainContent = document.querySelector(".nexus-main-content");
+    if (mainContent) {
+      mainContent.appendChild(overlay);
+    } else {
+      document.body.appendChild(overlay);
+    }
+    const sparksResizer = overlay.querySelector("#sparks-editor-resizer");
+    const formPane = overlay.querySelector(".sparks-editor-form");
+    const previewPane = overlay.querySelector(".sparks-editor-preview");
+    const editorContainer = overlay.querySelector(".sparks-editor");
+    if (sparksResizer && formPane && previewPane && editorContainer) {
+      let isDragging = false;
+      let animationFrameId = null;
+      sparksResizer.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        isDragging = true;
+        sparksResizer.classList.add("dragging");
+        editorContainer.classList.add("dragging");
+        document.body.style.cursor = "col-resize";
+      });
+      document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+        }
+        animationFrameId = requestAnimationFrame(() => {
+          const containerRect = editorContainer.getBoundingClientRect();
+          const paddingLeft = parseFloat(window.getComputedStyle(editorContainer).paddingLeft) || 0;
+          const paddingRight = parseFloat(window.getComputedStyle(editorContainer).paddingRight) || 0;
+          const relativeX = e.clientX - containerRect.left - paddingLeft;
+          const availableWidth = containerRect.width - paddingLeft - paddingRight - sparksResizer.offsetWidth;
+          if (availableWidth <= 0) return;
+          let percentage = relativeX / availableWidth * 100;
+          if (percentage < 25) percentage = 25;
+          if (percentage > 75) percentage = 75;
+          if (percentage >= 47.5 && percentage <= 52.5) {
+            percentage = 50;
+          }
+          formPane.style.flex = `${percentage}`;
+          previewPane.style.flex = `${100 - percentage}`;
+        });
+      });
+      document.addEventListener("mouseup", () => {
+        if (isDragging) {
+          isDragging = false;
+          sparksResizer.classList.remove("dragging");
+          editorContainer.classList.remove("dragging");
+          document.body.style.cursor = "";
+          if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+          }
+        }
+      });
+    }
+    let currentFiles = [...knowledgeFiles];
+    let currentAvatar = spark?.avatar || null;
+    let previewHistory = [];
+    let previewStreaming = false;
+    const initialName = spark?.name || "";
+    const initialDescription = spark?.description || "";
+    const initialInstructions = spark?.instructions || "";
+    const initialAvatar = spark?.avatar || null;
+    const getFilesSig = (files) => JSON.stringify((files || []).map((f) => ({ name: f.name, size: f.size })));
+    const initialFilesSig = getFilesSig(spark?.knowledgeFiles || []);
+    const saveBtn = overlay.querySelector("#sparks-editor-save");
+    const nameInput = overlay.querySelector("#spark-name-input");
+    const descriptionInput = overlay.querySelector("#spark-description-input");
+    const instructionsInput = overlay.querySelector("#spark-instructions-input");
+    const updateSaveButtonState = () => {
+      if (!saveBtn) return;
+      const currentName = nameInput ? nameInput.value.trim() : "";
+      const currentDesc = descriptionInput ? descriptionInput.value.trim() : "";
+      const currentInst = instructionsInput ? instructionsInput.value : "";
+      const currentFilesSig = getFilesSig(currentFiles);
+      const hasName = currentName.length > 0;
+      const isNameChanged = currentName !== initialName.trim();
+      const isDescChanged = currentDesc !== initialDescription.trim();
+      const isInstChanged = currentInst !== initialInstructions;
+      const isAvatarChanged = currentAvatar !== initialAvatar;
+      const isFilesChanged = currentFilesSig !== initialFilesSig;
+      const hasChanges = isNameChanged || isDescChanged || isInstChanged || isAvatarChanged || isFilesChanged;
+      saveBtn.disabled = !(hasName && hasChanges);
+    };
+    const avatarPreview = overlay.querySelector("#spark-avatar-preview");
+    const avatarInput = overlay.querySelector("#spark-avatar-file");
+    avatarPreview.addEventListener("click", () => avatarInput.click());
+    avatarInput.addEventListener("change", () => {
+      const file = avatarInput.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          openAvatarCropper(e.target.result, (croppedDataUrl) => {
+            currentAvatar = croppedDataUrl;
+            avatarPreview.innerHTML = `<img src="${currentAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" /><div class="spark-avatar-overlay"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>`;
+            const welcomeAvatar2 = overlay.querySelector("#sparks-preview-welcome-avatar");
+            if (welcomeAvatar2) {
+              welcomeAvatar2.style.background = "transparent";
+              welcomeAvatar2.innerHTML = `<img src="${currentAvatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`;
+            }
+            updateSaveButtonState();
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+    overlay.querySelector("#sparks-editor-back").addEventListener("click", () => {
+      overlay.remove();
+    });
+    const titleLabel = overlay.querySelector(".sparks-editor-title-row span");
+    const previewEmpty = overlay.querySelector("#sparks-preview-empty");
+    const previewInput = overlay.querySelector("#sparks-preview-input");
+    const previewSend = overlay.querySelector("#sparks-preview-send");
+    const updatePreviewState = () => {
+      const hasName = nameInput.value.trim().length > 0;
+      previewInput.disabled = !hasName;
+      previewSend.disabled = !hasName;
+      const uploadBtn = overlay.querySelector("#sparks-preview-upload");
+      const micBtn = overlay.querySelector("#sparks-preview-mic");
+      if (uploadBtn) {
+        uploadBtn.disabled = !hasName;
+        uploadBtn.style.opacity = hasName ? "1" : "0.5";
+        uploadBtn.style.cursor = hasName ? "pointer" : "not-allowed";
+      }
+      if (micBtn) {
+        micBtn.disabled = !hasName;
+        micBtn.style.opacity = hasName ? "0.6" : "0.5";
+        micBtn.style.cursor = hasName ? "pointer" : "not-allowed";
+      }
+      if (previewHistory.length > 0) {
+        previewEmpty.style.display = "none";
+      } else {
+        previewEmpty.style.display = "flex";
+      }
+    };
+    const welcomeTitle = overlay.querySelector("#sparks-preview-welcome-title");
+    const welcomeAvatar = overlay.querySelector("#sparks-preview-welcome-avatar");
+    function updateWelcomeAvatarLetter(nameVal) {
+      const firstLetter = (nameVal || "?")[0].toUpperCase();
+      if (welcomeAvatar && !currentAvatar) {
+        welcomeAvatar.textContent = firstLetter;
+      }
+      const previewLetter = overlay.querySelector("#spark-avatar-preview .spark-avatar-letter");
+      if (previewLetter && !currentAvatar) {
+        previewLetter.textContent = firstLetter;
+      }
+    }
+    nameInput.addEventListener("input", () => {
+      const nameVal = nameInput.value.trim();
+      titleLabel.textContent = nameVal || "New Spark";
+      if (welcomeTitle) {
+        welcomeTitle.textContent = nameVal || "New Spark";
+      }
+      updateWelcomeAvatarLetter(nameVal);
+      updatePreviewState();
+      updateSaveButtonState();
+    });
+    const welcomeDesc = overlay.querySelector("#sparks-preview-welcome-description");
+    if (descriptionInput && welcomeDesc) {
+      descriptionInput.addEventListener("input", () => {
+        const descVal = descriptionInput.value.trim();
+        welcomeDesc.textContent = descVal;
+        welcomeDesc.style.display = descVal ? "block" : "none";
+        updateSaveButtonState();
+      });
+    }
+    if (instructionsInput) {
+      instructionsInput.addEventListener("input", () => {
+        updateSaveButtonState();
+      });
+    }
+    updatePreviewState();
+    updateSaveButtonState();
+    const fileInput2 = overlay.querySelector("#sparks-file-input");
+    overlay.querySelector("#sparks-add-file-btn").addEventListener("click", () => fileInput2.click());
+    fileInput2.addEventListener("change", async () => {
+      for (const file of fileInput2.files) {
+        const reader = new FileReader();
+        await new Promise((resolve) => {
+          reader.onload = (e) => {
+            currentFiles.push({
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              content: e.target.result
+            });
+            resolve();
+          };
+          if (file.type.startsWith("text/") || file.name.match(/\.(txt|md|csv|json|js|ts|py|html|css|xml|yaml|yml)$/i)) {
+            reader.readAsText(file);
+          } else {
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+      fileInput2.value = "";
+      renderFileChips();
+      updateSaveButtonState();
+    });
+    function renderFileChips() {
+      const filesContainer = overlay.querySelector("#sparks-knowledge-files");
+      filesContainer.innerHTML = currentFiles.map((f, i) => `
+            <div class="sparks-file-chip" data-file-index="${i}">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>${escapeHtml(f.name)}</span>
+                <button class="sparks-file-remove" data-file-index="${i}">\xD7</button>
+            </div>
+        `).join("");
+      filesContainer.querySelectorAll(".sparks-file-remove").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.fileIndex);
+          currentFiles.splice(idx, 1);
+          renderFileChips();
+          updateSaveButtonState();
+        });
+      });
+    }
+    const resetDefaultBtn = overlay.querySelector("#spark-reset-default-btn");
+    if (resetDefaultBtn && sparkId && DEFAULT_SPARKS[sparkId]) {
+      resetDefaultBtn.addEventListener("click", () => {
+        const def = DEFAULT_SPARKS[sparkId];
+        overlay.querySelector("#spark-instructions-input").value = def.instructions;
+        if (def.description) {
+          overlay.querySelector("#spark-description-input").value = def.description;
+        }
+        if (def.name) {
+          overlay.querySelector("#spark-name-input").value = def.name;
+        }
+        updateSaveButtonState();
+      });
+    }
+    saveBtn.addEventListener("click", async () => {
+      const name = nameInput.value.trim();
+      if (!name) {
+        nameInput.focus();
+        nameInput.classList.add("sparks-input--error");
+        setTimeout(() => nameInput.classList.remove("sparks-input--error"), 1500);
+        return;
+      }
+      const sparks2 = await sparksLoad();
+      const isNew = !sparkId || !sparks2[sparkId];
+      const id = sparkId || sparksNewId();
+      const existingSpark = sparks2[id];
+      if (isNew) {
+        Object.values(sparks2).forEach((s) => {
+          if (s.order !== void 0) {
+            s.order += 1;
+          }
+        });
+      }
+      sparks2[id] = {
+        ...existingSpark,
+        id,
+        name,
+        description: overlay.querySelector("#spark-description-input").value.trim(),
+        instructions: overlay.querySelector("#spark-instructions-input").value.trim(),
+        knowledgeFiles: currentFiles,
+        avatar: currentAvatar,
+        createdAt: isNew ? Date.now() : existingSpark?.createdAt || Date.now(),
+        updatedAt: Date.now(),
+        order: isNew ? 0 : existingSpark?.order
+      };
+      await sparksSave(sparks2);
+      overlay.remove();
+      sparksRenderList2();
+    });
+    const messagesEl = overlay.querySelector("#sparks-preview-messages");
+    function buildSystemPrompt() {
+      let sys = overlay.querySelector("#spark-instructions-input").value.trim();
+      if (currentFiles.length > 0) {
+        const fileContexts = currentFiles.filter((f) => typeof f.content === "string" && !f.content.startsWith("data:")).map((f) => `--- File: ${f.name} ---
+${f.content}`).join("\n\n");
+        if (fileContexts) {
+          sys += `
+
+# Knowledge Files
+${fileContexts}`;
+        }
+      }
+      return sys;
+    }
+    function appendPreviewMessage(role, text) {
+      if (role === "user") {
+        const row = document.createElement("div");
+        row.className = "nexus-question-row";
+        const qDiv = document.createElement("div");
+        qDiv.className = "nexus-chat-question";
+        qDiv.textContent = text;
+        row.appendChild(qDiv);
+        messagesEl.appendChild(row);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        return qDiv;
+      } else {
+        const aDiv = document.createElement("div");
+        aDiv.className = "nexus-chat-answer";
+        aDiv.textContent = text;
+        messagesEl.appendChild(aDiv);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+        return aDiv;
+      }
+    }
+    let sparkSelectedModel = null;
+    async function initSparkPreviewModelSelector() {
+      const btn = overlay.querySelector("#sparks-preview-model-btn");
+      const label = overlay.querySelector("#sparks-preview-model-label");
+      const dropdown = overlay.querySelector("#sparks-preview-model-dropdown");
+      if (!btn || !dropdown || !label) return;
+      const data = await chrome.storage.local.get(["providers", "advancedParamsByModel", "lastUsedModel"]);
+      const chain = window.NexusModelHelper ? window.NexusModelHelper.buildModelChain(data) : [];
+      let currentModel = data.lastUsedModel?.model;
+      let currentProviderId = data.lastUsedModel?.providerId;
+      if (!currentModel && chain.length > 0) {
+        currentModel = chain[0].model;
+        currentProviderId = chain[0].providerId;
+      }
+      if (currentModel) {
+        sparkSelectedModel = { model: currentModel, providerId: currentProviderId };
+        const foundItem = chain.find((c) => c.model === currentModel && c.providerId === currentProviderId) || chain.find((c) => c.model === currentModel);
+        label.textContent = foundItem ? foundItem.displayName || foundItem.model : currentModel;
+      }
+      const renderDropdown = () => {
+        dropdown.innerHTML = chain.map((item) => {
+          const isSelected = sparkSelectedModel && sparkSelectedModel.model === item.model && sparkSelectedModel.providerId === item.providerId;
+          return `
+                    <div class="nexus-model-item ${isSelected ? "active" : ""}" data-model="${escapeHtml(item.model)}" data-provider-id="${escapeHtml(item.providerId)}">
+                        <div class="nexus-model-item-info">
+                            <div class="nexus-model-name">${escapeHtml(item.displayName)}</div>
+                            <div class="nexus-model-provider">${escapeHtml(item.providerName || item.providerId)}</div>
+                        </div>
+                    </div>
+                `;
+        }).join("");
+        dropdown.querySelectorAll(".nexus-model-item").forEach((el) => {
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const m = el.dataset.model;
+            const p = el.dataset.providerId;
+            sparkSelectedModel = { model: m, providerId: p };
+            const foundItem = chain.find((c) => c.model === m && c.providerId === p) || chain.find((c) => c.model === m);
+            label.textContent = foundItem ? foundItem.displayName || foundItem.model : m;
+            dropdown.classList.remove("active");
+          });
+        });
+      };
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isActive = dropdown.classList.contains("active");
+        document.querySelectorAll(".nexus-model-dropdown.active").forEach((d) => d.classList.remove("active"));
+        if (!isActive) {
+          renderDropdown();
+          dropdown.classList.add("active");
+        }
+      });
+      document.addEventListener("click", (e) => {
+        if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.classList.remove("active");
+        }
+      });
+    }
+    initSparkPreviewModelSelector();
+    async function sendPreviewMessage() {
+      if (previewStreaming) return;
+      const input = overlay.querySelector("#sparks-preview-input");
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      input.style.height = "auto";
+      appendPreviewMessage("user", text);
+      const systemPrompt = buildSystemPrompt();
+      const historyForAPI = previewHistory.map((h) => ({ role: h.role, parts: [{ text: h.text }] }));
+      previewHistory.push({ role: "user", text });
+      updatePreviewState();
+      const aiDiv = appendPreviewMessage("assistant", "");
+      aiDiv.innerHTML = NexusTemplates.thinkingDots();
+      previewStreaming = true;
+      previewSend.disabled = true;
+      try {
+        let model = sparkSelectedModel?.model;
+        let providerId = sparkSelectedModel?.providerId;
+        if (!model || !providerId) {
+          const storageData = await chrome.storage.local.get(["lastUsedModel", "providers"]);
+          if (storageData?.lastUsedModel?.model && storageData?.lastUsedModel?.providerId) {
+            model = storageData.lastUsedModel.model;
+            providerId = storageData.lastUsedModel.providerId;
+          } else if (typeof window.getActiveNexusTab === "function" && window.getActiveNexusTab()?.selectedModel) {
+            const curTab = window.getActiveNexusTab();
+            model = curTab.selectedModel.model;
+            providerId = curTab.selectedModel.providerId;
+          } else if (typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" && tabs[activeTabIndex]?.selectedModel) {
+            model = tabs[activeTabIndex].selectedModel.model;
+            providerId = tabs[activeTabIndex].selectedModel.providerId;
+          }
+          if (!providerId && storageData?.providers && storageData.providers.length > 0) {
+            const activeProv = storageData.providers.find((p) => p.enabled !== false && p.apiKey);
+            if (activeProv) {
+              providerId = activeProv.id;
+              model = activeProv.model || "gemini-2.0-flash";
+            }
+          }
+        }
+        const messages = [
+          ...systemPrompt ? [{ role: "user", parts: [{ text: `[System Instructions]
+${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will follow these instructions." }] }] : [],
+          ...historyForAPI,
+          { role: "user", parts: [{ text }] }
+        ];
+        const response = await chrome.runtime.sendMessage({
+          action: "preview_spark",
+          messages,
+          model,
+          providerId
+        });
+        let replyText = "";
+        if (response?.text) {
+          replyText = response.text;
+        } else if (response?.error) {
+          replyText = `Error: ${response.error}`;
+        } else {
+          replyText = "(No response)";
+        }
+        aiDiv.textContent = replyText;
+        previewHistory.push({ role: "assistant", text: replyText });
+      } catch (err) {
+        aiDiv.textContent = "Could not get a response. Check your API connection.";
+        console.error("[Sparks preview]", err);
+      } finally {
+        previewStreaming = false;
+        if (nameInput.value.trim()) previewSend.disabled = false;
+      }
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    previewSend.addEventListener("click", sendPreviewMessage);
+    previewInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendPreviewMessage();
+      }
+    });
+    previewInput.addEventListener("input", () => {
+      previewInput.style.height = "auto";
+      previewInput.style.height = Math.min(previewInput.scrollHeight, 100) + "px";
+    });
+  }
+  function getSparkColor(name) {
+    const gradients = [
+      "linear-gradient(135deg, #6366f1, #8b5cf6)",
+      "linear-gradient(135deg, #3b82f6, #06b6d4)",
+      "linear-gradient(135deg, #0ea5e9, #10b981)",
+      "linear-gradient(135deg, #10b981, #84cc16)",
+      "linear-gradient(135deg, #f59e0b, #f97316)",
+      "linear-gradient(135deg, #ec4899, #f43f5e)",
+      "linear-gradient(135deg, #8b5cf6, #d946ef)",
+      "linear-gradient(135deg, #14b8a6, #3b82f6)",
+      "linear-gradient(135deg, #f43f5e, #fb923c)",
+      "linear-gradient(135deg, #0284c7, #6366f1)"
+    ];
+    let hash = 0;
+    for (let i = 0; i < (name || "").length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return gradients[Math.abs(hash) % gradients.length];
+  }
+  async function sidebarSparksRenderList2() {
+    const container2 = document.getElementById("sidebar-sparks-list");
+    if (!container2) return;
+    const sparks = await sparksLoad();
+    const list = Object.values(sparks).filter((s) => s && !s.isDeleted).sort((a, b) => {
+      const orderA = a.order !== void 0 ? a.order : 99999;
+      const orderB = b.order !== void 0 ? b.order : 99999;
+      if (orderA !== orderB) return orderA - orderB;
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+    let html = "";
+    list.forEach((spark) => {
+      const color = getSparkColor(spark.name);
+      const avatarHTML = spark.avatar ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />` : (spark.name || "?")[0].toUpperCase();
+      const bgStyle = spark.avatar ? "background: transparent;" : `background: ${color}`;
+      html += `
+            <div class="sidebar-spark-item" draggable="true" data-spark-id="${spark.id}" title="${escapeHtml(spark.name)}">
+                <div class="sidebar-spark-item__avatar" style="${bgStyle}">${avatarHTML}</div>
+                <span class="sidebar-spark-item__title">${escapeHtml(spark.name)}</span>
+                <button class="sidebar-spark-item__menu-btn" data-spark-id="${spark.id}" title="More options" tabindex="-1">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                </button>
+            </div>
+        `;
+    });
+    container2.innerHTML = html;
+    let draggedItem = null;
+    container2.querySelectorAll(".sidebar-spark-item").forEach((item) => {
+      item.addEventListener("click", (e) => {
+        if (e.target.closest(".sidebar-spark-item__menu-btn")) return;
+        openSparkChat2(item.dataset.sparkId);
+        const sidebar = document.getElementById("nexus-sidebar");
+        const backdrop = document.querySelector(".sidebar-backdrop");
+        if (sidebar) sidebar.classList.remove("active");
+        if (backdrop) backdrop.classList.remove("active");
+        document.body.classList.remove("sidebar-open");
+      });
+      item.addEventListener("dragstart", (e) => {
+        draggedItem = item;
+        item.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+      });
+      item.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        const draggingEl = container2.querySelector(".sidebar-spark-item.dragging");
+        if (!draggingEl || draggingEl === item) return;
+        const rect = item.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        if (e.clientY < midpoint) {
+          container2.insertBefore(draggingEl, item);
+        } else {
+          container2.insertBefore(draggingEl, item.nextSibling);
+        }
+      });
+      item.addEventListener("dragend", async () => {
+        item.classList.remove("dragging");
+        draggedItem = null;
+        const orderedIds = Array.from(container2.querySelectorAll(".sidebar-spark-item")).map((el) => el.dataset.sparkId);
+        await sparksSaveOrder(orderedIds);
+        if (typeof sparksRenderList2 === "function") {
+          sparksRenderList2();
+        }
+      });
+    });
+    container2.querySelectorAll(".sidebar-spark-item__menu-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        showSparkContextMenu(btn, btn.dataset.sparkId);
+      });
+    });
+  }
+  function showSparkContextMenu(btn, sparkId) {
+    if (!btn) return;
+    NexusMenu.show({
+      anchor: btn,
+      placement: "bottom-end",
+      items: [
+        {
+          label: "Edit",
+          icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>`,
+          action: () => sparksOpenEditor(sparkId)
+        },
+        {
+          label: "Delete",
+          icon: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
+          action: async () => {
+            const confirmed = await window.showCustomPopup({
+              title: "Delete Spark",
+              body: "Are you sure you want to delete this Spark?",
+              confirmLabel: "Delete",
+              isDanger: true
+            });
+            if (confirmed) {
+              await sparksDelete(sparkId);
+              sidebarSparksRenderList2();
+              if (typeof sparksRenderList2 === "function") sparksRenderList2();
+            }
+          }
+        }
+      ]
+    });
+  }
+  async function openSparkChat2(sparkId) {
+    sparksClosePage2();
+    document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+    document.querySelectorAll(".sidebar-spark-item").forEach((el) => {
+      if (el.dataset.sparkId === sparkId) el.classList.add("active");
+      else el.classList.remove("active");
+    });
+    document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
+    document.getElementById("sidebar-notes-btn")?.classList.remove("active");
+    document.getElementById("sidebar-tts-btn")?.classList.remove("active");
+    const activeTab = typeof window.getActiveNexusTab === "function" ? window.getActiveNexusTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : window.NexusSelectionScope?.getTabs?.()?.[window.NexusSelectionScope?.getActiveTabIndex?.()] ?? null;
+    if (activeTab) {
+      activeTab.sparkId = sparkId;
+      if (activeTab.chatUIInstance) activeTab.chatUIInstance.sparkId = sparkId;
+      const targetChatUI = activeTab ? activeTab.chatUIInstance : null;
+      const targetSharedInputUI = typeof window.getSharedInputUI === "function" ? window.getSharedInputUI() : typeof sharedInputUI !== "undefined" ? sharedInputUI : activeTab?.chatUIInstance?.sharedInputUI || null;
+      const settingsRes = await chrome.storage.local.get(["nexus_spark_last_settings"]);
+      const sparkSettings = (settingsRes.nexus_spark_last_settings || {})[sparkId];
+      if (activeTab.selectedModel) {
+        if (targetChatUI) {
+          targetChatUI.activeTabModel = { ...activeTab.selectedModel };
+          targetChatUI.thinkingLevel = activeTab.thinkingLevel || null;
+        }
+        if (targetSharedInputUI) {
+          targetSharedInputUI.activeTabModel = { ...activeTab.selectedModel };
+          targetSharedInputUI.thinkingLevel = activeTab.thinkingLevel || null;
+          if (typeof targetSharedInputUI.refreshModelSelector === "function") targetSharedInputUI.refreshModelSelector();
+          if (typeof targetSharedInputUI.refreshReasoningSelector === "function") targetSharedInputUI.refreshReasoningSelector();
+        }
+      } else if (sparkSettings) {
+        activeTab.selectedModel = sparkSettings.selectedModel || null;
+        activeTab.thinkingLevel = sparkSettings.thinkingLevel || null;
+        if (targetChatUI) {
+          targetChatUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
+          targetChatUI.thinkingLevel = activeTab.thinkingLevel || null;
+        }
+        if (targetSharedInputUI) {
+          targetSharedInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
+          targetSharedInputUI.thinkingLevel = activeTab.thinkingLevel || null;
+          if (typeof targetSharedInputUI.refreshModelSelector === "function") targetSharedInputUI.refreshModelSelector();
+          if (typeof targetSharedInputUI.refreshReasoningSelector === "function") targetSharedInputUI.refreshReasoningSelector();
+        }
+      } else {
+        activeTab.selectedModel = null;
+        activeTab.thinkingLevel = null;
+        if (targetChatUI) {
+          targetChatUI.activeTabModel = null;
+          targetChatUI.thinkingLevel = null;
+        }
+        if (targetSharedInputUI) {
+          targetSharedInputUI.activeTabModel = null;
+          targetSharedInputUI.thinkingLevel = null;
+          if (typeof targetSharedInputUI.refreshModelSelector === "function") targetSharedInputUI.refreshModelSelector();
+          if (typeof targetSharedInputUI.refreshReasoningSelector === "function") targetSharedInputUI.refreshReasoningSelector();
+        }
+      }
+      activeTab.title = "New Tab";
+      activeTab.sessionId = null;
+      activeTab.rawHistoryHtml = null;
+      if (activeTab.historyEl) {
+        activeTab.historyEl.removeAttribute("data-session-id");
+      }
+      activeTab.scrollTop = -1;
+      if (typeof window.updateUrlSessionId === "function") {
+        window.updateUrlSessionId(null);
+      } else if (typeof updateUrlSessionId === "function") {
+        updateUrlSessionId(null);
+      }
+      if (targetChatUI) {
+        targetChatUI.clearHistory();
+        if (targetChatUI.inputEl) {
+          targetChatUI.inputEl.value = "";
+          targetChatUI.inputEl.style.height = "auto";
+          targetChatUI.inputEl.focus();
+        }
+      }
+      await renderSparkWelcomeScreen2(activeTab);
+      if (typeof window.updateWelcomeScreenState === "function") {
+        window.updateWelcomeScreenState("primary");
+      } else if (typeof updateWelcomeScreenState === "function") {
+        updateWelcomeScreenState("primary");
+      }
+      if (typeof window.renderTabs === "function") window.renderTabs();
+      else if (typeof renderTabs === "function") renderTabs();
+      if (typeof window.saveTabsState === "function") window.saveTabsState();
+      else if (typeof saveTabsState === "function") saveTabsState();
+      if (typeof window.updateModelSelector === "function") {
+        window.updateModelSelector();
+      } else if (typeof window.updateTopbarModelSelector === "function") {
+        window.updateTopbarModelSelector();
+      }
+      if (typeof window.updateInputPlaceholder === "function") {
+        window.updateInputPlaceholder();
+      }
+    }
+  }
+  async function renderSparkWelcomeScreen2(activeTab) {
+    const historyEl = activeTab.historyEl;
+    if (!historyEl) return;
+    const sparks = await sparksLoad();
+    const spark = sparks[activeTab.sparkId];
+    if (!spark) return;
+    const sessions = await ChatHistoryManager.getAllHistories();
+    const sparkChats = Object.values(sessions).filter((s) => s.sparkId === spark.id).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 5);
+    const color = getSparkColor(spark.name);
+    const avatarHTML = spark.avatar ? `<img src="${spark.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />` : (spark.name || "?")[0].toUpperCase();
+    const bgStyle = spark.avatar ? "background: transparent;" : `background: ${color}`;
+    let recentHTML = "";
+    if (sparkChats.length > 0) {
+      recentHTML = `
+            <div class="spark-welcome__recent">
+                <div class="spark-welcome__recent-title">Recent</div>
+                <div class="spark-welcome__recent-list">
+                    ${sparkChats.map((s) => {
+        let displayTitle = s.title;
+        if (!s.isRenamed && !s.autoNamed && s.questions && s.questions.length > 0) {
+          displayTitle = s.questions[s.questions.length - 1].text || "Untitled Chat";
+        }
+        if (!displayTitle) displayTitle = "Untitled Chat";
+        displayTitle = displayTitle.charAt(0).toUpperCase() + displayTitle.slice(1);
+        return `
+                            <div class="spark-welcome__recent-item" data-session-id="${s.id}">
+                                <div class="spark-welcome__recent-item-avatar" style="${bgStyle}">${avatarHTML}</div>
+                                <span class="spark-welcome__recent-item-title">${escapeHtml(displayTitle)}</span>
+                            </div>
+                        `;
+      }).join("")}
+                </div>
+            </div>
+        `;
+    }
+    historyEl.innerHTML = `
+        <div class="spark-welcome">
+            <div class="spark-welcome__avatar" style="${bgStyle}">${avatarHTML}</div>
+            <h1 class="spark-welcome__title">${escapeHtml(spark.name)}</h1>
+            ${spark.description ? `<p class="spark-welcome__description" style="color: var(--nexus-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45;">${escapeHtml(spark.description)}</p>` : ""}
+            ${recentHTML}
+        </div>
+    `;
+    historyEl.querySelectorAll(".spark-welcome__recent-item").forEach((item) => {
+      item.addEventListener("click", async () => {
+        const sid = item.dataset.sessionId;
+        const messages = await ChatHistoryManager.getSessionMessages(sid);
+        const meta = sessions[sid] || { id: sid };
+        window.loadHistoryIntoNewTab(messages, meta, sid, null, false);
+      });
+    });
+  }
+  function openAvatarCropper(imageSrc, callback) {
+    const modal = document.createElement("div");
+    modal.className = "spark-crop-modal";
+    modal.innerHTML = `
+        <div class="spark-crop-container">
+            <div class="spark-crop-title">Adjust Avatar</div>
+            <div class="spark-crop-viewport">
+                <div class="spark-crop-mask"></div>
+                <img id="spark-crop-image" src="${imageSrc}" style="position: absolute; cursor: move; user-select: none; max-width: none !important; max-height: none !important; width: auto; height: auto;" />
+            </div>
+            <div class="spark-crop-controls">
+                <input type="range" id="spark-crop-zoom" min="100" max="300" value="100" style="width: 80%; cursor: pointer;" />
+            </div>
+            <div class="spark-crop-actions">
+                <button class="spark-crop-btn spark-crop-cancel" id="spark-crop-cancel">Cancel</button>
+                <button class="spark-crop-btn spark-crop-done" id="spark-crop-done">Apply</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    const img = modal.querySelector("#spark-crop-image");
+    const zoomInput = modal.querySelector("#spark-crop-zoom");
+    const doneBtn = modal.querySelector("#spark-crop-done");
+    const cancelBtn = modal.querySelector("#spark-crop-cancel");
+    let scale = 1;
+    let imgWidth = 0;
+    let imgHeight = 0;
+    let posX = 0;
+    let posY = 0;
+    let startX = 0;
+    let startY = 0;
+    let isDragging = false;
+    function clampPosition() {
+      const viewportSize = 250;
+      const currentWidth = imgWidth * scale;
+      const currentHeight = imgHeight * scale;
+      if (posX > 0) posX = 0;
+      if (posX < viewportSize - currentWidth) posX = viewportSize - currentWidth;
+      if (posY > 0) posY = 0;
+      if (posY < viewportSize - currentHeight) posY = viewportSize - currentHeight;
+    }
+    img.onload = () => {
+      const viewportSize = 250;
+      const ratio = img.naturalWidth / img.naturalHeight;
+      if (ratio >= 1) {
+        imgHeight = viewportSize;
+        imgWidth = viewportSize * ratio;
+      } else {
+        imgWidth = viewportSize;
+        imgHeight = viewportSize / ratio;
+      }
+      const minScale = Math.max(viewportSize / imgWidth, viewportSize / imgHeight);
+      scale = minScale;
+      zoomInput.min = Math.round(minScale * 100);
+      zoomInput.max = Math.round(minScale * 300);
+      zoomInput.value = Math.round(minScale * 100);
+      posX = (viewportSize - imgWidth * scale) / 2;
+      posY = (viewportSize - imgHeight * scale) / 2;
+      clampPosition();
+      updateTransform();
+    };
+    if (img.complete) {
+      img.onload();
+    }
+    function updateTransform() {
+      img.style.width = `${imgWidth * scale}px`;
+      img.style.height = `${imgHeight * scale}px`;
+      img.style.left = `${posX}px`;
+      img.style.top = `${posY}px`;
+    }
+    function performZoom(factor, clientX, clientY) {
+      const prevScale = scale;
+      const minScale = parseFloat(zoomInput.min) / 100;
+      const maxScale = parseFloat(zoomInput.max) / 100;
+      let newScale = scale * factor;
+      if (newScale < minScale) newScale = minScale;
+      if (newScale > maxScale) newScale = maxScale;
+      if (newScale === prevScale) return;
+      scale = newScale;
+      zoomInput.value = Math.round(scale * 100);
+      const viewport2 = modal.querySelector(".spark-crop-viewport");
+      const rect = viewport2.getBoundingClientRect();
+      const zoomX = clientX !== void 0 ? clientX - rect.left : 125;
+      const zoomY = clientY !== void 0 ? clientY - rect.top : 125;
+      posX = zoomX - (zoomX - posX) * (scale / prevScale);
+      posY = zoomY - (zoomY - posY) * (scale / prevScale);
+      clampPosition();
+      updateTransform();
+    }
+    zoomInput.addEventListener("input", () => {
+      const targetScale = parseInt(zoomInput.value) / 100;
+      const factor = targetScale / scale;
+      performZoom(factor);
+    });
+    const viewport = modal.querySelector(".spark-crop-viewport");
+    viewport.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      let delta = e.deltaY;
+      let sensitivity = 15e-4;
+      if (e.ctrlKey) {
+        sensitivity = 3e-3;
+      }
+      delta = Math.max(-100, Math.min(100, delta));
+      const factor = Math.exp(-delta * sensitivity);
+      performZoom(factor, e.clientX, e.clientY);
+    }, { passive: false });
+    img.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      startX = e.clientX - posX;
+      startY = e.clientY - posY;
+      isDragging = true;
+    });
+    const moveHandler = (e) => {
+      if (!isDragging) return;
+      posX = e.clientX - startX;
+      posY = e.clientY - startY;
+      clampPosition();
+      updateTransform();
+    };
+    const upHandler = () => {
+      isDragging = false;
+    };
+    window.addEventListener("mousemove", moveHandler);
+    window.addEventListener("mouseup", upHandler);
+    cancelBtn.addEventListener("click", () => {
+      window.removeEventListener("mousemove", moveHandler);
+      window.removeEventListener("mouseup", upHandler);
+      modal.remove();
+    });
+    doneBtn.addEventListener("click", () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 150;
+      canvas.height = 150;
+      const ctx = canvas.getContext("2d");
+      const drawScale = 150 / 250;
+      ctx.drawImage(img, posX * drawScale, posY * drawScale, imgWidth * scale * drawScale, imgHeight * scale * drawScale);
+      const dataUrl = canvas.toDataURL("image/png");
+      callback(dataUrl);
+      window.removeEventListener("mousemove", moveHandler);
+      window.removeEventListener("mouseup", upHandler);
+      modal.remove();
+    });
+  }
+  function initSparks() {
+    const sparksBtn = document.getElementById("sidebar-sparks-btn");
+    if (sparksBtn) {
+      sparksBtn.removeAttribute("disabled");
+      sparksBtn.classList.remove("disabled");
+      sparksBtn.title = "My Sparks";
+      sparksBtn.addEventListener("click", () => {
+        const page = document.getElementById("sparks-page");
+        if (page && page.style.display !== "none") {
+          sparksClosePage2();
+        } else {
+          sparksOpenPage();
+        }
+      });
+    }
+    const newSparkBtn = document.getElementById("sparks-new-btn");
+    if (newSparkBtn) {
+      newSparkBtn.addEventListener("click", () => sparksOpenEditor(null));
+    }
+    const sidebarNewSparkBtn = document.getElementById("sidebar-new-spark-btn");
+    if (sidebarNewSparkBtn) {
+      sidebarNewSparkBtn.addEventListener("click", () => sparksOpenEditor(null));
+    }
+    document.getElementById("sidebar-new-chat-btn")?.addEventListener("click", () => {
+      const activeTab = typeof window.getActiveNexusTab === "function" ? window.getActiveNexusTab() : typeof window.getActiveSpotlightTab === "function" ? window.getActiveSpotlightTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
+      if (activeTab) {
+        activeTab.sparkId = null;
+        if (typeof renderTabs === "function") renderTabs();
+        if (typeof saveTabsState === "function") saveTabsState();
+      }
+      sparksClosePage2();
+      sidebarSparksRenderList2();
+    });
+    document.getElementById("topbar-new-chat-btn")?.addEventListener("click", () => {
+      const activeTab = typeof window.getActiveNexusTab === "function" ? window.getActiveNexusTab() : typeof window.getActiveSpotlightTab === "function" ? window.getActiveSpotlightTab() : typeof tabs !== "undefined" && typeof activeTabIndex !== "undefined" ? tabs[activeTabIndex] : null;
+      if (activeTab) {
+        activeTab.sparkId = null;
+        if (typeof renderTabs === "function") renderTabs();
+        if (typeof saveTabsState === "function") saveTabsState();
+      }
+      sparksClosePage2();
+      sidebarSparksRenderList2();
+    });
+    document.addEventListener("click", (e) => {
+      const chatItem = e.target.closest(".recent-chat-item");
+      if (chatItem && !e.target.closest(".recent-chat-item__menu-btn")) {
+        sparksClosePage2();
+        sidebarSparksRenderList2();
+      }
+    });
+    sidebarSparksRenderList2();
+    if (typeof tabs !== "undefined") {
+      tabs.forEach((tab) => {
+        if (tab && tab.sparkId && !tab.sessionId) {
+          renderSparkWelcomeScreen2(tab);
+          if (typeof window.updateWelcomeScreenState === "function") {
+            window.updateWelcomeScreenState("primary");
+          } else if (typeof updateWelcomeScreenState === "function") {
+            updateWelcomeScreenState("primary");
+          }
+        }
+      });
+    }
+  }
+  if (typeof window !== "undefined") {
+    window.openSparkChat = openSparkChat2;
+    window.renderSparkWelcomeScreen = renderSparkWelcomeScreen2;
+    window.sparksClosePage = sparksClosePage2;
+    window.sparksOpenPage = sparksOpenPage;
+    window.sidebarSparksRenderList = sidebarSparksRenderList2;
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initSparks);
+  } else {
+    initSparks();
   }
 
   // src/components/chat/templates.js
@@ -38164,15 +39777,19 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
             return eventsHtml ? `<div class="nexus-timeline-track">${eventsHtml}</div>` : "";
           }
         },
-        // 5. <GenerateWidget> (Interactive Sandbox Widgets)
+        // 5. <GenerateApp> & <GenerateWidget> (Interactive Sandbox Apps / Widgets)
         {
           name: "generateWidget",
           level: "block",
           start(src) {
-            return src.indexOf("<GenerateWidget");
+            const i1 = src.indexOf("<GenerateApp");
+            const i2 = src.indexOf("<GenerateWidget");
+            if (i1 === -1) return i2;
+            if (i2 === -1) return i1;
+            return Math.min(i1, i2);
           },
           tokenizer(src) {
-            const completeMatch = src.match(/^<GenerateWidget([^>]*)>([\s\S]*?)<\/GenerateWidget>/i);
+            const completeMatch = src.match(/^<(?:GenerateApp|GenerateWidget)([^>]*)>([\s\S]*?)<\/(?:GenerateApp|GenerateWidget)>/i);
             if (completeMatch) {
               const attrs = completeMatch[1] || "";
               const heightMatch = attrs.match(/\bheight="([^"]*)"/i);
@@ -38181,12 +39798,12 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
                 type: "generateWidget",
                 raw: completeMatch[0],
                 height: heightMatch ? heightMatch[1] : "380px",
-                title: titleMatch ? titleMatch[1] : "Interactive Widget",
+                title: titleMatch ? titleMatch[1] : "Interactive App",
                 body: completeMatch[2] || "",
                 isComplete: true
               };
             }
-            const partialMatch = src.match(/^<GenerateWidget([^>]*)>([\s\S]*)$/i);
+            const partialMatch = src.match(/^<(?:GenerateApp|GenerateWidget)([^>]*)>([\s\S]*)$/i);
             if (partialMatch) {
               const attrs = partialMatch[1] || "";
               const heightMatch = attrs.match(/\bheight="([^"]*)"/i);
@@ -38195,20 +39812,18 @@ ${systemPrompt}` }] }, { role: "model", parts: [{ text: "Understood. I will foll
                 type: "generateWidget",
                 raw: partialMatch[0],
                 height: heightMatch ? heightMatch[1] : "380px",
-                title: titleMatch ? titleMatch[1] : "Interactive Widget",
+                title: titleMatch ? titleMatch[1] : "Interactive App",
                 body: partialMatch[2] || "",
                 isComplete: false
               };
             }
-            const tagShieldMatch = src.match(/^<GenerateWidget[^>]*$/i);
+            const tagShieldMatch = src.match(/^<(?:GenerateApp|GenerateWidget)[^>]*$/i);
             if (tagShieldMatch) {
-              const attrs = tagShieldMatch[0] || "";
-              const titleMatch = attrs.match(/\btitle="([^"]*)"/i);
               return {
                 type: "generateWidget",
                 raw: tagShieldMatch[0],
                 height: "380px",
-                title: titleMatch ? titleMatch[1] : "Interactive Widget",
+                title: "Loading App...",
                 body: "",
                 isComplete: false
               };
@@ -43992,6 +45607,7 @@ Output only the revised text.`;
         hasTopbar: true,
         displayType: "",
         onOpen: () => {
+          document.getElementById("sidebar-apps-btn")?.classList.remove("active");
           document.getElementById("sidebar-notes-btn")?.classList.remove("active");
           document.getElementById("sidebar-tts-btn")?.classList.remove("active");
           const topBar = document.getElementById("nexus-topbar");
@@ -44000,11 +45616,46 @@ Output only the revised text.`;
           }
         }
       },
+      apps: {
+        el: "#apps-page",
+        hasTopbar: false,
+        displayType: "flex",
+        onOpen: (params) => {
+          document.getElementById("sidebar-apps-btn")?.classList.add("active");
+          document.getElementById("sidebar-notes-btn")?.classList.remove("active");
+          document.getElementById("sidebar-tts-btn")?.classList.remove("active");
+          document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
+          document.querySelectorAll(".recent-chat-item.active").forEach((el) => el.classList.remove("active"));
+          const appsPage = document.getElementById("apps-page");
+          if (appsPage) {
+            if (params?.appId) {
+              appsPage.classList.add("is-detail");
+              const hub = document.getElementById("apps-hub-view");
+              const studio = document.getElementById("apps-studio-view");
+              if (hub) hub.style.display = "none";
+              if (studio) studio.style.display = "flex";
+            } else {
+              appsPage.classList.remove("is-detail");
+              const hub = document.getElementById("apps-hub-view");
+              const studio = document.getElementById("apps-studio-view");
+              if (hub) hub.style.display = "flex";
+              if (studio) studio.style.display = "none";
+            }
+          }
+          if (!window.nexusAppsPanelInstance && typeof AppsPanel !== "undefined") {
+            window.nexusAppsPanelInstance = new AppsPanel();
+          }
+          if (window.nexusAppsPanelInstance && typeof window.nexusAppsPanelInstance.init === "function") {
+            window.nexusAppsPanelInstance.init(params?.appId, params?.mode);
+          }
+        }
+      },
       notes: {
         el: "#notes-page",
         hasTopbar: false,
         displayType: "flex",
         onOpen: (params) => {
+          document.getElementById("sidebar-apps-btn")?.classList.remove("active");
           document.getElementById("sidebar-notes-btn")?.classList.add("active");
           document.getElementById("sidebar-tts-btn")?.classList.remove("active");
           document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
@@ -44022,6 +45673,7 @@ Output only the revised text.`;
         hasTopbar: false,
         displayType: "flex",
         onOpen: (params) => {
+          document.getElementById("sidebar-apps-btn")?.classList.remove("active");
           document.getElementById("sidebar-tts-btn")?.classList.add("active");
           document.getElementById("sidebar-notes-btn")?.classList.remove("active");
           document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
@@ -44039,6 +45691,7 @@ Output only the revised text.`;
         hasTopbar: false,
         displayType: "flex",
         onOpen: (params) => {
+          document.getElementById("sidebar-apps-btn")?.classList.remove("active");
           document.getElementById("sidebar-notes-btn")?.classList.remove("active");
           document.getElementById("sidebar-tts-btn")?.classList.remove("active");
           document.getElementById("sidebar-new-chat-btn")?.classList.remove("active");
@@ -44052,14 +45705,16 @@ Output only the revised text.`;
     switchView(targetView, params = {}) {
       if (!this.views[targetView]) return;
       this.currentView = targetView;
-      const initStyle = document.getElementById("view-init-style");
-      if (initStyle) initStyle.remove();
       const mainContent = document.querySelector(".nexus-main-content");
       if (mainContent) {
         mainContent.setAttribute("data-active-view", targetView);
       }
+      const initStyle = document.getElementById("view-init-style");
+      if (initStyle) initStyle.remove();
       if (targetView === "tts") {
         document.title = "TTS Studio";
+      } else if (targetView === "apps") {
+        document.title = "Apps";
       } else if (targetView === "notes") {
         document.title = "Notes";
       } else if (targetView === "sparks") {
@@ -44078,8 +45733,21 @@ Output only the revised text.`;
     },
     updateUrl(viewName, params = {}) {
       const urlParams = new URLSearchParams(window.location.search);
-      if (viewName === "notes") {
+      if (viewName === "apps") {
         urlParams.delete("sid");
+        urlParams.delete("noteId");
+        urlParams.delete("colId");
+        urlParams.delete("sparkId");
+        urlParams.delete("recordingId");
+        urlParams.set("view", "apps");
+        if (params.appId) {
+          urlParams.set("appId", params.appId);
+        } else {
+          urlParams.delete("appId");
+        }
+      } else if (viewName === "notes") {
+        urlParams.delete("sid");
+        urlParams.delete("appId");
         urlParams.delete("sparkId");
         urlParams.delete("recordingId");
         urlParams.set("view", "notes");
@@ -44095,6 +45763,7 @@ Output only the revised text.`;
         }
       } else if (viewName === "sparks") {
         urlParams.delete("sid");
+        urlParams.delete("appId");
         urlParams.delete("noteId");
         urlParams.delete("colId");
         urlParams.delete("recordingId");
@@ -44106,6 +45775,7 @@ Output only the revised text.`;
         }
       } else if (viewName === "tts") {
         urlParams.delete("sid");
+        urlParams.delete("appId");
         urlParams.delete("noteId");
         urlParams.delete("colId");
         urlParams.delete("sparkId");
@@ -44117,6 +45787,7 @@ Output only the revised text.`;
         }
       } else {
         urlParams.delete("view");
+        urlParams.delete("appId");
         urlParams.delete("noteId");
         urlParams.delete("colId");
         urlParams.delete("recordingId");
@@ -44162,6 +45833,12 @@ Output only the revised text.`;
   function ttsClosePage() {
     NexusViewManager2.switchView("chat");
   }
+  function appsOpenPage(appId, mode) {
+    NexusViewManager2.switchView("apps", { appId, mode });
+  }
+  function appsClosePage() {
+    NexusViewManager2.switchView("chat");
+  }
   if (typeof window !== "undefined") {
     window.NexusViewManager = NexusViewManager2;
     window.updateNotesUrl = updateNotesUrl;
@@ -44171,10 +45848,14 @@ Output only the revised text.`;
     window.sparksClosePage = sparksClosePage3;
     window.ttsOpenPage = ttsOpenPage;
     window.ttsClosePage = ttsClosePage;
+    window.appsOpenPage = appsOpenPage;
+    window.appsClosePage = appsClosePage;
     document.addEventListener("DOMContentLoaded", () => {
       const urlParams = new URLSearchParams(window.location.search);
       const view = urlParams.get("view");
-      if (view === "notes") {
+      if (view === "apps") {
+        NexusViewManager2.switchView("apps", { appId: urlParams.get("app") || urlParams.get("appId") });
+      } else if (view === "notes") {
         NexusViewManager2.switchView("notes", { noteId: urlParams.get("noteId"), colId: urlParams.get("colId") });
       } else if (view === "sparks") {
         NexusViewManager2.switchView("sparks", { sparkId: urlParams.get("sparkId") });
@@ -44340,6 +46021,10 @@ Output only the revised text.`;
   var chatUI = null;
   var sharedInputUI2 = null;
   function getHoveredInputEl() {
+    const appsStudioInput = document.getElementById("apps-studio-prompt-input");
+    if (appsStudioInput && !appsStudioInput.disabled && appsStudioInput.offsetParent !== null) {
+      return appsStudioInput;
+    }
     const sparkInput = document.getElementById("sparks-preview-input");
     if (sparkInput && !sparkInput.disabled && sparkInput.offsetParent !== null) {
       return sparkInput;
@@ -46940,13 +48625,13 @@ Output only the revised text.`;
         closeMobileSidebar();
       });
     }
-    const liveBtn = document.getElementById("sidebar-live-btn");
-    if (liveBtn) {
-      liveBtn.addEventListener("click", () => {
-        if (typeof window.initGeminiLiveModal === "function") {
-          window.initGeminiLiveModal();
-        } else if (typeof initGeminiLiveModal === "function") {
-          initGeminiLiveModal();
+    const appsBtn = document.getElementById("sidebar-apps-btn");
+    if (appsBtn) {
+      appsBtn.addEventListener("click", () => {
+        if (typeof window.appsOpenPage === "function") {
+          window.appsOpenPage();
+        } else if (typeof viewManager !== "undefined") {
+          viewManager.switchView("apps");
         }
         closeMobileSidebar();
       });
@@ -46961,6 +48646,9 @@ Output only the revised text.`;
         }
         if (typeof sparksClosePage === "function") {
           sparksClosePage();
+        }
+        if (typeof window.appsClosePage === "function") {
+          window.appsClosePage();
         }
         resetChat2();
         closeMobileSidebar();
@@ -50186,7 +51874,7 @@ ${selectedAns.text}`;
       }
     });
     let currentGeminiLiveClient = null;
-    function initGeminiLiveModal2() {
+    function initGeminiLiveModal() {
       const modal = document.getElementById("nexus-live-modal");
       if (!modal) return;
       modal.style.display = "flex";
@@ -50308,7 +51996,7 @@ ${selectedAns.text}`;
             currentGeminiLiveClient.voiceName = voiceSelect.value;
             currentGeminiLiveClient.disconnect();
             setTimeout(() => {
-              initGeminiLiveModal2();
+              initGeminiLiveModal();
             }, 300);
           }
         };
@@ -50336,7 +52024,7 @@ ${selectedAns.text}`;
         };
       }
     }
-    window.initGeminiLiveModal = initGeminiLiveModal2;
+    window.initGeminiLiveModal = initGeminiLiveModal;
   })();
 
   // src/core/auth/sync_debugger.js

@@ -1,6 +1,7 @@
 export * from './panels/history_panel.js';
 export * from './panels/notes_panel.js';
 export * from './panels/notes_utils.js';
+export * from './panels/apps_panel.js';
 export * from './panels/tts_panel.js';
 export * from './panels/tts_utils.js';
 export * from './dictionary/dictionary_popup.js';

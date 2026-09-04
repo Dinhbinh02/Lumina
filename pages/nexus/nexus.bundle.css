@@ -1201,62 +1201,52 @@ body {
   box-sizing: border-box;
 }
 .nexus-main-content[data-active-view=chat] #chat-page,
+.nexus-main-content[data-active-view=apps] #apps-page,
 .nexus-main-content[data-active-view=notes] #notes-page,
 .nexus-main-content[data-active-view=sparks] #sparks-page,
 .nexus-main-content[data-active-view=tts] #tts-page {
   display: flex !important;
 }
-.topbar.nexus-view-topbar,
+.nexus-hub-topbar,
+.nexus-detail-topbar,
+.nexus-view-topbar,
 .topbar.nexus-hub-topbar,
-.topbar.nexus-detail-topbar {
+.topbar.nexus-detail-topbar,
+.topbar.nexus-view-topbar {
   height: 46px;
   min-height: 46px;
-  padding: 0 4px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   flex-shrink: 0;
   position: relative;
   z-index: 10;
   background: var(--nexus-chat-bg, #FFFFFF);
   border: none;
+  border-bottom: none;
   box-shadow: none;
   box-sizing: border-box;
   font-size: 13px !important;
 }
-.topbar.nexus-view-topbar button,
-.topbar.nexus-view-topbar input,
-.topbar.nexus-view-topbar select,
-.topbar.nexus-hub-topbar button,
-.topbar.nexus-hub-topbar input,
-.topbar.nexus-hub-topbar select,
-.topbar.nexus-detail-topbar button,
-.topbar.nexus-detail-topbar input,
-.topbar.nexus-detail-topbar select {
+.nexus-hub-topbar button,
+.nexus-hub-topbar input,
+.nexus-hub-topbar select,
+.nexus-detail-topbar button,
+.nexus-detail-topbar input,
+.nexus-detail-topbar select,
+.nexus-view-topbar button,
+.nexus-view-topbar input,
+.nexus-view-topbar select {
   font-size: inherit;
-}
-.topbar.nexus-view-topbar::after,
-.topbar.nexus-hub-topbar::after,
-.topbar.nexus-detail-topbar::after {
-  content: "" !important;
-  position: absolute !important;
-  top: 100% !important;
-  left: 0 !important;
-  right: 0 !important;
-  height: 16px !important;
-  background:
-    linear-gradient(
-      to bottom,
-      rgb(var(--nexus-ui-base-rgb)),
-      transparent) !important;
-  pointer-events: none !important;
-  z-index: 10 !important;
 }
 .nexus-topbar-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  flex: 1;
+  max-width: 440px;
   min-width: 0;
 }
 .nexus-topbar-left .sidebar-toggle-btn,
@@ -1284,10 +1274,11 @@ body {
   font-size: 13px;
 }
 .nexus-topbar-title {
-  font-size: 16px;
-  font-weight: var(--nexus-weight-medium);
+  font-size: 15px;
+  font-weight: var(--nexus-weight-medium, 500);
   color: var(--nexus-text-primary, #202124);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.2px;
+  flex-shrink: 0;
 }
 [data-theme=dark] .nexus-topbar-title {
   color: #FFFFFF;
@@ -1339,7 +1330,7 @@ body {
   min-height: 0;
   width: 100%;
   overflow-y: auto;
-  padding: 12px 16px 18px 16px;
+  padding: 16px 16px 24px 16px;
   box-sizing: border-box;
 }
 .nexus-detail-body {
@@ -1364,7 +1355,8 @@ body {
   border: none;
   border-radius: 8px;
   font-size: 13px;
-  font-weight: var(--nexus-weight-medium);
+  font-weight: var(--nexus-weight-medium, 500);
+  font-family: inherit;
   cursor: pointer;
   transition: opacity 0.15s ease;
   white-space: nowrap;
@@ -1394,7 +1386,8 @@ body {
   border: none;
   border-radius: 8px;
   font-size: 13px;
-  font-weight: var(--nexus-weight-medium);
+  font-weight: var(--nexus-weight-medium, 500);
+  font-family: inherit;
   cursor: pointer;
   transition: background 0.15s ease;
   white-space: nowrap;
@@ -1423,6 +1416,59 @@ body {
   background: #FFFFFF;
   color: #000000;
 }
+.nexus-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
+  color: var(--nexus-text-secondary, #5F6368);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+[data-theme=dark] .nexus-icon-btn {
+  background: var(--nexus-question-bg, rgba(255, 255, 255, 0.06));
+  color: var(--nexus-text-secondary, #A0A0A0);
+}
+.nexus-icon-btn:hover {
+  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.07));
+  color: var(--nexus-text-primary, #202124);
+}
+[data-theme=dark] .nexus-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+.nexus-icon-btn.active {
+  background: var(--nexus-primary-color, #000000);
+  color: #FFFFFF;
+}
+[data-theme=dark] .nexus-icon-btn.active {
+  background: #FFFFFF;
+  color: #000000;
+}
+.nexus-primary-icon-btn {
+  background: var(--nexus-primary-color, #000000);
+  color: #FFFFFF;
+}
+[data-theme=dark] .nexus-primary-icon-btn {
+  background: #FFFFFF;
+  color: #000000;
+}
+.nexus-primary-icon-btn:hover {
+  opacity: 0.85;
+  background: var(--nexus-primary-color, #000000);
+  color: #FFFFFF;
+}
+[data-theme=dark] .nexus-primary-icon-btn:hover {
+  opacity: 0.85;
+  background: #FFFFFF;
+  color: #000000;
+}
 .nexus-hub-toolbar {
   display: flex;
   align-items: center;
@@ -1435,11 +1481,12 @@ body {
 .nexus-hub-search-wrapper {
   position: relative;
   flex: 1;
-  min-width: 0;
+  min-width: 140px;
+  max-width: 320px;
 }
 .nexus-hub-search-icon {
   position: absolute;
-  left: 10px;
+  left: 9px;
   top: 50%;
   transform: translateY(-50%);
   width: 14px;
@@ -1449,24 +1496,33 @@ body {
 }
 .nexus-hub-search-input {
   width: 100%;
-  padding: 6px 10px 6px 32px;
-  border-radius: 9px;
-  border: none;
+  height: 30px;
+  padding: 0 10px 0 29px;
+  border-radius: 8px;
+  border: 1px solid transparent;
   background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
   color: var(--nexus-text-primary, #202124);
-  font-size: 1em;
+  font-size: 13px;
+  font-family: inherit;
   outline: none;
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
   box-sizing: border-box;
 }
 [data-theme=dark] .nexus-hub-search-input {
   background: var(--nexus-question-bg, rgba(255, 255, 255, 0.06));
+  color: #FFFFFF;
 }
 .nexus-hub-search-input:focus {
-  background: var(--nexus-question-bg, rgba(0, 0, 0, 0.07));
+  background: var(--nexus-chat-bg, #FFFFFF);
+  border-color: var(--nexus-border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 [data-theme=dark] .nexus-hub-search-input:focus {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--nexus-card-bg, #1E1F23);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.nexus-hub-search-input::placeholder {
+  color: var(--nexus-text-tertiary, #9AA0A6);
 }
 .nexus-hub-view-controls {
   display: flex;
@@ -1474,28 +1530,52 @@ body {
   gap: 6px;
   flex-shrink: 0;
 }
-.nexus-sort-select {
-  padding: 5px 8px;
+.nexus-sort-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
   border-radius: 8px;
   border: none;
   background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
-  color: var(--nexus-text-primary, #202124);
-  font-size: 1em;
-  outline: none;
+  color: var(--nexus-text-secondary, #5F6368);
+  font-size: 13px;
+  font-weight: var(--nexus-weight-regular, 400);
+  font-family: inherit;
   cursor: pointer;
-  width: auto;
-  max-width: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  user-select: none;
+  box-sizing: border-box;
 }
-[data-theme=dark] .nexus-sort-select {
+[data-theme=dark] .nexus-sort-trigger-btn {
   background: var(--nexus-question-bg, rgba(255, 255, 255, 0.06));
+  color: var(--nexus-text-secondary, #A0A0A0);
+}
+.nexus-sort-trigger-btn:hover {
+  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.07));
+  color: var(--nexus-text-primary, #202124);
+}
+[data-theme=dark] .nexus-sort-trigger-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+.nexus-dropdown-arrow {
+  color: var(--nexus-text-tertiary, #9AA0A6);
+  pointer-events: none;
+  transition: transform 0.15s ease;
 }
 .nexus-view-toggle-group {
   display: inline-flex;
+  align-items: center;
+  height: 30px;
   padding: 2px;
   background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
   border: none;
   border-radius: 8px;
   gap: 2px;
+  box-sizing: border-box;
 }
 [data-theme=dark] .nexus-view-toggle-group {
   background: var(--nexus-question-bg, rgba(255, 255, 255, 0.06));
@@ -1509,13 +1589,14 @@ body {
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: var(--nexus-text-secondary, #5f6368);
+  color: var(--nexus-text-secondary, #5F6368);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 .nexus-view-toggle-btn.active {
   background: var(--nexus-chat-bg, #FFFFFF);
   color: var(--nexus-text-primary, #202124);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
 [data-theme=dark] .nexus-view-toggle-btn.active {
   background: var(--nexus-card-bg, #2C2C2C);
@@ -1525,15 +1606,21 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 14px;
+  padding: 4px 16px 8px 16px;
+  border: none;
+  border-bottom: none;
+  background: var(--nexus-chat-bg, #FFFFFF);
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
   flex-wrap: nowrap;
-  padding: 0 0 4px 0;
   flex-shrink: 0;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+[data-theme=dark] .nexus-hub-pills-bar {
+  background: var(--nexus-chat-bg, #1A1A1E);
 }
 .nexus-hub-pills-bar::-webkit-scrollbar {
   display: none;
@@ -1548,21 +1635,25 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
-  border-radius: 12px;
+  height: 26px;
+  padding: 0 9px;
+  border-radius: 7px;
   background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
   color: var(--nexus-text-secondary, #5F6368);
-  font-size: 1em;
-  font-weight: var(--nexus-weight-medium);
+  font-size: 12px;
+  font-weight: var(--nexus-weight-medium, 500);
+  font-family: inherit;
   border: none;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
   user-select: none;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 [data-theme=dark] .nexus-hub-pill {
   background: var(--nexus-question-bg, rgba(255, 255, 255, 0.06));
+  color: var(--nexus-text-secondary, #A0A0A0);
 }
 .nexus-hub-pill:hover {
   background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.07));
@@ -1570,11 +1661,11 @@ body {
 }
 [data-theme=dark] .nexus-hub-pill:hover {
   background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
 }
 .nexus-hub-pill.active {
   background: var(--nexus-primary-color, #000000);
   color: #FFFFFF;
-  font-weight: var(--nexus-weight-medium);
 }
 [data-theme=dark] .nexus-hub-pill.active {
   background: #FFFFFF;
@@ -1582,7 +1673,7 @@ body {
 }
 .nexus-hub-pill.drag-over {
   background: rgba(0, 0, 0, 0.1);
-  transform: scale(1.04);
+  transform: scale(1.03);
 }
 [data-theme=dark] .nexus-hub-pill.drag-over {
   background: rgba(255, 255, 255, 0.18);
@@ -1591,13 +1682,14 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  border-radius: 8px;
-  font-size: 0.85em;
-  background: rgba(0, 0, 0, 0.05);
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 5px;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.06);
   color: inherit;
+  line-height: 1;
 }
 .nexus-hub-pill.active .nexus-pill-count {
   background: rgba(255, 255, 255, 0.25);
@@ -1609,23 +1701,32 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
-  border-radius: 12px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 7px;
   border: none;
-  background: transparent;
+  background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
   color: var(--nexus-text-secondary, #5F6368);
-  font-size: 1em;
+  font-size: 12px;
+  font-weight: var(--nexus-weight-medium, 500);
+  font-family: inherit;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
   flex-shrink: 0;
+  box-sizing: border-box;
+}
+[data-theme=dark] .nexus-new-pill-btn {
+  background: var(--nexus-question-bg, rgba(255, 255, 255, 0.06));
+  color: var(--nexus-text-secondary, #A0A0A0);
 }
 .nexus-new-pill-btn:hover {
-  background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
+  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.07));
   color: var(--nexus-text-primary, #202124);
 }
 [data-theme=dark] .nexus-new-pill-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
 }
 .nexus-section-block {
   margin-bottom: 16px;
@@ -1635,48 +1736,51 @@ body {
   align-items: center;
   gap: 5px;
   margin-bottom: 8px;
-  font-size: 0.85em;
-  font-weight: var(--nexus-weight-semibold);
+  font-size: 11.5px;
+  font-weight: var(--nexus-weight-semibold, 600);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--nexus-text-tertiary, #9AA0A6);
 }
 .nexus-hub-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
   gap: 12px;
 }
 .nexus-hub-card {
   display: flex;
   flex-direction: column;
-  background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
+  background: var(--nexus-question-bg, rgba(0, 0, 0, 0.035));
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 12px 14px;
   cursor: pointer;
   position: relative;
-  transition: background 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
   box-sizing: border-box;
   user-select: none;
-  box-shadow: none;
 }
 [data-theme=dark] .nexus-hub-card {
-  background: var(--nexus-question-bg, rgba(255, 255, 255, 0.06));
+  background: var(--nexus-question-bg, rgba(255, 255, 255, 0.05));
 }
 .nexus-hub-card:hover {
-  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.07));
-  transform: none;
-  box-shadow: none;
+  background: var(--nexus-chat-bg, #FFFFFF);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
 }
 [data-theme=dark] .nexus-hub-card:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--nexus-card-bg, #25262B);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 .nexus-hub-card.is-selected {
-  background: var(--nexus-question-bg, rgba(0, 0, 0, 0.08));
+  background: var(--nexus-question-bg, rgba(0, 0, 0, 0.06));
   box-shadow: inset 0 0 0 1.5px var(--nexus-primary-color, #000000);
 }
 [data-theme=dark] .nexus-hub-card.is-selected {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.1);
   box-shadow: inset 0 0 0 1.5px #FFFFFF;
 }
 .nexus-hub-card.is-dragging {
@@ -1712,11 +1816,11 @@ body {
   align-items: center;
   gap: 3px;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: 5px;
   background: rgba(0, 0, 0, 0.04);
   border: none;
-  font-size: 0.9em;
-  font-weight: var(--nexus-weight-medium);
+  font-size: 11.5px;
+  font-weight: var(--nexus-weight-medium, 500);
   color: var(--nexus-text-secondary, #5F6368);
   max-width: 140px;
   overflow: hidden;
@@ -1725,6 +1829,7 @@ body {
 }
 [data-theme=dark] .nexus-card-badge {
   background: rgba(255, 255, 255, 0.07);
+  color: var(--nexus-text-secondary, #A0A0A0);
 }
 .nexus-card-top-right {
   display: flex;
@@ -1754,6 +1859,7 @@ body {
 [data-theme=dark] .nexus-card-pin-btn:hover,
 [data-theme=dark] .nexus-card-menu-btn:hover {
   background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
 }
 .nexus-card-pin-btn.pinned {
   color: #F59E0B;
@@ -1766,8 +1872,8 @@ body {
   margin-bottom: 6px;
 }
 .nexus-card-title {
-  font-size: 1em;
-  font-weight: var(--nexus-weight-semibold);
+  font-size: 13.5px;
+  font-weight: var(--nexus-weight-semibold, 600);
   color: var(--nexus-text-primary, #202124);
   margin: 0;
   line-height: 1.35;
@@ -1775,22 +1881,29 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+[data-theme=dark] .nexus-card-title {
+  color: #FFFFFF;
+}
 .nexus-card-snippet {
-  font-size: 0.88em;
+  font-size: 12.5px;
   color: var(--nexus-text-secondary, #5F6368);
-  line-height: 1.4;
+  line-height: 1.45;
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
+}
+[data-theme=dark] .nexus-card-snippet {
+  color: var(--nexus-text-secondary, #A0A0A0);
 }
 .nexus-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.82em;
+  font-size: 11.5px;
   color: var(--nexus-text-tertiary, #9AA0A6);
   padding-top: 0;
   border: none;
@@ -1828,6 +1941,7 @@ body {
 }
 .nexus-hub-list .nexus-card-snippet {
   -webkit-line-clamp: 1;
+  line-clamp: 1;
   flex: 1;
 }
 .nexus-hub-list .nexus-card-footer {
@@ -2048,6 +2162,292 @@ body {
 }
 .is-sidepanel .nexus-detail-body {
   padding: 4px 10px 12px 10px !important;
+}
+.apps-studio-container {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  background: var(--nexus-ui-bg);
+}
+.apps-studio-container.is-player .apps-studio-left-pane {
+  display: none !important;
+}
+.apps-studio-container.is-player .apps-studio-right-pane {
+  width: 100% !important;
+  max-width: 100% !important;
+  flex: 1 1 100% !important;
+}
+.apps-studio-title-input {
+  height: 28px;
+  border: none;
+  background: transparent;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--nexus-text-primary);
+  padding: 0 6px;
+  border-radius: 6px;
+  outline: none;
+  min-width: 120px;
+  max-width: 240px;
+  transition: background 0.15s ease;
+}
+.apps-studio-title-input:hover,
+.apps-studio-title-input:focus {
+  background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
+}
+[data-theme=dark] .apps-studio-title-input:hover,
+[data-theme=dark] .apps-studio-title-input:focus {
+  background: rgba(255, 255, 255, 0.08);
+}
+.apps-version-pill {
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: none;
+  background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
+  color: var(--nexus-text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+[data-theme=dark] .apps-version-pill {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--nexus-text-secondary);
+}
+.apps-version-pill:hover {
+  background: var(--nexus-sidebar-hover, rgba(0, 0, 0, 0.07));
+  color: var(--nexus-text-primary);
+}
+[data-theme=dark] .apps-version-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+.apps-studio-toggle-group {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 2px;
+  background: var(--nexus-question-bg, rgba(0, 0, 0, 0.04));
+  border-radius: 7px;
+  gap: 2px;
+}
+[data-theme=dark] .apps-studio-toggle-group {
+  background: rgba(255, 255, 255, 0.06);
+}
+.apps-studio-toggle-group .nexus-view-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  min-width: unset;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--nexus-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.apps-studio-toggle-group .nexus-view-toggle-btn.active {
+  background: var(--nexus-card-bg, #ffffff);
+  color: var(--nexus-text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+[data-theme=dark] .apps-studio-toggle-group .nexus-view-toggle-btn.active {
+  background: var(--nexus-card-bg, #28292d);
+  color: #ffffff;
+}
+.apps-studio-left-pane {
+  width: 380px;
+  min-width: 300px;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-right: 1px solid var(--nexus-border-color, rgba(0, 0, 0, 0.08));
+  background: var(--nexus-chat-bg, #ffffff);
+  position: relative;
+  overflow: hidden;
+}
+[data-theme=dark] .apps-studio-left-pane {
+  border-right-color: rgba(255, 255, 255, 0.08);
+}
+.apps-studio-left-pane .layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  position: relative;
+  background: var(--nexus-chat-bg, #ffffff);
+}
+.apps-studio-left-pane .nexus-chat-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+.apps-studio-left-pane .nexus-chat-scroll-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 14px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  margin: 0;
+}
+.apps-studio-left-pane .nexus-entry {
+  margin-bottom: 0 !important;
+  min-height: auto !important;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 0 !important;
+}
+.apps-studio-left-pane .nexus-question-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  width: 100%;
+}
+.apps-studio-left-pane .nexus-chat-question {
+  background: var(--nexus-question-bg, rgba(0, 0, 0, 0.05));
+  border-radius: 18px 18px 4px 18px;
+  padding: 9px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--nexus-text-primary);
+  max-width: 90%;
+  word-break: break-word;
+}
+[data-theme=dark] .apps-studio-left-pane .nexus-chat-question {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+.apps-studio-left-pane .nexus-chat-answer {
+  padding: 4px 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--nexus-text-primary);
+  word-break: break-word;
+}
+.apps-studio-left-pane .nexus-chat-input-container {
+  position: relative !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 12px 14px 12px !important;
+  background: transparent !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  z-index: 10;
+}
+.apps-studio-left-pane .nexus-chat-input-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 12px 14px 12px !important;
+  background: transparent !important;
+}
+.apps-studio-left-pane .nexus-input-container {
+  width: 100% !important;
+}
+.apps-studio-right-pane {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--nexus-ui-bg);
+  position: relative;
+  overflow: hidden;
+  border: none;
+}
+.apps-studio-canvas-pane {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  position: relative;
+  border: none;
+}
+.apps-native-widget-host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  padding: 32px 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+.apps-native-widget-host > .nexus-widget,
+.apps-native-widget-host > * {
+  margin: auto !important;
+  max-width: 580px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.apps-studio-preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  display: block;
+}
+.apps-studio-code-editor {
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 16px 20px;
+  font-family: var(--nexus-font-mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  background: var(--nexus-code-bg, #1a1a1f);
+  color: var(--nexus-code-text, #f1f6fe);
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
+}
+@media (max-width: 860px) {
+  .apps-studio-container {
+    flex-direction: column;
+  }
+  .apps-studio-left-pane {
+    width: 100%;
+    max-width: 100%;
+    height: 280px;
+    border-right: none;
+    border-bottom: 1px solid var(--nexus-border-color, rgba(0, 0, 0, 0.08));
+  }
 }
 
 /* src/pages/nexus/styles/chat.css */
@@ -2628,24 +3028,24 @@ body {
   mask-image: url('data:image/svg+xml,<svg id="Layer_1" height="512" viewBox="0 0 24 24" width="512" xmlns="http://www.w3.org/2000/svg" data-name="Layer 1"><path d="m15 20h-10a5.006 5.006 0 0 1 -5-5v-10a5.006 5.006 0 0 1 5-5h10a5.006 5.006 0 0 1 5 5v10a5.006 5.006 0 0 1 -5 5zm9-1v-13a1 1 0 0 0 -2 0v13a3 3 0 0 1 -3 3h-13a1 1 0 0 0 0 2h13a5.006 5.006 0 0 0 5-5z"/></svg>');
 }
 .nexus-icon-plus {
-  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="512" height="512">%0A<g>%0A%09<path d="M490.667,234.667H277.333V21.333C277.333,9.551,267.782,0,256,0c-11.782,0-21.333,9.551-21.333,21.333v213.333H21.333   C9.551,234.667,0,244.218,0,256c0,11.782,9.551,21.333,21.333,21.333h213.333v213.333c0,11.782,9.551,21.333,21.333,21.333   c11.782,0,21.333-9.551,21.333-21.333V277.333h213.333c11.782,0,21.333-9.551,21.333-21.333   C512,244.218,502.449,234.667,490.667,234.667z"/>%0A</g>%0A</svg>');
-  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="512" height="512">%0A<g>%0A%09<path d="M490.667,234.667H277.333V21.333C277.333,9.551,267.782,0,256,0c-11.782,0-21.333,9.551-21.333,21.333v213.333H21.333   C9.551,234.667,0,244.218,0,256c0,11.782,9.551,21.333,21.333,21.333h213.333v213.333c0,11.782,9.551,21.333,21.333,21.333   c11.782,0,21.333-9.551,21.333-21.333V277.333h213.333c11.782,0,21.333-9.551,21.333-21.333   C512,244.218,502.449,234.667,490.667,234.667z"/>%0A</g>%0A</svg>');
+  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="512" height="512">%0D%0A<g>%0D%0A%09<path d="M490.667,234.667H277.333V21.333C277.333,9.551,267.782,0,256,0c-11.782,0-21.333,9.551-21.333,21.333v213.333H21.333   C9.551,234.667,0,244.218,0,256c0,11.782,9.551,21.333,21.333,21.333h213.333v213.333c0,11.782,9.551,21.333,21.333,21.333   c11.782,0,21.333-9.551,21.333-21.333V277.333h213.333c11.782,0,21.333-9.551,21.333-21.333   C512,244.218,502.449,234.667,490.667,234.667z"/>%0D%0A</g>%0D%0A</svg>');
+  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve" width="512" height="512">%0D%0A<g>%0D%0A%09<path d="M490.667,234.667H277.333V21.333C277.333,9.551,267.782,0,256,0c-11.782,0-21.333,9.551-21.333,21.333v213.333H21.333   C9.551,234.667,0,244.218,0,256c0,11.782,9.551,21.333,21.333,21.333h213.333v213.333c0,11.782,9.551,21.333,21.333,21.333   c11.782,0,21.333-9.551,21.333-21.333V277.333h213.333c11.782,0,21.333-9.551,21.333-21.333   C512,244.218,502.449,234.667,490.667,234.667z"/>%0D%0A</g>%0D%0A</svg>');
 }
 .nexus-icon-refresh {
-  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512.016 512.016" style="enable-background:new 0 0 512.016 512.016;" xml:space="preserve" width="512" height="512">%0A<g>%0A%09<path d="M256.008,42.675c57.16,0.188,111.87,23.233,151.936,64h-66.603c-11.782,0-21.333,9.551-21.333,21.333   s9.551,21.333,21.333,21.333h88.384c21.874-0.012,39.604-17.742,39.616-39.616V21.341c0-11.782-9.551-21.333-21.333-21.333   s-21.333,9.551-21.333,21.333v44.331C321.782-28.795,160.169-20.343,65.702,84.55C28.733,125.6,6.058,177.523,1.075,232.541   c-1.096,11.814,7.593,22.279,19.407,23.375c0.64,0.059,1.283,0.09,1.927,0.092c10.813,0.138,19.954-7.977,21.099-18.731   C53.35,127.213,145.505,42.82,256.008,42.675z"/>%0A%09<path d="M489.629,256.008c-10.813-0.138-19.954,7.977-21.099,18.731C458.35,391.953,355.076,478.721,237.861,468.54   c-50.715-4.405-98.176-26.825-133.789-63.199h66.603c11.782,0,21.333-9.551,21.333-21.333c0-11.782-9.551-21.333-21.333-21.333   H82.291c-21.868-0.012-39.604,17.706-39.616,39.573c0,0.014,0,0.028,0,0.043v88.384c0,11.782,9.551,21.333,21.333,21.333   s21.333-9.551,21.333-21.333v-44.331c104.893,94.467,266.505,86.015,360.972-18.878c36.97-41.05,59.645-92.973,64.628-147.992   c1.096-11.814-7.593-22.279-19.407-23.375C490.901,256.041,490.265,256.01,489.629,256.008z"/>%0A</g>%0A</svg>');
-  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512.016 512.016" style="enable-background:new 0 0 512.016 512.016;" xml:space="preserve" width="512" height="512">%0A<g>%0A%09<path d="M256.008,42.675c57.16,0.188,111.87,23.233,151.936,64h-66.603c-11.782,0-21.333,9.551-21.333,21.333   s9.551,21.333,21.333,21.333h88.384c21.874-0.012,39.604-17.742,39.616-39.616V21.341c0-11.782-9.551-21.333-21.333-21.333   s-21.333,9.551-21.333,21.333v44.331C321.782-28.795,160.169-20.343,65.702,84.55C28.733,125.6,6.058,177.523,1.075,232.541   c-1.096,11.814,7.593,22.279,19.407,23.375c0.64,0.059,1.283,0.09,1.927,0.092c10.813,0.138,19.954-7.977,21.099-18.731   C53.35,127.213,145.505,42.82,256.008,42.675z"/>%0A%09<path d="M489.629,256.008c-10.813-0.138-19.954,7.977-21.099,18.731C458.35,391.953,355.076,478.721,237.861,468.54   c-50.715-4.405-98.176-26.825-133.789-63.199h66.603c11.782,0,21.333-9.551,21.333-21.333c0-11.782-9.551-21.333-21.333-21.333   H82.291c-21.868-0.012-39.604,17.706-39.616,39.573c0,0.014,0,0.028,0,0.043v88.384c0,11.782,9.551,21.333,21.333,21.333   s21.333-9.551,21.333-21.333v-44.331c104.893,94.467,266.505,86.015,360.972-18.878c36.97-41.05,59.645-92.973,64.628-147.992   c1.096-11.814-7.593-22.279-19.407-23.375C490.901,256.041,490.265,256.01,489.629,256.008z"/>%0A</g>%0A</svg>');
+  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512.016 512.016" style="enable-background:new 0 0 512.016 512.016;" xml:space="preserve" width="512" height="512">%0D%0A<g>%0D%0A%09<path d="M256.008,42.675c57.16,0.188,111.87,23.233,151.936,64h-66.603c-11.782,0-21.333,9.551-21.333,21.333   s9.551,21.333,21.333,21.333h88.384c21.874-0.012,39.604-17.742,39.616-39.616V21.341c0-11.782-9.551-21.333-21.333-21.333   s-21.333,9.551-21.333,21.333v44.331C321.782-28.795,160.169-20.343,65.702,84.55C28.733,125.6,6.058,177.523,1.075,232.541   c-1.096,11.814,7.593,22.279,19.407,23.375c0.64,0.059,1.283,0.09,1.927,0.092c10.813,0.138,19.954-7.977,21.099-18.731   C53.35,127.213,145.505,42.82,256.008,42.675z"/>%0D%0A%09<path d="M489.629,256.008c-10.813-0.138-19.954,7.977-21.099,18.731C458.35,391.953,355.076,478.721,237.861,468.54   c-50.715-4.405-98.176-26.825-133.789-63.199h66.603c11.782,0,21.333-9.551,21.333-21.333c0-11.782-9.551-21.333-21.333-21.333   H82.291c-21.868-0.012-39.604,17.706-39.616,39.573c0,0.014,0,0.028,0,0.043v88.384c0,11.782,9.551,21.333,21.333,21.333   s21.333-9.551,21.333-21.333v-44.331c104.893,94.467,266.505,86.015,360.972-18.878c36.97-41.05,59.645-92.973,64.628-147.992   c1.096-11.814-7.593-22.279-19.407-23.375C490.901,256.041,490.265,256.01,489.629,256.008z"/>%0D%0A</g>%0D%0A</svg>');
+  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<!-- Generator: Adobe Illustrator 25.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->%0D%0A<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 512.016 512.016" style="enable-background:new 0 0 512.016 512.016;" xml:space="preserve" width="512" height="512">%0D%0A<g>%0D%0A%09<path d="M256.008,42.675c57.16,0.188,111.87,23.233,151.936,64h-66.603c-11.782,0-21.333,9.551-21.333,21.333   s9.551,21.333,21.333,21.333h88.384c21.874-0.012,39.604-17.742,39.616-39.616V21.341c0-11.782-9.551-21.333-21.333-21.333   s-21.333,9.551-21.333,21.333v44.331C321.782-28.795,160.169-20.343,65.702,84.55C28.733,125.6,6.058,177.523,1.075,232.541   c-1.096,11.814,7.593,22.279,19.407,23.375c0.64,0.059,1.283,0.09,1.927,0.092c10.813,0.138,19.954-7.977,21.099-18.731   C53.35,127.213,145.505,42.82,256.008,42.675z"/>%0D%0A%09<path d="M489.629,256.008c-10.813-0.138-19.954,7.977-21.099,18.731C458.35,391.953,355.076,478.721,237.861,468.54   c-50.715-4.405-98.176-26.825-133.789-63.199h66.603c11.782,0,21.333-9.551,21.333-21.333c0-11.782-9.551-21.333-21.333-21.333   H82.291c-21.868-0.012-39.604,17.706-39.616,39.573c0,0.014,0,0.028,0,0.043v88.384c0,11.782,9.551,21.333,21.333,21.333   s21.333-9.551,21.333-21.333v-44.331c104.893,94.467,266.505,86.015,360.972-18.878c36.97-41.05,59.645-92.973,64.628-147.992   c1.096-11.814-7.593-22.279-19.407-23.375C490.901,256.041,490.265,256.01,489.629,256.008z"/>%0D%0A</g>%0D%0A</svg>');
 }
 .nexus-icon-text-check {
-  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="512" height="512"><path d="M11.107,14.447a1,1,0,1,0,1.789-.894l-5.5-11a1,1,0,0,0-1.789,0l-5.5,11a1,1,0,1,0,1.789.894L3.619,11H9.383ZM4.619,9,6.5,5.236,8.383,9Z"/><path d="M23.707,11.293a1,1,0,0,0-1.414,0L13,20.586,8.707,16.293a1,1,0,1,0-1.414,1.414l5,5a1,1,0,0,0,1.414,0l10-10A1,1,0,0,0,23.707,11.293Z"/></svg>');
-  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0A<svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="512" height="512"><path d="M11.107,14.447a1,1,0,1,0,1.789-.894l-5.5-11a1,1,0,0,0-1.789,0l-5.5,11a1,1,0,1,0,1.789.894L3.619,11H9.383ZM4.619,9,6.5,5.236,8.383,9Z"/><path d="M23.707,11.293a1,1,0,0,0-1.414,0L13,20.586,8.707,16.293a1,1,0,1,0-1.414,1.414l5,5a1,1,0,0,0,1.414,0l10-10A1,1,0,0,0,23.707,11.293Z"/></svg>');
+  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="512" height="512"><path d="M11.107,14.447a1,1,0,1,0,1.789-.894l-5.5-11a1,1,0,0,0-1.789,0l-5.5,11a1,1,0,1,0,1.789.894L3.619,11H9.383ZM4.619,9,6.5,5.236,8.383,9Z"/><path d="M23.707,11.293a1,1,0,0,0-1.414,0L13,20.586,8.707,16.293a1,1,0,1,0-1.414,1.414l5,5a1,1,0,0,0,1.414,0l10-10A1,1,0,0,0,23.707,11.293Z"/></svg>');
+  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="UTF-8"?>%0D%0A<svg xmlns="http://www.w3.org/2000/svg" id="Outline" viewBox="0 0 24 24" width="512" height="512"><path d="M11.107,14.447a1,1,0,1,0,1.789-.894l-5.5-11a1,1,0,0,0-1.789,0l-5.5,11a1,1,0,1,0,1.789.894L3.619,11H9.383ZM4.619,9,6.5,5.236,8.383,9Z"/><path d="M23.707,11.293a1,1,0,0,0-1.414,0L13,20.586,8.707,16.293a1,1,0,1,0-1.414,1.414l5,5a1,1,0,0,0,1.414,0l10-10A1,1,0,0,0,23.707,11.293Z"/></svg>');
 }
 .nexus-icon-thumbtack {
-  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0A</svg>');
-  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0A</svg>');
+  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0D%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0D%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0D%0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0D%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0D%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0D%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0D%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0D%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0D%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0D%0A</svg>');
+  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0D%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0D%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0D%0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0D%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0D%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0D%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0D%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0D%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0D%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0D%0A</svg>');
 }
 .nexus-icon-thumbtack-filled {
-  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0A</svg>');
-  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0A</svg>');
+  -webkit-mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0D%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0D%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0D%0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0D%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0D%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0D%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0D%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0D%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0D%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0D%0A</svg>');
+  mask-image: url('data:image/svg+xml,<?xml version="1.0" encoding="iso-8859-1"?>%0D%0A<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->%0D%0A<svg fill="%23000000" height="800px" width="800px" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" %0D%0A%09 viewBox="0 0 329.942 329.942" xml:space="preserve">%0D%0A<path id="XMLID_16_" d="M329.208,126.666c-1.765-5.431-6.459-9.389-12.109-10.209l-95.822-13.922l-42.854-86.837%0D%0A%09c-2.527-5.12-7.742-8.362-13.451-8.362c-5.71,0-10.925,3.242-13.451,8.362l-42.851,86.836l-95.825,13.922%0D%0A%09c-5.65,0.821-10.345,4.779-12.109,10.209c-1.764,5.431-0.293,11.392,3.796,15.377l69.339,67.582L57.496,305.07%0D%0A%09c-0.965,5.628,1.348,11.315,5.967,14.671c2.613,1.899,5.708,2.865,8.818,2.865c2.387,0,4.784-0.569,6.979-1.723l85.711-45.059%0D%0A%09l85.71,45.059c2.208,1.161,4.626,1.714,7.021,1.723c8.275-0.012,14.979-6.723,14.979-15c0-1.152-0.13-2.275-0.376-3.352%0D%0A%09l-16.233-94.629l69.339-67.583C329.501,138.057,330.972,132.096,329.208,126.666z"/>%0D%0A</svg>');
 }
 .nexus-action-item .nexus-svg-icon {
   width: 17px !important;
