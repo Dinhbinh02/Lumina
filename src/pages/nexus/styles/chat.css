@@ -276,65 +276,7 @@ body {
   opacity: 1 !important;
 }
 
-#nexus-action-bar .nexus-action-comment {
-  display: flex !important;
-}
 
-#nexus-comment-hover-tooltip .nexus-comment-tooltip-card {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(12px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
-  border-radius: 10px !important;
-  padding: 6px 10px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.08) !important;
-  font-family: var(--nexus-font-family, system-ui, sans-serif) !important;
-  font-size: 13px !important;
-  color: #1c1c1e !important;
-  max-width: 280px !important;
-  word-break: break-word !important;
-  animation: nexus-pop-in 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-  pointer-events: auto !important;
-}
-
-[data-theme="dark"] #nexus-comment-hover-tooltip .nexus-comment-tooltip-card {
-  background: rgba(28, 28, 30, 0.95) !important;
-  color: #ffffff !important;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15) !important;
-}
-
-.nexus-comment-tooltip-text {
-  flex: 1 !important;
-  line-height: 1.35 !important;
-  font-weight: 500 !important;
-}
-
-.nexus-comment-highlight {
-  background-color: #fff9c4 !important;
-  cursor: text !important;
-  border-radius: 2px;
-  transition: background-color 0.2s;
-}
-
-.nexus-comment-tooltip {
-  position: fixed;
-  z-index: 10000;
-  background: #333;
-  color: #fff;
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 0.86em;
-  max-width: 250px;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  font-family: var(--nexus-font-family);
-  line-height: 1.4;
-}
 
 .nexus-selected-text-tag {
   display: inline-block !important;
@@ -420,42 +362,7 @@ body {
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.nexus-dictionary-popup {
-  position: fixed !important;
-  z-index: 2147483647 !important;
-  background: var(--nexus-bg-primary, #ffffff) !important;
-  border-radius: 14px !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-  border: 1px solid var(--nexus-ui-border, rgba(0, 0, 0, 0.1)) !important;
-  pointer-events: auto !important;
-  transform: translateZ(0) !important;
-  will-change: transform, opacity !important;
-  font-family: 'Google Sans', 'Google Sans Text', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-}
 
-.nexus-dictionary-popup *:not(.nexus-dict-ipa):not(.nexus-dict-popup-title),
-.nexus-dictionary-popup *:not(.nexus-dict-ipa):not(.nexus-dict-popup-title)::before,
-.nexus-dictionary-popup *:not(.nexus-dict-ipa):not(.nexus-dict-popup-title)::after {
-  font-family: 'Google Sans', 'Google Sans Text', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-}
-
-.nexus-dict-body {
-  flex: 1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-  position: relative !important;
-  background: transparent !important;
-  border-top-left-radius: 14px !important;
-  border-top-right-radius: 14px !important;
-}
-
-.nexus-dict-popup-item {
-  margin-bottom: 12px !important;
-}
 
 .nexus-chat-answer.is-editing {
   width: 100% !important;
@@ -496,13 +403,6 @@ body {
 
 .nexus-question-row-editing {
   justify-content: flex-start !important;
-}
-
-.nexus-proofread-comment-highlight {
-  background-color: rgba(255, 193, 7, 0.2) !important;
-  border-bottom: 2px solid rgba(255, 193, 7, 0.4) !important;
-  cursor: help !important;
-  transition: background-color 0.2s !important;
 }
 
 .nexus-input-meta-container {
@@ -567,38 +467,38 @@ body {
 }
 
 .nexus-icon-copy {
-  -webkit-mask-image: url("../../../../assets/icons/nexus/copy.svg");
-  mask-image: url("../../../../assets/icons/nexus/copy.svg");
+  -webkit-mask-image: url("../../../assets/icons/nexus/copy.svg");
+  mask-image: url("../../../assets/icons/nexus/copy.svg");
 }
 
 .nexus-icon-copy-alt {
-  -webkit-mask-image: url("../../../../assets/icons/nexus/copy-alt.svg");
-  mask-image: url("../../../../assets/icons/nexus/copy-alt.svg");
+  -webkit-mask-image: url("../../../assets/icons/nexus/copy-alt.svg");
+  mask-image: url("../../../assets/icons/nexus/copy-alt.svg");
 }
 
 .nexus-icon-plus {
-  -webkit-mask-image: url("../../../../assets/icons/nexus/plus.svg");
-  mask-image: url("../../../../assets/icons/nexus/plus.svg");
+  -webkit-mask-image: url("../../../assets/icons/nexus/plus.svg");
+  mask-image: url("../../../assets/icons/nexus/plus.svg");
 }
 
 .nexus-icon-refresh {
-  -webkit-mask-image: url("../../../../assets/icons/nexus/refresh.svg");
-  mask-image: url("../../../../assets/icons/nexus/refresh.svg");
+  -webkit-mask-image: url("../../../assets/icons/nexus/refresh.svg");
+  mask-image: url("../../../assets/icons/nexus/refresh.svg");
 }
 
 .nexus-icon-text-check {
-  -webkit-mask-image: url("../../../../assets/icons/nexus/text-check.svg");
-  mask-image: url("../../../../assets/icons/nexus/text-check.svg");
+  -webkit-mask-image: url("../../../assets/icons/nexus/text-check.svg");
+  mask-image: url("../../../assets/icons/nexus/text-check.svg");
 }
 
 .nexus-icon-thumbtack {
-  -webkit-mask-image: url("../../../../assets/icons/nexus/star.svg");
-  mask-image: url("../../../../assets/icons/nexus/star.svg");
+  -webkit-mask-image: url("../../../assets/icons/nexus/star.svg");
+  mask-image: url("../../../assets/icons/nexus/star.svg");
 }
 
 .nexus-icon-thumbtack-filled {
-  -webkit-mask-image: url("../../../../assets/icons/nexus/star.svg");
-  mask-image: url("../../../../assets/icons/nexus/star.svg");
+  -webkit-mask-image: url("../../../assets/icons/nexus/star.svg");
+  mask-image: url("../../../assets/icons/nexus/star.svg");
 }
 
 .nexus-action-item .nexus-svg-icon {
@@ -695,35 +595,7 @@ body {
   color: inherit;
 }
 
-.nexus-dict-resizer-right {
-  position: absolute !important;
-  right: -3px !important;
-  top: 0 !important;
-  width: 8px !important;
-  height: 100% !important;
-  cursor: ew-resize !important;
-  z-index: 2147483647 !important;
-}
 
-.nexus-dict-resizer-bottom {
-  position: absolute !important;
-  bottom: -3px !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 8px !important;
-  cursor: ns-resize !important;
-  z-index: 2147483647 !important;
-}
-
-.nexus-dict-resizer-corner {
-  position: absolute !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 16px !important;
-  height: 16px !important;
-  cursor: nwse-resize !important;
-  z-index: 2147483647 !important;
-}
 
 #nexus-ask-input-popup {
   all: initial;
@@ -3194,66 +3066,7 @@ body {
   flex-shrink: 0;
 }
 
-.nexus-dictionary-logo {
-  width: 17px;
-  height: 17px;
-  display: block;
-  object-fit: contain;
-  flex-shrink: 0;
-}
 
-.nexus-dict-word {
-  font-weight: var(--nexus-weight-bold) !important;
-  font-size: 1.6em !important;
-  color: var(--nexus-text-primary);
-  letter-spacing: -0.03em;
-  text-transform: lowercase !important;
-  display: inline-block;
-  line-height: 1.2 !important;
-  margin-top: -6px !important;
-}
-
-.nexus-dict-pos {
-  display: inline-block;
-  font-size: 0.85em !important;
-  font-weight: var(--nexus-weight-semibold) !important;
-  color: var(--nexus-primary-color);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: rgba(var(--nexus-primary-rgb), 0.1);
-  padding: 1px 6px;
-  border-radius: 4px;
-  margin-right: 6px;
-  margin-bottom: 3px;
-  vertical-align: middle;
-}
-
-.nexus-dict-meaning-text {
-  font-weight: var(--nexus-weight-regular) !important;
-  color: var(--nexus-text-primary);
-  line-height: 1.5;
-  display: inline;
-}
-
-.nexus-dict-meaning-text::first-letter {
-  text-transform: uppercase !important;
-}
-
-.nexus-dict-example {
-  font-style: italic;
-  color: var(--nexus-text-secondary);
-  margin-top: 6px;
-  padding-left: 12px;
-  border-left: 2px solid rgba(var(--nexus-primary-rgb), 0.4);
-  font-size: 0.92em !important;
-  font-weight: var(--nexus-weight-regular) !important;
-  line-height: 1.65;
-}
-
-.nexus-dict-translation {
-  color: var(--nexus-text-secondary);
-  font-weight: var(--nexus-weight-regular) !important;
-}
 
 .nexus-entry {
   display: flex;
@@ -3299,13 +3112,7 @@ body.is-sidepanel .layout.new-chat-homepage .nexus-chat-input-container,
   }
 }
 
-.nexus-chat-answer .nexus-dict-scroll-area {
-  padding: 20px !important;
-  padding-bottom: 40px !important;
-  height: 100% !important;
-  overflow-y: auto !important;
-  box-sizing: border-box !important;
-}
+
 
 .nexus-skeleton-line {
   height: 14px;
@@ -3347,414 +3154,7 @@ body.is-sidepanel .layout.new-chat-homepage .nexus-chat-input-container,
   background: rgba(255, 255, 255, 0.08);
 }
 
-[data-theme="dark"] .nexus-dictionary-popup {
-  background: var(--nexus-bg-primary, #1c1c1e) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2) !important;
-}
 
-.nexus-dict-scroll-area {
-  flex: 1 !important;
-  min-height: 0 !important;
-  overflow-y: auto !important;
-  padding: 10px 12px !important;
-  box-sizing: border-box !important;
-  overscroll-behavior: contain !important;
-  will-change: transform !important;
-  -webkit-overflow-scrolling: touch !important;
-}
-
-.nexus-dict-scroll-area::-webkit-scrollbar {
-  width: 6px;
-}
-
-.nexus-dict-scroll-area::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 3px;
-}
-
-[data-theme="dark"] .nexus-dict-scroll-area::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.nexus-dict-footer {
-  position: relative !important;
-  height: 32px !important;
-  background: #f1f3f4 !important;
-  z-index: 100 !important;
-  display: flex !important;
-  align-items: center !important;
-  border-bottom-left-radius: 12px !important;
-  border-bottom-right-radius: 12px !important;
-  border-top: none !important;
-  flex-shrink: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-}
-
-.nexus-dict-tabs {
-  display: flex !important;
-  width: 100% !important;
-  height: 100% !important;
-  gap: 0 !important;
-  background: transparent !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-  z-index: 2 !important;
-}
-
-[data-theme="dark"] .nexus-dict-footer {
-  background: #1e1e1e !important;
-  border-top: none !important;
-}
-
-[data-theme="dark"] .nexus-dict-tabs {
-  background: transparent !important;
-}
-
-.nexus-dict-tab-btn {
-  flex: 1 !important;
-  height: 100% !important;
-  border: none !important;
-  background: transparent !important;
-  border-radius: 0 !important;
-  font-size: 0.85em !important;
-  font-weight: var(--nexus-weight-semibold) !important;
-  color: #5f6368 !important;
-  cursor: pointer !important;
-  transition: none !important;
-  white-space: nowrap !important;
-  position: relative !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.nexus-dict-tab-btn.active {
-  background: var(--nexus-bg-primary, #ffffff) !important;
-  color: var(--nexus-primary-color, #007aff) !important;
-  z-index: 10 !important;
-}
-
-.nexus-dict-tab-btn.active::before {
-  content: "" !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: -12px !important;
-  width: 12px !important;
-  height: 12px !important;
-  background: radial-gradient(circle at bottom left, transparent 12px, var(--nexus-bg-primary, #ffffff) 12.5px) !important;
-  pointer-events: none !important;
-}
-
-.nexus-dict-tab-btn.active::after {
-  content: "" !important;
-  position: absolute !important;
-  top: 0 !important;
-  right: -12px !important;
-  width: 12px !important;
-  height: 12px !important;
-  background: radial-gradient(circle at bottom right, transparent 12px, var(--nexus-bg-primary, #ffffff) 12.5px) !important;
-  pointer-events: none !important;
-}
-
-[data-theme="dark"] .nexus-dict-tab-btn {
-  color: #9aa0a6 !important;
-}
-
-[data-theme="dark"] .nexus-dict-tab-btn.active {
-  background: var(--nexus-input-bg) !important;
-  color: #fff !important;
-}
-
-[data-theme="dark"] .nexus-dict-tab-btn.active::before {
-  background: radial-gradient(circle at bottom left, transparent 12px, var(--nexus-input-bg) 12.5px) !important;
-}
-
-[data-theme="dark"] .nexus-dict-tab-btn.active::after {
-  background: radial-gradient(circle at bottom right, transparent 12px, var(--nexus-input-bg) 12.5px) !important;
-}
-
-.nexus-dict-tab-btn:not(.active):hover {
-  background: rgba(0, 0, 0, 0.04) !important;
-  color: #202124 !important;
-}
-
-[data-theme="dark"] .nexus-dict-tab-btn:not(.active):hover {
-  background: rgba(255, 255, 255, 0.04) !important;
-  color: #e8eaed !important;
-}
-
-.nexus-dict-status-container {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  height: 100% !important;
-  min-height: 200px !important;
-  text-align: center !important;
-  padding: 32px 24px !important;
-  box-sizing: border-box !important;
-}
-
-.nexus-dict-status-card {
-  max-width: 320px !important;
-  animation: nexus-fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-
-.nexus-dict-status-icon {
-  font-size: 3em !important;
-  margin-bottom: 16px !important;
-  line-height: 1 !important;
-}
-
-.nexus-dict-status-title {
-  font-size: 1.25em !important;
-  font-weight: var(--nexus-weight-semibold) !important;
-  margin-bottom: 10px !important;
-  color: var(--nexus-text-primary) !important;
-  letter-spacing: -0.01em !important;
-}
-
-.nexus-dict-status-desc {
-  font-size: 0.95em !important;
-  line-height: 1.6 !important;
-  color: var(--nexus-text-secondary) !important;
-  font-weight: var(--nexus-weight-regular) !important;
-}
-
-.status-error .nexus-dict-status-icon {
-  filter: drop-shadow(0 2px 4px rgba(255, 59, 48, 0.2));
-}
-
-.status-empty .nexus-dict-status-icon {
-  filter: grayscale(1) opacity(0.6);
-}
-
-.nexus-dict-popup-meta {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  margin-bottom: 8px !important;
-}
-
-.nexus-dict-popup-item+.nexus-dict-popup-item {
-  margin-top: 14px !important;
-  border-top: 1px solid var(--nexus-ui-border, rgba(0, 0, 0, 0.08)) !important;
-  padding-top: 10px !important;
-}
-
-.nexus-dict-popup-sense {
-  margin-top: 6px !important;
-  margin-bottom: 4px !important;
-  position: relative !important;
-}
-
-.nexus-dict-popup-meaning {
-  margin-bottom: 4px !important;
-}
-
-.nexus-dict-popup-meaning:last-child {
-  margin-bottom: 0 !important;
-}
-
-.nexus-dict-header-row {
-  display: flex !important;
-  justify-content: flex-start !important;
-  align-items: baseline !important;
-  gap: 8px !important;
-  margin-bottom: 4px !important;
-}
-
-.nexus-dict-popup-pos {
-  font-size: 0.85em !important;
-  text-transform: lowercase !important;
-  color: var(--nexus-text-secondary) !important;
-  font-weight: var(--nexus-weight-medium) !important;
-  font-style: italic !important;
-  text-align: right !important;
-  opacity: 0.7 !important;
-  line-height: 1.2 !important;
-}
-
-.nexus-dict-popup-examples {
-  margin-top: 8px !important;
-  padding-left: 12px !important;
-  border-left: 2px solid rgba(0, 0, 0, 0.05) !important;
-}
-
-[data-theme="dark"] .nexus-dict-popup-examples {
-  border-left-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-.nexus-dict-popup-example {
-  font-size: 0.95em !important;
-  color: var(--nexus-text-secondary) !important;
-  font-style: italic !important;
-  margin-bottom: 4px !important;
-  line-height: 1.4 !important;
-}
-
-.nexus-dict-loading-state {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  height: 100% !important;
-  gap: 12px !important;
-  color: var(--nexus-text-secondary) !important;
-  font-size: 0.9em !important;
-}
-
-.nexus-dictionary-popup .nexus-dict-popup-title {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-  font-size: 1.4em !important;
-  font-weight: var(--nexus-weight-bold) !important;
-  color: var(--nexus-text-primary) !important;
-  margin: 0 !important;
-  letter-spacing: -0.02em !important;
-  line-height: 1.1 !important;
-  white-space: nowrap !important;
-  flex-shrink: 1 !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-.nexus-dict-images-grid {
-  display: grid !important;
-  grid-template-columns: repeat(2, 1fr) !important;
-  gap: 10px !important;
-  padding: 0 !important;
-}
-
-.nexus-dict-image-card {
-  position: relative !important;
-  border-radius: 8px !important;
-  overflow: hidden !important;
-  background: rgba(0, 0, 0, 0.05) !important;
-  aspect-ratio: 4/3 !important;
-  border: 1px solid var(--nexus-ui-border, rgba(0, 0, 0, 0.08)) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-  cursor: pointer !important;
-}
-
-.nexus-dict-image-card:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-}
-
-.nexus-dict-image-card .nexus-loading-spinner {
-  position: absolute !important;
-  top: 50% !important;
-  left: 50% !important;
-  margin-top: -10px !important;
-  margin-left: -10px !important;
-  z-index: 1 !important;
-}
-
-.nexus-dict-image-card img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  display: block !important;
-}
-
-[data-theme="dark"] .nexus-dict-image-card {
-  background: rgba(255, 255, 255, 0.05) !important;
-}
-
-.nexus-dict-popup-prons {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-  margin-top: 2px !important;
-}
-
-.nexus-dict-pron-group {
-  display: flex !important;
-  align-items: center !important;
-  gap: 4px !important;
-  font-weight: var(--nexus-weight-semibold) !important;
-}
-
-.nexus-dict-pron-group .nexus-dict-ipa {
-  font-weight: var(--nexus-weight-medium) !important;
-}
-
-.nexus-dict-pron-group.uk {
-  color: #0076d6 !important;
-}
-
-.nexus-dict-pron-group.us {
-  color: #d0021b !important;
-}
-
-.nexus-dict-lang {
-  font-size: 0.9em !important;
-  font-weight: var(--nexus-weight-bold) !important;
-  line-height: 1.2 !important;
-  text-transform: uppercase !important;
-}
-
-.nexus-dict-ipa {
-  font-family: "Lucida Sans Unicode", "Arial Unicode MS", "Doulos SIL", "Charis SIL", "Gentium Plus", sans-serif !important;
-  font-size: 0.95em !important;
-  letter-spacing: 0.03em !important;
-  font-weight: var(--nexus-weight-semibold) !important;
-  color: var(--nexus-text-primary) !important;
-  line-height: 1.2 !important;
-  margin-top: -1px !important;
-}
-
-.nexus-dict-popup-audio {
-  background: transparent !important;
-  border: none !important;
-  padding: 4px !important;
-  cursor: pointer !important;
-  color: inherit !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border-radius: 50% !important;
-  transition: all 0.2s !important;
-}
-
-.nexus-dict-popup-audio:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
-  transform: scale(1.1) !important;
-}
-
-[data-theme="dark"] .nexus-dict-popup-audio:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.nexus-dict-sense-indicator {
-  font-size: 0.76em !important;
-  font-weight: var(--nexus-weight-bold) !important;
-  color: var(--nexus-primary-color) !important;
-  background: rgba(var(--nexus-primary-rgb, 0, 86, 210), 0.08) !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.08em !important;
-  padding: 3px 8px !important;
-  border-radius: 6px !important;
-  display: inline-block !important;
-  margin-top: 6px !important;
-  margin-bottom: 6px !important;
-  line-height: 1.2 !important;
-}
-
-[data-theme="dark"] .nexus-dict-sense-indicator {
-  background: rgba(var(--nexus-primary-rgb, 0, 86, 210), 0.16) !important;
-  color: #58a6ff !important;
-}
-
-.nexus-dict-popup-sense:first-child .nexus-dict-sense-indicator {
-  margin-top: 0 !important;
-}
-
-.nexus-dict-popup-meaning:last-child {
-  margin-bottom: 0;
-}
 
 @keyframes nexus-mic-pulse {
 
@@ -4044,39 +3444,6 @@ b .katex * {
   color: #f5f5f7 !important;
 }
 
-.nexus-comment-part {
-  display: none !important;
-  align-items: center !important;
-  padding: 0 10px !important;
-  height: 28px !important;
-  cursor: pointer !important;
-  font-size: 1em !important;
-  font-weight: var(--nexus-weight-medium) !important;
-  color: #1d1d1f !important;
-  transition: all 0.2s ease !important;
-  letter-spacing: -0.01em !important;
-  font-family: inherit !important;
-  white-space: nowrap !important;
-  min-width: max-content !important;
-  border-radius: 8px !important;
-}
-
-[data-theme="dark"] .nexus-comment-part {
-  color: #f5f5f7 !important;
-}
-
-.nexus-comment-part:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
-}
-
-[data-theme="dark"] .nexus-comment-part:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
-}
-
-.nexus-comment-highlight:hover {
-  background-color: #fff176 !important;
-  ;
-}
 
 .nexus-overlay-backdrop {
   position: fixed;
@@ -5084,43 +4451,6 @@ b .katex * {
   min-width: 0;
 }
 
-.nexus-send-comment-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background-color: var(--nexus-primary-color);
-  color: #ffffff !important;
-  padding: 10px 20px;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  font-family: var(--nexus-font-family);
-  font-size: 1em;
-  font-weight: var(--nexus-weight-semibold);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  width: calc(100% - 32px);
-  box-shadow: var(--nexus-shadow-secondary);
-  margin-top: 10px;
-}
-
-.nexus-send-comment-btn:hover {
-  background-color: var(--nexus-primary-color);
-  filter: brightness(1.1);
-  box-shadow: var(--nexus-shadow-hover);
-}
-
-.nexus-send-comment-btn:active {
-  filter: brightness(0.95);
-}
-
-.nexus-send-comment-btn svg {
-  width: 16px;
-  height: 16px;
-  stroke: currentColor;
-  fill: none;
-}
-
 .nexus-page {
   background: transparent;
   margin: 0;
@@ -5832,25 +5162,6 @@ b .katex * {
   box-sizing: border-box !important;
 }
 
-.nexus-youtube-wrapper {
-  position: relative;
-  width: 100%;
-  max-width: 560px;
-  margin: 16px auto;
-  border-radius: var(--nexus-radius-sm, 12px);
-  overflow: hidden;
-  box-shadow: var(--nexus-shadow-secondary);
-}
-
-.nexus-youtube-wrapper .nexus-media-skeleton {
-  width: 100%;
-  height: 315px;
-}
-
-.nexus-youtube-iframe {
-  border: none;
-  display: block;
-}
 
 .nexus-image-wrapper.is-loading .nexus-image-caption {
   display: none !important;
@@ -6632,7 +5943,7 @@ b .katex * {
 
 
 /* ==========================================================================
-   HOMEPAGE WELCOME & CANVAS SPLIT-PANE WORKSPACE
+   HOMEPAGE WELCOME
    ========================================================================== */
 .layout.new-chat-homepage {
   display: flex !important;
@@ -6845,297 +6156,3 @@ button:hover .sidebar-toggle-svg .collapse-chevron {
 }
 
 
-/* ==========================================================================
-   NEXUS LIVE VOICE ASSISTANT MODAL
-   ========================================================================== */
-.nexus-live-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 999999;
-  background: rgba(10, 12, 18, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: fadeIn 0.3s ease;
-}
-
-.nexus-live-modal-content {
-  width: 90%;
-  max-width: 540px;
-  height: 80vh;
-  max-height: 650px;
-  background: #12151e;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(66, 133, 244, 0.15);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  color: #ffffff;
-  font-family: 'Inter', sans-serif;
-}
-
-.nexus-live-header {
-  padding: 18px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.live-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.live-status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #9aa0a6;
-  transition: background 0.3s;
-}
-
-.live-status-dot.active {
-  background: #34a853;
-  box-shadow: 0 0 10px #34a853;
-}
-
-.live-status-dot.speaking {
-  background: #4285f4;
-  box-shadow: 0 0 10px #4285f4;
-}
-
-.nexus-live-close-btn {
-  background: transparent;
-  border: none;
-  color: #9aa0a6;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 50%;
-  transition: all 0.2s;
-}
-
-.nexus-live-close-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.nexus-live-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px;
-  overflow: hidden;
-}
-
-.nexus-live-visualizer-container {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-}
-
-.nexus-live-sphere {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sphere-core {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ea4335, #fb8c00, #4285f4, #34a853);
-  background-size: 200% 200%;
-  animation: gradientGlow 3s ease infinite;
-  box-shadow: 0 0 30px rgba(66, 133, 244, 0.5);
-  z-index: 2;
-}
-
-.sphere-wave {
-  position: absolute;
-  border-radius: 50%;
-  border: 2px solid rgba(66, 133, 244, 0.4);
-  animation: wavePulse 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-.sphere-wave.wave1 {
-  width: 90px;
-  height: 90px;
-  animation-delay: 0s;
-}
-
-.sphere-wave.wave2 {
-  width: 120px;
-  height: 120px;
-  animation-delay: 0.6s;
-}
-
-@keyframes gradientGlow {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-@keyframes wavePulse {
-  0% {
-    transform: scale(0.8);
-    opacity: 0.8;
-  }
-
-  100% {
-    transform: scale(1.6);
-    opacity: 0;
-  }
-}
-
-.nexus-live-transcript-box {
-  width: 100%;
-  max-height: 140px;
-  overflow-y: auto;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  padding: 12px 16px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: #e8eaed;
-}
-
-.transcript-placeholder {
-  color: #80868b;
-  text-align: center;
-  font-style: italic;
-}
-
-.transcript-entry {
-  margin-bottom: 8px;
-}
-
-.transcript-entry strong {
-  color: #8ab4f8;
-}
-
-.nexus-live-controls {
-  padding: 16px 24px;
-  background: rgba(0, 0, 0, 0.3);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  gap: 12px;
-}
-
-.live-control-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.live-control-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-  transform: scale(1.05);
-}
-
-.live-control-btn.active {
-  background: #4285f4;
-  color: #fff;
-}
-
-.live-control-btn.end-btn {
-  background: #ea4335;
-}
-
-.live-control-btn.end-btn:hover {
-  background: #d93025;
-}
-
-.live-voice-select {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #fff;
-  border-radius: 20px;
-  padding: 8px 14px;
-  font-size: 12px;
-  outline: none;
-  cursor: pointer;
-}
-
-.live-voice-select option {
-  background: #181b24;
-  color: #fff;
-}
-
-.nexus-live-input-box {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.nexus-live-input-box input {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
-  padding: 10px 16px;
-  color: #ffffff;
-  font-size: 13px;
-  outline: none;
-  transition: border-color 0.2s ease, background 0.2s ease;
-}
-
-.nexus-live-input-box input:focus {
-  border-color: #6366f1;
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.nexus-live-input-box button {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: none;
-  background: linear-gradient(135deg, #6366f1, #a855f7);
-  color: #ffffff;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.15s ease, opacity 0.15s ease;
-}
-
-.nexus-live-input-box button:hover {
-  transform: scale(1.06);
-  opacity: 0.95;
-}

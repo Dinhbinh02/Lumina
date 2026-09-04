@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load marked
-const markedMinPath = path.join(__dirname, '../lib/vendor/marked.min.js');
+const markedMinPath = path.join(__dirname, '../src/lib/marked.min.js');
 const markedCode = fs.readFileSync(markedMinPath, 'utf8');
 const markedFn = new Function('window', 'globalThis', `${markedCode}; return (typeof marked !== 'undefined' ? marked : (typeof window !== 'undefined' ? window.marked : globalThis.marked));`);
 const marked = markedFn({}, globalThis);
@@ -18,7 +18,7 @@ globalThis.WidgetRunner = {
 };
 
 // Import LMDX parser
-const lmdxModule = await import('../src/components/chat/lmdx_components_parser.js');
+const lmdxModule = await import('../src/components/cores/component_parser.js');
 lmdxModule.initLmdxComponentsParser();
 
 const edgeCases = [

@@ -1,6 +1,8 @@
 .DS_Store
 node_modules/
 dist/
+nexus.zip
+*.zip
 target/
 *.log
 npm-debug.log*

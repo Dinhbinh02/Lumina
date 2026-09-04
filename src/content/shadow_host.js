@@ -28,7 +28,7 @@ export class ShadowHostManager {
 
         const katexLink = document.createElement('link');
         katexLink.rel = 'stylesheet';
-        katexLink.href = chrome.runtime.getURL('lib/vendor/katex/katex.min.css');
+        katexLink.href = chrome.runtime.getURL('lib/katex/katex.min.css');
         this.nexusShadowRoot.appendChild(katexLink);
 
         this.applyAskSelectionStyles();

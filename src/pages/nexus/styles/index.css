@@ -1,6 +1,6 @@
 @import "./tokens.css";
 @import "./base.css";
-@import "../../../../lib/vendor/katex/katex.min.css";
+@import "../../../lib/katex/katex.min.css";
 @import "./hub_layout.css";
 
 /* Core Feature Domains */

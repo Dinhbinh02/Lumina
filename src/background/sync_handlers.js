@@ -1,9 +1,8 @@
-import { NexusSync } from '../core/auth/drive_sync.js';
+import { NexusSync } from '../db/drive_sync.js';
 import '../db/chat_db.js';
 import '../db/notes_manager.js';
-import '../db/highlight_db.js';
 import '../db/attachment_db.js';
-import '../core/audio/tts_manager.js';
+import '../db/tts_manager.js';
 
 export function initSyncHandlers() {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -58,6 +57,13 @@ export function initSyncHandlers() {
                 .then(res => sendResponse(res))
                 .catch(err => sendResponse({ success: false, error: err.message }));
             return true;
+        }
+
+        if ((request.action === 'nexus_session_updated' ||
+            request.action === 'nexus_sessions_index_updated' ||
+            request.action === 'nexus_sessions_deleted') && !request.isBroadcast) {
+            request.isBroadcast = true;
+            chrome.runtime.sendMessage(request).catch(() => { });
         }
     });
 }

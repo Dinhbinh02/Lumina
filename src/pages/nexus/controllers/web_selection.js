@@ -1,5 +1,5 @@
-import { WEB_SOURCE_SELECTION_STORAGE_PREFIX, isWebPageUrl } from '../../../shared/constants.js';
-import { NexusToken } from '../../../core/ai/token_utils.js';
+import { WEB_SOURCE_SELECTION_STORAGE_PREFIX, isWebPageUrl } from '../../../utils/constants.js';
+import { NexusToken } from '../../../utils/token_utils.js';
 import { ChatHistoryManager } from '../../../db/chat_history.js';
 
 export const webSourceSelectionsByPageTabId = {};

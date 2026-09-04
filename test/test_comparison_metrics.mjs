@@ -9,14 +9,14 @@ const __dirname = path.dirname(__filename);
 console.log('Testing <Comparison> and <Metrics> Components in Marked Parser...');
 
 // 1. Load marked parser from vendor
-const markedMinPath = path.join(__dirname, '../lib/vendor/marked.min.js');
+const markedMinPath = path.join(__dirname, '../src/lib/marked.min.js');
 const markedCode = fs.readFileSync(markedMinPath, 'utf8');
 const markedFn = new Function('window', 'globalThis', `${markedCode}; return (typeof marked !== 'undefined' ? marked : (typeof window !== 'undefined' ? window.marked : globalThis.marked));`);
 const marked = markedFn({}, globalThis);
 globalThis.marked = marked;
 
 // 2. Import LMDX parser
-const lmdxModule = await import('../src/components/chat/lmdx_components_parser.js');
+const lmdxModule = await import('../src/components/cores/component_parser.js');
 lmdxModule.initLmdxComponentsParser();
 
 // 1. Test <Comparison> complete rendering

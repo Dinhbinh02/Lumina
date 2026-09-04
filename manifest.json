@@ -91,12 +91,11 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "lib/vendor/*",
-                "lib/parsers/*",
+                "lib/*",
+                "lib/katex/*",
                 "assets/*",
                 "assets/audio/*",
                 "assets/styles/*",
-                "lib/vendor/katex/*",
                 "scripts/*",
                 "pages/*"
             ],

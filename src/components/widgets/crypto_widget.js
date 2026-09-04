@@ -203,7 +203,7 @@ export class NexusCryptoWidget {
                         }
                     });
 
-                    // Prioritize curated coin dictionary first, then add valid Binance coins
+                    // Prioritize curated coin map first, then add valid Binance coins
                     const known = Object.keys(POPULAR_CRYPTO);
                     const others = Array.from(usdtCoins).filter(c => !POPULAR_CRYPTO[c]).sort();
                     const all = [...known, ...others];

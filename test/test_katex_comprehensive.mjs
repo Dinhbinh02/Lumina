@@ -7,20 +7,20 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 1. Load marked & KaTeX engines
-const markedMinPath = path.join(__dirname, '../lib/vendor/marked.min.js');
+const markedMinPath = path.join(__dirname, '../src/lib/marked.min.js');
 const markedCode = fs.readFileSync(markedMinPath, 'utf8');
 const markedFn = new Function('window', 'globalThis', `${markedCode}; return (typeof marked !== "undefined" ? marked : globalThis.marked);`);
 const marked = markedFn({}, globalThis);
 globalThis.marked = marked;
 
-const katexMinPath = path.join(__dirname, '../lib/vendor/katex/katex.min.js');
+const katexMinPath = path.join(__dirname, '../src/lib/katex/katex.min.js');
 const katexCode = fs.readFileSync(katexMinPath, 'utf8');
 const katexFn = new Function('window', 'globalThis', `${katexCode}; return (typeof katex !== "undefined" ? katex : globalThis.katex);`);
 const katex = katexFn({}, globalThis);
 globalThis.katex = katex;
 
-// 2. Load markdown_math module
-const mathModule = await import('../src/components/chat/markdown_math.js');
+// 2. Load markdown_parser module
+const mathModule = await import('../src/components/cores/markdown_parser.js');
 mathModule.initMarkdownMath();
 
 console.log('============================================================');

@@ -1,4 +1,4 @@
-import { MIME_ALIASES, SUPPORTED_MIME_TYPES } from '../shared/constants.js';
+import { MIME_ALIASES, SUPPORTED_MIME_TYPES } from '../utils/constants.js';
 import { NexusAttachmentDB } from '../db/attachment_db.js';
 
 export function detectMediaType(item) {

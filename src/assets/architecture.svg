@@ -1,0 +1,197 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 620" width="100%" height="100%">
+  <defs>
+    <marker id="sketch-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569" />
+    </marker>
+    <marker id="sketch-arrow-bidir" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b" />
+    </marker>
+    <style>
+      .sketch-title { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; font-weight: 700; fill: #0f172a; letter-spacing: -0.2px; }
+      .sketch-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; font-weight: 600; fill: #1e293b; }
+      .sketch-subtext { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 10.5px; font-weight: 400; fill: #64748b; }
+      .box-layer { fill: #f8fafc; stroke: #334155; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; rx: 10px; }
+      .box-item-blue { fill: #f0fdf4; stroke: #0284c7; stroke-width: 1.3; rx: 6px; }
+      .box-item-purple { fill: #faf5ff; stroke: #7c3aed; stroke-width: 1.3; rx: 6px; }
+      .box-item-emerald { fill: #ecfdf5; stroke: #059669; stroke-width: 1.3; rx: 6px; }
+      .box-item-amber { fill: #fffbeb; stroke: #d97706; stroke-width: 1.3; rx: 6px; }
+      .box-item-slate { fill: #f8fafc; stroke: #475569; stroke-width: 1.3; rx: 6px; }
+      .sketch-line { stroke: #475569; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .sketch-line-dash { stroke: #64748b; stroke-width: 1.5; stroke-dasharray: 4 4; fill: none; }
+      @media (prefers-color-scheme: dark) {
+        .sketch-title { fill: #f8fafc; }
+        .sketch-text { fill: #f1f5f9; }
+        .sketch-subtext { fill: #94a3b8; }
+        .box-layer { fill: #090d16; stroke: #64748b; }
+        .box-item-blue { fill: #0f172a; stroke: #38bdf8; }
+        .box-item-purple { fill: #0f172a; stroke: #a855f7; }
+        .box-item-emerald { fill: #0f172a; stroke: #34d399; }
+        .box-item-amber { fill: #0f172a; stroke: #fbbf24; }
+        .box-item-slate { fill: #0f172a; stroke: #94a3b8; }
+        .sketch-line { stroke: #cbd5e1; }
+        .sketch-line-dash { stroke: #94a3b8; }
+        path[fill="#475569"] { fill: #cbd5e1; }
+        path[fill="#64748b"] { fill: #94a3b8; }
+      }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="920" height="620" fill="transparent" />
+
+  <!-- ==================== LAYER 5 ==================== -->
+  <g transform="translate(30, 20)">
+    <rect class="box-layer" x="0" y="0" width="860" height="96" />
+    <text class="sketch-title" x="18" y="24">Presentation Layer (Workspace UI)</text>
+    
+    <!-- Card 1 -->
+    <g transform="translate(18, 36)">
+      <rect class="box-item-blue" x="0" y="0" width="194" height="46" />
+      <text class="sketch-text" x="10" y="19">Chat Interface &amp; Stream</text>
+      <text class="sketch-subtext" x="10" y="34">Markdown / KaTeX / Charts</text>
+    </g>
+
+    <!-- Card 2 -->
+    <g transform="translate(226, 36)">
+      <rect class="box-item-blue" x="0" y="0" width="194" height="46" />
+      <text class="sketch-text" x="10" y="19">Sparks Agent Studio</text>
+      <text class="sketch-subtext" x="10" y="34">Isolated Prompts &amp; Preview</text>
+    </g>
+
+    <!-- Card 3 -->
+    <g transform="translate(434, 36)">
+      <rect class="box-item-blue" x="0" y="0" width="194" height="46" />
+      <text class="sketch-text" x="10" y="19">TipTap Rich Editor</text>
+      <text class="sketch-subtext" x="10" y="34">Document Workspace</text>
+    </g>
+
+    <!-- Card 4 -->
+    <g transform="translate(642, 36)">
+      <rect class="box-item-blue" x="0" y="0" width="200" height="46" />
+      <text class="sketch-text" x="10" y="19">Modals &amp; Side Panels</text>
+      <text class="sketch-subtext" x="10" y="34">Settings / Search / History</text>
+    </g>
+  </g>
+
+  <!-- Connectors L5 -> L4 -->
+  <path class="sketch-line" d="M 240 116 L 240 148" marker-end="url(#sketch-arrow)" />
+  <path class="sketch-line" d="M 680 116 L 680 148" marker-end="url(#sketch-arrow)" />
+
+  <!-- ==================== LAYER 4 ==================== -->
+  <g transform="translate(30, 148)">
+    <rect class="box-layer" x="0" y="0" width="860" height="96" />
+    <text class="sketch-title" x="18" y="24">Core Services &amp; AI Engines (src/core/)</text>
+    
+    <!-- Card 1 -->
+    <g transform="translate(18, 36)">
+      <rect class="box-item-purple" x="0" y="0" width="194" height="46" />
+      <text class="sketch-text" x="10" y="19">AI Streaming Dispatcher</text>
+      <text class="sketch-subtext" x="10" y="34">Multi-provider &amp; Fallback</text>
+    </g>
+
+    <!-- Card 2 -->
+    <g transform="translate(226, 36)">
+      <rect class="box-item-purple" x="0" y="0" width="194" height="46" />
+      <text class="sketch-text" x="10" y="19">IndexedDB Storage Engine</text>
+      <text class="sketch-subtext" x="10" y="34">Attachments &amp; Chat Cache</text>
+    </g>
+
+    <!-- Card 3 -->
+    <g transform="translate(434, 36)">
+      <rect class="box-item-purple" x="0" y="0" width="194" height="46" />
+      <text class="sketch-text" x="10" y="19">TTS Synthesis Manager</text>
+      <text class="sketch-subtext" x="10" y="34">Voice Queue &amp; Audio Fetch</text>
+    </g>
+
+    <!-- Card 4 -->
+    <g transform="translate(642, 36)">
+      <rect class="box-item-purple" x="0" y="0" width="200" height="46" />
+      <text class="sketch-text" x="10" y="19">OAuth &amp; Drive Sync</text>
+      <text class="sketch-subtext" x="10" y="34">Chrome Identity API</text>
+    </g>
+  </g>
+
+  <!-- Connectors L4 -> L3 -->
+  <path class="sketch-line" d="M 350 244 L 350 276" marker-end="url(#sketch-arrow)" />
+  <path class="sketch-line" d="M 570 244 L 570 276" marker-end="url(#sketch-arrow)" />
+
+  <!-- ==================== LAYER 3 ==================== -->
+  <g transform="translate(30, 276)">
+    <rect class="box-layer" x="0" y="0" width="860" height="96" />
+    <text class="sketch-title" x="18" y="24">Persistence &amp; Storage Layer (IndexedDB / Local Storage)</text>
+    
+    <!-- Card 1 -->
+    <g transform="translate(18, 36)">
+      <rect class="box-item-emerald" x="0" y="0" width="194" height="46" />
+      <text class="sketch-text" x="10" y="19">LuminaChatDB</text>
+      <text class="sketch-subtext" x="10" y="34">Threads, Messages &amp; Sparks</text>
+    </g>
+
+    <!-- Card 2 -->
+    <g transform="translate(226, 36)">
+      <rect class="box-item-emerald" x="0" y="0" width="194" height="46" />
+      <text class="sketch-text" x="10" y="19">LuminaHighlightDB</text>
+      <text class="sketch-subtext" x="10" y="34">Web Page Annotations</text>
+    </g>
+
+    <!-- Card 3 -->
+    <g transform="translate(434, 36)">
+      <rect class="box-item-emerald" x="0" y="0" width="194" height="46" />
+      <text class="sketch-text" x="10" y="19">LuminaAttachmentDB</text>
+      <text class="sketch-subtext" x="10" y="34">Binary Files &amp; Knowledge</text>
+    </g>
+
+    <!-- Card 4 -->
+    <g transform="translate(642, 36)">
+      <rect class="box-item-emerald" x="0" y="0" width="200" height="46" />
+      <text class="sketch-text" x="10" y="19">chrome.storage.local</text>
+      <text class="sketch-subtext" x="10" y="34">Settings, Keys &amp; Sync State</text>
+    </g>
+  </g>
+
+  <!-- Connectors L3 -> L1/L2 -->
+  <path class="sketch-line" d="M 230 372 L 230 404" marker-end="url(#sketch-arrow)" />
+  <path class="sketch-line" d="M 690 372 L 690 404" marker-end="url(#sketch-arrow)" />
+
+  <!-- ==================== LAYER 2 & LAYER 1 ==================== -->
+  <g transform="translate(30, 404)">
+    <!-- Layer 2: Content Scripts (Left) -->
+    <g id="layer-2" transform="translate(0, 0)">
+      <rect class="box-layer" x="0" y="0" width="418" height="152" />
+      <text class="sketch-title" x="18" y="24">Content Script &amp; In-Page (src/content/)</text>
+      
+      <g transform="translate(18, 38)">
+        <rect class="box-item-amber" x="0" y="0" width="382" height="44" />
+        <text class="sketch-text" x="10" y="18">Selection Floating Action Bar</text>
+        <text class="sketch-subtext" x="10" y="33">Translate / Explain / Proofread DOM Actions</text>
+      </g>
+
+      <g transform="translate(18, 92)">
+        <rect class="box-item-amber" x="0" y="0" width="382" height="44" />
+        <text class="sketch-text" x="10" y="18">Web Extractors &amp; Annotations</text>
+        <text class="sketch-subtext" x="10" y="33">DOM Extractors, PDF Parser &amp; Highlighting</text>
+      </g>
+    </g>
+
+    <!-- Bi-directional IPC -->
+    <path class="sketch-line-dash" d="M 418 480 L 442 480" marker-end="url(#sketch-arrow-bidir)" marker-start="url(#sketch-arrow-bidir)" />
+
+    <!-- Layer 1: Extension Runtime (Right) -->
+    <g id="layer-1" transform="translate(442, 0)">
+      <rect class="box-layer" x="0" y="0" width="418" height="152" />
+      <text class="sketch-title" x="18" y="24">Extension Runtime (src/background/)</text>
+      
+      <g transform="translate(18, 38)">
+        <rect class="box-item-slate" x="0" y="0" width="382" height="44" />
+        <text class="sketch-text" x="10" y="18">Manifest V3 Background Service Worker</text>
+        <text class="sketch-subtext" x="10" y="33">Long-lived Ports ('lumina-chat-stream'), Auto-Naming</text>
+      </g>
+
+      <g transform="translate(18, 92)">
+        <rect class="box-item-slate" x="0" y="0" width="382" height="44" />
+        <text class="sketch-text" x="10" y="18">Side Panel &amp; Offscreen Audio</text>
+        <text class="sketch-subtext" x="10" y="33">Window Bindings, PCM Capture &amp; Storage Cleanup</text>
+      </g>
+    </g>
+  </g>
+</svg>

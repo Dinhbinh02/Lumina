@@ -1,4 +1,3 @@
-import { NexusAnnotationDB } from './highlight_db.js';
 import { NexusChatDB } from './chat_db.js';
 
 export async function runNexusMigrations() {
@@ -7,34 +6,6 @@ export async function runNexusMigrations() {
         const keysToRemove = [];
         for (const key of Object.keys(allLocalData)) {
             if (key.startsWith('highlights_')) {
-                const legacyHighlights = allLocalData[key] || [];
-                if (Array.isArray(legacyHighlights) && legacyHighlights.length > 0) {
-                    const flatHighlights = legacyHighlights.map(h => {
-                        if (Array.isArray(h)) return h;
-                        if (!h || !h.rangeData) return null;
-                        return [
-                            h.id,
-                            h.color,
-                            Array.isArray(h.rangeData.startPath) ? h.rangeData.startPath.join('/') : '',
-                            h.rangeData.startOffset,
-                            Array.isArray(h.rangeData.endPath) ? h.rangeData.endPath.join('/') : '',
-                            h.rangeData.endOffset,
-                            h.rangeData.text || '',
-                            h.timestamp || Date.now()
-                        ];
-                    }).filter(Boolean);
-                    
-                    if (flatHighlights.length > 0) {
-                        try {
-                            const existing = await NexusAnnotationDB.get(key);
-                            if (!existing || existing.length === 0) {
-                                await NexusAnnotationDB.put(key, flatHighlights);
-                            }
-                        } catch (dbErr) {
-                            console.error(`[Nexus Migration] Failed to migrate highlights for key: ${key}`, dbErr);
-                        }
-                    }
-                }
                 keysToRemove.push(key);
             }
             
@@ -104,17 +75,6 @@ export async function runNexusMigrations() {
             }
             
             if (key.startsWith('highlights_')) {
-                const legacyHighlights = allData[key] || [];
-                if (Array.isArray(legacyHighlights) && legacyHighlights.length > 0) {
-                    const flatHighlights = legacyHighlights.map(serializeHighlight).filter(Boolean);
-                    if (flatHighlights.length > 0) {
-                        try {
-                            await NexusAnnotationDB.put(key, flatHighlights);
-                        } catch (dbErr) {
-                            console.error(`[Nexus Migration] Failed to save highlights for key: ${key}`, dbErr);
-                        }
-                    }
-                }
                 keysToRemove.push(key);
             }
         }

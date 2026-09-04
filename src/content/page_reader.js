@@ -1,5 +1,4 @@
-import { YoutubeUtils } from '../helpers/youtube_utils.js';
-import { NexusToken } from '../core/ai/token_utils.js';
+import { NexusToken } from '../utils/token_utils.js';
 
 let lastExtractedContent = null;
 let lastExtractedUrl = "";
@@ -35,8 +34,7 @@ export function getVisibleText(node) {
     const classStr = typeof el.className === 'string' ? el.className.toLowerCase() : '';
     if (el.getAttribute('role') === 'button' ||
         classStr.includes('btn') ||
-        classStr.includes('button') ||
-        el.classList.contains('nexus-dict-play-btn')) {
+        classStr.includes('button')) {
         return '';
     }
     if (tag === 'a' && (
@@ -219,11 +217,6 @@ export async function extractMainContent(doc = document, forceRefresh = false) {
 }
 
 export async function performExtraction(doc, url) {
-    const isYouTube = typeof YoutubeUtils !== 'undefined' && YoutubeUtils.isYouTubeVideo(url);
-    let youtubeTranscript = "";
-    if (isYouTube) {
-        youtubeTranscript = await YoutubeUtils.fetchTranscript(url);
-    }
     let result = {
         url: url,
         title: document.title,
@@ -312,9 +305,6 @@ export async function performExtraction(doc, url) {
                 }
             }
         });
-        if (youtubeTranscript) {
-            finalMarkdown += "\n\n--- [Video Transcript] ---\n\n" + youtubeTranscript;
-        }
         result.content = segmentsCount > 0 ? finalMarkdown : `[Fallback Page Text]:\n${doc.body ? doc.body.innerText : ''}`;
         return result;
     } catch (error) {

@@ -4,41 +4,90 @@ const fs = require('fs');
 
 const isWatch = process.argv.includes('--watch');
 
-async function buildBlockNote() {
-    const entry = path.resolve(__dirname, 'tools/blocknote_entry.jsx');
-    const outfile = path.resolve(__dirname, 'lib/vendor/blocknote.js');
-    if (!fs.existsSync(entry)) return;
-    
-    await esbuild.build({
-        entryPoints: [entry],
-        bundle: true,
-        outfile: outfile,
-        loader: { '.js': 'jsx', '.jsx': 'jsx' },
-        conditions: ['style'],
-        define: { 'process.env.NODE_ENV': '"production"' },
-        minify: false,
-        sourcemap: false
-    });
+function copyDirSync(src, dest, filter) {
+    if (!fs.existsSync(src)) return;
+    fs.mkdirSync(dest, { recursive: true });
+    const entries = fs.readdirSync(src, { withFileTypes: true });
+
+    for (const entry of entries) {
+        if (entry.name === '.DS_Store') continue;
+
+        const srcPath = path.join(src, entry.name);
+        const destPath = path.join(dest, entry.name);
+
+        if (filter && !filter(srcPath, entry)) continue;
+
+        if (entry.isDirectory()) {
+            copyDirSync(srcPath, destPath, filter);
+        } else {
+            fs.copyFileSync(srcPath, destPath);
+        }
+    }
+}
+
+function syncStaticAssets() {
+    const distDir = path.resolve(__dirname, 'dist');
+
+    // 1. Manifest & DNR rules
+    if (fs.existsSync(path.resolve(__dirname, 'manifest.json'))) {
+        fs.copyFileSync(
+            path.resolve(__dirname, 'manifest.json'),
+            path.resolve(distDir, 'manifest.json')
+        );
+    }
+    if (fs.existsSync(path.resolve(__dirname, 'rules.json'))) {
+        fs.copyFileSync(
+            path.resolve(__dirname, 'rules.json'),
+            path.resolve(distDir, 'rules.json')
+        );
+    }
+
+    // 2. Static assets & libraries
+    copyDirSync(path.resolve(__dirname, 'src/assets'), path.resolve(distDir, 'assets'));
+    copyDirSync(path.resolve(__dirname, 'src/lib'), path.resolve(distDir, 'lib'));
+
+    if (fs.existsSync(path.resolve(__dirname, '_locales'))) {
+        copyDirSync(path.resolve(__dirname, '_locales'), path.resolve(distDir, '_locales'));
+    }
+
+    // 3. Static HTML / assets inside src/pages/
+    // Copy non-entry files (html, css, static js) to dist/pages/
+    copyDirSync(
+        path.resolve(__dirname, 'src/pages'),
+        path.resolve(distDir, 'pages'),
+        (srcPath, entry) => {
+            // Exclude source folders that are compiled into bundles
+            if (entry.isDirectory() && (entry.name === 'controllers' || entry.name === 'styles')) {
+                return false;
+            }
+            // Exclude JS entries that esbuild compiles
+            if (srcPath.endsWith('src/pages/nexus/index.js') ||
+                srcPath.endsWith('src/pages/nexus/workspace.js') ||
+                srcPath.endsWith('src/pages/popup/index.js')) {
+                return false;
+            }
+            return true;
+        }
+    );
 }
 
 async function buildNexusWorkspace() {
     const jsEntry = path.resolve(__dirname, 'src/pages/nexus/index.js');
-    const jsOut = path.resolve(__dirname, 'pages/nexus/nexus.bundle.js');
+    const jsDistOut = path.resolve(__dirname, 'dist/pages/nexus/nexus.bundle.js');
+
     const cssEntry = path.resolve(__dirname, 'src/pages/nexus/styles/index.css');
-    const cssOut = path.resolve(__dirname, 'pages/nexus/nexus.bundle.css');
+    const cssDistOut = path.resolve(__dirname, 'dist/pages/nexus/nexus.bundle.css');
 
     if (fs.existsSync(jsEntry)) {
         const jsContext = await esbuild.context({
             entryPoints: [jsEntry],
             bundle: true,
-            outfile: jsOut,
+            outfile: jsDistOut,
             format: 'iife',
             target: ['chrome110'],
+            minify: !isWatch,
             sourcemap: false
         });
-
-
-
 
         if (isWatch) {
             await jsContext.watch();
@@ -52,7 +101,7 @@ async function buildNexusWorkspace() {
         const cssContext = await esbuild.context({
             entryPoints: [cssEntry],
             bundle: true,
-            outfile: cssOut,
+            outfile: cssDistOut,
             loader: {
                 '.svg': 'dataurl',
                 '.woff': 'dataurl',
@@ -60,6 +109,7 @@ async function buildNexusWorkspace() {
                 '.ttf': 'dataurl',
                 '.png': 'dataurl'
             },
+            minify: !isWatch,
             sourcemap: false
         });
 
@@ -74,16 +124,16 @@ async function buildNexusWorkspace() {
 
 async function buildBackground() {
     const entry = path.resolve(__dirname, 'src/background/index.js');
-    const outfile = path.resolve(__dirname, 'scripts/background.bundle.js');
-    const distOutfile = path.resolve(__dirname, 'dist/background.bundle.js');
+    const distOutfile = path.resolve(__dirname, 'dist/scripts/background.bundle.js');
     if (!fs.existsSync(entry)) return;
 
     const ctx = await esbuild.context({
         entryPoints: [entry],
         bundle: true,
-        outfile: outfile,
+        outfile: distOutfile,
         format: 'esm',
         target: ['chrome110'],
+        minify: !isWatch,
         sourcemap: false
     });
 
@@ -92,23 +142,21 @@ async function buildBackground() {
     } else {
         await ctx.rebuild();
         await ctx.dispose();
-        fs.copyFileSync(outfile, distOutfile);
     }
 }
 
-
 async function buildContent() {
     const entry = path.resolve(__dirname, 'src/content/index.js');
-    const outfile = path.resolve(__dirname, 'scripts/content.bundle.js');
-    const distOutfile = path.resolve(__dirname, 'dist/content.bundle.js');
+    const distOutfile = path.resolve(__dirname, 'dist/scripts/content.bundle.js');
     if (!fs.existsSync(entry)) return;
 
     const ctx = await esbuild.context({
         entryPoints: [entry],
         bundle: true,
-        outfile: outfile,
+        outfile: distOutfile,
         format: 'iife',
         target: ['chrome110'],
+        minify: !isWatch,
         sourcemap: false
     });
 
@@ -117,21 +165,21 @@ async function buildContent() {
     } else {
         await ctx.rebuild();
         await ctx.dispose();
-        fs.copyFileSync(outfile, distOutfile);
     }
 }
 
 async function buildPopup() {
-    const entry = path.resolve(__dirname, 'src/popup/index.js');
-    const outfile = path.resolve(__dirname, 'pages/popup/popup.bundle.js');
+    const entry = path.resolve(__dirname, 'src/pages/popup/index.js');
+    const distOutfile = path.resolve(__dirname, 'dist/pages/popup/popup.bundle.js');
     if (!fs.existsSync(entry)) return;
 
     const ctx = await esbuild.context({
         entryPoints: [entry],
         bundle: true,
-        outfile: outfile,
+        outfile: distOutfile,
         format: 'iife',
         target: ['chrome110'],
+        minify: !isWatch,
         sourcemap: false
     });
 
@@ -145,17 +193,23 @@ async function buildPopup() {
 
 async function run() {
     const distDir = path.resolve(__dirname, 'dist');
-    if (!fs.existsSync(distDir)) {
-        fs.mkdirSync(distDir, { recursive: true });
+    
+    console.log('[Nexus Build] Cleaning and preparing dist folder...');
+    if (!isWatch && fs.existsSync(distDir)) {
+        fs.rmSync(distDir, { recursive: true, force: true });
     }
+    fs.mkdirSync(distDir, { recursive: true });
 
-    console.log('[Nexus Build] Compiling packages...');
-    await buildBlockNote();
+    console.log('[Nexus Build] Syncing static files & assets to dist/ ...');
+    syncStaticAssets();
+
+    console.log('[Nexus Build] Compiling packages with esbuild...');
     await buildNexusWorkspace();
     await buildBackground();
     await buildContent();
     await buildPopup();
-    console.log('[Nexus Build] Build completed successfully.');
+
+    console.log('[Nexus Build] Build completed successfully. All extension files ready in dist/ !');
 
     if (isWatch) {
         console.log('[Nexus Build] Watching for file changes in src/ ...');
@@ -166,4 +220,3 @@ run().catch((err) => {
     console.error('[Nexus Build Error]', err);
     process.exit(1);
 });
-

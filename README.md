@@ -33,11 +33,11 @@ presentation_layer: "Presentation Layer (Workspace UI)" {
   modals: "Modals & Side Panels\n(Settings / Search / History)"
 }
 
-service_layer: "Core Services & AI Engines (src/core/)" {
+service_layer: "Core & Data Services (src/db/ & src/utils/)" {
   ai_stream: "AI Streaming Dispatcher\n(Multi-provider & Key Rotation)"
-  audio_engine: "PCM 16-bit 24kHz Audio Engine\n(Gemini Live WebSocket)"
   tts_manager: "TTS Synthesis Manager\n(Voice Queue & Audio Fetch)"
   auth_sync: "OAuth & Drive Sync\n(Chrome Identity API)"
+  crypto: "AES-GCM Encryption\n(Sync Payload Security)"
 }
 
 persistence_layer: "Persistence Layer (IndexedDB / Local Storage)" {
@@ -49,12 +49,12 @@ persistence_layer: "Persistence Layer (IndexedDB / Local Storage)" {
 
 content_layer: "Content Script & In-Page (src/content/)" {
   action_bar: "Selection Floating Action Bar\n(Translate / Explain / Proofread)"
-  extractors: "Web Extractors & Annotations\n(YouTube Transcripts, PDF Parser)"
+  extractors: "Web Extractors & Annotations\n(DOM Text, PDF Parser)"
 }
 
 runtime_layer: "Extension Runtime (src/background/)" {
   service_worker: "Manifest V3 Background Worker\n(Long-lived Ports, Auto-Naming)"
-  sidepanel_offscreen: "Side Panel & Offscreen Audio\n(Window Bindings, PCM Capture)"
+  sidepanel_offscreen: "Side Panel & Offscreen Bridge\n(Window Bindings & Audio)"
 }
 
 presentation_layer -> service_layer: Invokes services
@@ -72,21 +72,20 @@ service_layer <-> runtime_layer: Port streaming
    - Manages Side Panel window attachments, offscreen audio document bridging, token bucket management, and unified long-lived messaging channels (`lumina-chat-stream`).
    - Handles multi-provider model routing, automated API key rotation, concurrent auto-naming, and Google Drive debounced synchronization.
 
-2. **Content Script & In-Page Injection Layer (`src/content/`, `src/helpers/`)**
+2. **Content Script & In-Page Injection Layer (`src/content/`)**
    - Coordinates DOM selection events, in-page annotation highlighting, and contextual floating action bars.
-   - Houses document extractors for web context harvesting, YouTube transcript extraction, and local PDF/DOM text parsing.
+   - Houses document extractors for web context harvesting and local PDF/DOM text parsing.
 
-3. **Core Services & Engine Layer (`src/core/`)**
-   - Real-time bidirectional PCM audio processing (16-bit 24kHz) for low-latency voice streaming.
-   - Multimodal Gemini Live WebSocket connectivity and client-side TTS synthesis management.
-   - Token budgeting, memory indexing, and OAuth identity orchestration via Chrome Identity API.
+3. **Core Services & Utils Layer (`src/utils/`, `src/components/cores/`)**
+   - Stream parser, markdown/math renderers, code syntax highlighters, memory indexing.
+   - Token budgeting, location helpers, file processing, and Chrome messaging utilities.
 
 4. **Persistence & Data Storage Layer (`src/db/`)**
-   - Repository-based architecture backed by IndexedDB.
-   - Dedicated object stores for chat sessions and message threads (`LuminaChatDB`), highlights and annotations (`LuminaHighlightDB`), media attachments (`LuminaAttachmentDB`), and audio cache (`LuminaAudioCacheDB`).
+   - Repository-based architecture backed by IndexedDB and AES-GCM encryption.
+   - Dedicated object stores for chat sessions and message threads (`LuminaChatDB`), highlights and annotations (`LuminaHighlightDB`), media attachments (`LuminaAttachmentDB`), and TTS audio cache.
    - Migration pipelines ensuring schema backwards compatibility across extension revisions.
 
-5. **UI & Component Layer (`src/components/`, `src/pages/`, `src/popup/`)**
+5. **UI & Component Layer (`src/components/`, `src/pages/`)**
    - Workspace interface supporting multi-tab management, split view layouts, responsive sidebars, and customizable theme design tokens.
    - Sparks agent studio with dedicated system prompt overrides, knowledge attachment binding, and live interactive sandbox preview.
    - BlockNote-powered rich document workspace integrated alongside chat streams.
@@ -156,30 +155,20 @@ service_layer <-> runtime_layer: Port streaming
 ## Repository Structure
 
 ```text
-Lumina/
+Nexus/
 ├── manifest.json                  # Manifest V3 extension definition and permission scopes
 ├── package.json                   # Dependencies, build scripts, and metadata
 ├── build.js                       # esbuild build and watch compilation pipeline
-├── assets/                        # Static icons, fonts, and media files
 ├── dist/                          # Compiled distribution artifacts
-├── lib/
-│   └── vendor/                    # Third-party libraries (BlockNote, KaTeX, Marked, Highlight.js)
-├── pages/
-│   ├── lumina/                    # Main Lumina workspace HTML and compiled bundle output
-│   ├── offscreen/                 # Offscreen audio capture and playback document
-│   └── popup/                     # Quick action extension popup interface
-├── scripts/                       # Output bundles for content scripts and service workers
 ├── src/
+│   ├── assets/                    # Static icons, fonts, templates
 │   ├── background/                # Background service worker modules and streaming services
-│   ├── components/                # Modular UI components (chat, notes, sparks, modals, panels)
+│   ├── components/                # Modular UI components (cores, features, ui, widgets)
 │   ├── content/                   # Content scripts, floating action bar, and annotation DOM handlers
-│   ├── core/                      # Core runtime engines (audio, Gemini live, TTS, memory, auth)
-│   ├── db/                        # IndexedDB database schemas and repository wrappers
-│   ├── helpers/                   # Document extractors, YouTube parser, selection tools
-│   ├── pages/                     # Workspace view controllers, styles, and entrypoints
-│   ├── popup/                     # Popup view logic and quick launcher controllers
-│   └── shared/                    # Shared types, constants, and utilities
-└── tools/                         # BlockNote compilation entry and developer utilities
+│   ├── db/                        # IndexedDB schemas, Drive sync, crypto, and auth
+│   ├── lib/                       # Third-party libraries (KaTeX, Marked, Highlight.js)
+│   ├── pages/                     # Workspace view controllers, styles, and popup
+│   └── utils/                     # Shared utilities, constants, messaging, storage
 ```
 
 ---
@@ -195,8 +184,8 @@ Lumina utilizes `esbuild` to compile and bundle modern JavaScript/JSX and CSS in
 | `src/pages/lumina/index.js` | `pages/lumina/lumina.bundle.js` | IIFE | Chrome 110+ |
 | `src/pages/lumina/styles/index.css` | `pages/lumina/lumina.bundle.css` | CSS Bundle | Chrome 110+ |
 | `src/background/index.js` | `scripts/background.bundle.js` | ESM | Chrome Service Worker |
-| `src/content/content_script.js` | `scripts/content.bundle.js` | IIFE | Chrome Content Script |
-| `tools/blocknote_entry.jsx` | `lib/vendor/blocknote.js` | ESM/JSX Bundle | Browser / Workspace |
+| `src/content/index.js` | `scripts/content.bundle.js` | IIFE | Chrome Content Script |
+| `tools/blocknote_entry.jsx` | `lib/blocknote.js` | ESM/JSX Bundle | Browser / Workspace |
 
 ---
 

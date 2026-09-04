@@ -1,6 +1,6 @@
 import { detectMediaType, processAttachments, processAttachmentsForGemini, readOpfsFileAsBase64 } from './media_processor.js';
-import { UserMemory } from '../core/ai/memory.js';
-import { UserLocation } from '../core/ai/location.js';
+import { UserMemory } from '../components/cores/memory.js';
+import { UserLocation } from '../utils/location.js';
 
 const sessionPorts = new Map();
 const sessionControllers = new Map();
@@ -377,26 +377,7 @@ Server Actions with unguessable action IDs and dead code elimination for server-
 </BentoItem>
 </BentoGrid>
 
-</component_library>
-
-[Nexus Canvas — Long Documents & Full Web Apps]
-The Nexus Canvas is a dedicated side-by-side workspace next to the conversation.
-- Canvas Activation Gate (Strict): Use Canvas ONLY when the user explicitly asks to open a dedicated side-panel project or write a long document/article (> 300 words) using keywords like "open canvas", "create canvas document", "write in canvas". All interactive tools, mini-apps, algorithms, HTML5 Canvas simulations, and physics visualizers MUST be generated as inline <GenerateWidget> directly inside the chat.
-- Do NOT use Canvas for: interactive widgets, simulations, calculators, short code snippets, quick scripts, or terminal commands.
-- Commands:
-1. Create Document:
-<nexus-canvas-create name="Document Name" type="code/html">
-...content here...
-</nexus-canvas-create>
-(Types: "document", "code/html", "code/react", "code/javascript", "code/css", "code/python").
-2. Update Document:
-<nexus-canvas-update name="Document Name">
-<pattern>.*</pattern>
-<replacement>...new content...</replacement>
-</nexus-canvas-update>
-
-[YouTube]
-\`![Title](youtube://id)\` or \`![Title](youtube://search?q=query_keywords)\`.`;
+</component_library>\n`;
 
     let targetOververbosity = 4;
     if (requestOptions.oververbosity) {
@@ -691,13 +672,11 @@ async function buildApiPayload(msgs, currentQ, sysPrompt, activeKey, params) {
 }
 
 async function getModelChain(type = 'text', preferredModel = null) {
-    const data = await chrome.storage.local.get(['models', 'providers', 'provider', 'model', 'lastUsedModel', 'dictProvider', 'dictModel']);
+    const data = await chrome.storage.local.get(['models', 'providers', 'provider', 'model', 'lastUsedModel']);
     let chain = [];
     const storedModels = data.models || [];
     if (storedModels.length > 0) {
         chain = [...storedModels];
-    } else if (type === 'dictionary' && data.dictProvider && data.dictModel) {
-        chain = [{ providerId: data.dictProvider, model: data.dictModel }];
     } else {
         chain = [{ providerId: data.provider, model: data.model }];
     }
@@ -1559,25 +1538,11 @@ export function initChatStreamService() {
                     if (!sessionPorts.has(msg.sessionId)) sessionPorts.set(msg.sessionId, new Set());
                     sessionPorts.get(msg.sessionId).add(port);
                 }
-                if (msg.action === 'chat_stream' || msg.action === 'proofread' || msg.action === 'dict_stream') {
+                if (msg.action === 'chat_stream' || msg.action === 'proofread') {
                     try {
                         let question = msg.question;
                         let initialContext = msg.initialContext;
-                        let systemMsg = null;
-                        if (msg.action === 'dict_stream' && msg.word) {
-                            question = `Dictionary entry for: ${msg.word}`;
-                            systemMsg = `You are a professional lexicographer. Provide a concise dictionary entry for the word: "${msg.word}".
-                            Use the structure of Cambridge/Oxford dictionaries but focus on SIMPLICITY and BREVITY.
-                            Format your response in MARKDOWN with:
-                            - **Word** in large bold.
-                            - *UK /.../* and *US /.../* for phonetics.
-                            - __[Part of Speech]__ (e.g. __[noun]__).
-                            - Clear meanings: ONE short, easy-to-understand sentence max.
-                            - Vietnamese translations in parentheses.
-                            - 1-2 example sentences in italics.
-                            Avoid long technical explanations. Be very concise.`;
-                        }
-                        const finalSystemOverride = (msg.options && msg.options.systemOverride) || msg.systemOverride || systemMsg;
+                        const finalSystemOverride = (msg.options && msg.options.systemOverride) || msg.systemOverride;
                         await handleChatStream(
                             msg.messages,
                             initialContext,

@@ -1,4 +1,3 @@
-import { CanvasService } from '../../components/canvas/canvas_service.js';
 import { WidgetRunner } from '../../components/widgets/widget_runner.js';
 import { NexusToast, NexusTooltip, NexusMenu } from '../../components/ui/index.js';
 
@@ -995,7 +994,6 @@ async function initTabs() {
         const data = await chrome.storage.local.get([
             KEYS.tabs,
             KEYS.activeTabIndex,
-            'nexus_youtube_trigger',
             'nexus_session_settings',
             'nexus_sparks',
             'lumina_sparks',
@@ -1063,9 +1061,6 @@ async function initTabs() {
             ensureTabHistoryLoaded(singleTab);
         }, 0);
         activeTabIndex = 0;
-        if (data.nexus_youtube_trigger) {
-            setTimeout(() => handleYouTubeTrigger(data.nexus_youtube_trigger), 100);
-        }
     } catch (e) {
         console.error('[Spotlight] initTabs failed:', e);
     }
@@ -1511,35 +1506,39 @@ function renderTabs() {
         tabEl.className = `nexus-tab ${isActive ? 'active' : ''}`;
         tabEl.dataset.tabIndex = index;
         tabEl.dataset.tabId = tab.id;
-        const temp = document.getElementById('nexus-tabItemTemplate');
-        if (temp && temp.content) {
-            const clone = temp.content.cloneNode(true);
-            const subTabEl = clone.querySelector('.nexus-tab-sub') || clone.firstElementChild;
-            if (subTabEl) {
-                subTabEl.dataset.tabId = tab.id;
-                const titleSpan = subTabEl.querySelector('.nexus-tab-title');
-                if (titleSpan) titleSpan.textContent = tab.title;
-                const closeBtn = subTabEl.querySelector('.nexus-tab-close');
-                if (closeBtn) {
-                    closeBtn.title = 'Close tab';
-                    closeBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        closeTab(tab.id);
-                    };
-                }
-                subTabEl.onmousedown = (e) => {
-                    if (e.target.closest('.nexus-tab-close')) return;
-                    if (e.button !== 0) return;
-                    if (index !== activeTabIndex) {
-                        switchTab(index);
-                    }
-                };
-                tabEl.appendChild(subTabEl);
+        const subTabEl = document.createElement('div');
+        subTabEl.className = 'nexus-tab-sub';
+        subTabEl.dataset.tabId = tab.id;
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'nexus-tab-title';
+        titleSpan.textContent = tab.title;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.type = 'button';
+        closeBtn.className = 'nexus-tab-close';
+        closeBtn.title = 'Close tab';
+        closeBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+        `;
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            closeTab(tab.id);
+        };
+
+        subTabEl.onmousedown = (e) => {
+            if (e.target.closest('.nexus-tab-close')) return;
+            if (e.button !== 0) return;
+            if (index !== activeTabIndex) {
+                switchTab(index);
             }
-        } else {
-            tabEl.textContent = tab.title;
-            tabEl.onclick = () => switchTab(index);
-        }
+        };
+
+        subTabEl.appendChild(titleSpan);
+        subTabEl.appendChild(closeBtn);
+        tabEl.appendChild(subTabEl);
         list.appendChild(tabEl);
     });
     if (newTabBtn) {
@@ -1652,7 +1651,7 @@ function initSpotlightAskSelection() {
     if (window.NexusSelection) {
         NexusSelection.init({
             shadowRoot: null,
-            onSubmit: (query, displayQuery, isDictionary, sourceEntry, range, isTranslate, isAudio) => {
+            onSubmit: (query, displayQuery, sourceEntry, range, isTranslate, isAudio) => {
                 if (isAudio) {
                     playSpotlightAudio(displayQuery);
                     return;
@@ -1662,53 +1661,22 @@ function initSpotlightAskSelection() {
                     handleSubmit(query, [], { mode: 'translate' }, targetTab || null, displayQuery);
                     return;
                 }
-                if (isDictionary) {
-                    const selection = window.getSelection();
-                    const text = selection.toString().trim() || displayQuery;
-                    if (text) {
-                        const finalRange = range || (selection.rangeCount > 0 ? selection.getRangeAt(0) : null);
-                        const rect = finalRange ? finalRange.getBoundingClientRect() : { left: window.innerWidth / 2, bottom: window.innerHeight / 2 };
-                        NexusDictionaryPopup.show(text, {
-                            x: rect.left,
-                            y: rect.bottom + 5,
-                            source: 'cambridge'
-                        });
-                        return;
-                    }
-                }
                 if (window.NexusAnnotation && range) {
                     window.NexusAnnotation.highlight(range);
                 }
                 const targetTab = tabs[activeTabIndex];
-                handleSubmit(query, [], { mode: isDictionary ? 'dictionary' : 'qa' }, targetTab || null, displayQuery);
+                handleSubmit(query, [], { mode: 'qa' }, targetTab || null, displayQuery);
             },
             onTranslate: (text) => {
                 const targetTab = tabs[activeTabIndex];
                 handleSubmit(text, [], { mode: 'translate' }, targetTab || null, text);
-            },
-            onCommentAdded: (span, entry, commentText) => {
-                if (!entry) return;
-                let btn = entry.querySelector('.nexus-send-comment-btn');
-                if (!btn) {
-                    btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'nexus-send-comment-btn';
-                    btn.innerHTML = `
-                        <span class="nexus-svg-icon nexus-icon-send" aria-hidden="true"></span>
-                        <span>Send comment</span>
-                    `;
-                    entry.appendChild(btn);
-                    btn.addEventListener('click', () => {
-                        handleCommentSubmission(entry);
-                    });
-                }
             }
         });
     }
     document.addEventListener('mouseup', (e) => {
         if (window.NexusSelection && NexusSelection.isInteractingWithActionBar) return;
         const path = e.composedPath();
-        const isInsideNexus = path.some(el => el.id === 'nexus-action-bar' || el.id === 'nexus-ask-input-popup' || el.id === 'nexus-shadow-host' || (el.tagName && el.tagName.toLowerCase() === 'nexus-shadow-host'));
+        const isInsideNexus = path.some(el => el.id === 'nexus-action-bar' || el.id === 'nexus-shadow-host' || (el.tagName && el.tagName.toLowerCase() === 'nexus-shadow-host'));
         if (isInsideNexus) return;
         setTimeout(() => {
             const targetEl = (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'))
@@ -1802,7 +1770,7 @@ function initSpotlightAskSelection() {
     });
     document.addEventListener('click', (e) => {
         const path = e.composedPath();
-        const isInsideNexus = path.some(el => el.id === 'nexus-action-bar' || el.id === 'nexus-ask-input-popup' || el.id === 'nexus-shadow-host' || el.id === 'nexus-comment-hover-tooltip' || (el.tagName && el.tagName.toLowerCase() === 'nexus-shadow-host'));
+        const isInsideNexus = path.some(el => el.id === 'nexus-action-bar' || el.id === 'nexus-shadow-host' || (el.tagName && el.tagName.toLowerCase() === 'nexus-shadow-host'));
         if (isInsideNexus || (window.NexusSelection && NexusSelection.isInteractingWithActionBar)) return;
 
         if (window.NexusAnnotation) {
@@ -1816,44 +1784,6 @@ function initSpotlightAskSelection() {
             }
         }
     }, true);
-}
-
-function handleCommentSubmission(entry) {
-    console.log('[Nexus DEBUG] handleCommentSubmission called', { entry });
-    try {
-        const highlights = entry.querySelectorAll('.nexus-comment-highlight');
-        console.log('[Nexus DEBUG] Highlights found:', highlights.length);
-        if (highlights.length === 0) {
-            console.warn('[Nexus] No highlights found in entry for comment submission');
-            return;
-        }
-        let constructedPrompt = "The user has provided feedback on the following parts of the text:\n\n";
-        highlights.forEach((h, idx) => {
-            const originalText = h.textContent.trim();
-            const comment = h.dataset.comment;
-            console.log(`[Nexus DEBUG] Highlight ${idx}: "${originalText}" -> "${comment}"`);
-            constructedPrompt += `- Text: "${originalText}"\n  Comment: "${comment}"\n`;
-        });
-        constructedPrompt += "\nPlease revise the content accordingly.";
-        let targetTab = (activeTabIndex >= 0) ? tabs[activeTabIndex] : null;
-        if (!targetTab) {
-            console.warn('[Nexus DEBUG] No targetTab found by index, searching tabs array...');
-            targetTab = tabs.find(t => t && t.chatUIInstance) || null;
-        }
-        console.log('[Nexus DEBUG] Resolved targetTab:', targetTab ? targetTab.title : 'NULL');
-        if (typeof handleSubmit === 'function') {
-            console.log('[Nexus DEBUG] Calling handleSubmit...');
-            handleSubmit(constructedPrompt, [], { mode: 'proofread' }, targetTab, "Sent comments")
-                .then(() => console.log('[Nexus DEBUG] handleSubmit finished'))
-                .catch(e => console.error('[Nexus DEBUG] handleSubmit error:', e));
-        } else {
-            console.error('[Nexus DEBUG] handleSubmit is NOT a function!');
-        }
-        const btn = entry.querySelector('.nexus-send-comment-btn');
-        if (btn) btn.remove();
-    } catch (err) {
-        console.error('[Nexus] Error in handleCommentSubmission:', err);
-    }
 }
 
 function setupWebSourceTracking() {
@@ -2185,11 +2115,12 @@ function getDomainDisplayName(url) {
 function createWebChipElement(source, selectedSources, nexusTabId) {
     const hasMultipleTabs = source.isSummary;
     const isGhost = source.isGhost;
-    const temp = document.getElementById('nexus-webChipTemplate');
-    const clone = temp.content.cloneNode(true);
-    const chip = clone.querySelector('.nexus-web-chip');
+    const chip = document.createElement('div');
     chip.className = `nexus-web-chip ${source.isActive ? 'is-active' : ''} ${isGhost ? 'is-ghost' : ''}`;
-    chip.removeAttribute('title');
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'chip-title';
+    chip.appendChild(titleSpan);
+
     if (source.isSummary) {
         const totalTokens = selectedSources.reduce((sum, s) => sum + (parseInt(s.tokens) || 0), 0);
         chip.dataset.tokens = totalTokens;
@@ -2220,7 +2151,6 @@ function createWebChipElement(source, selectedSources, nexusTabId) {
             chip.insertBefore(faviconImg, chip.firstChild);
         }
     }
-    const titleSpan = chip.querySelector('.chip-title');
     let displayName = source.displayTitle;
     if (!displayName && !hasMultipleTabs && source.url) {
         displayName = getDomainDisplayName(source.url);
@@ -2823,10 +2753,6 @@ async function init() {
                         if (typeof nexusAppsPanelInstance.refreshStudioPreview === 'function') nexusAppsPanelInstance.refreshStudioPreview();
                     }
                 });
-            }
-        } else if (request.action === 'nexus_highlights_updated') {
-            if (typeof window.NexusAnnotationUI !== 'undefined' && typeof window.NexusAnnotationUI.reload === 'function') {
-                window.NexusAnnotationUI.reload();
             }
         } else if (request.action === 'settings_updated') {
             const size = request.settings.fontSize || (request.settings.globalDefaults?.fontSize);
@@ -3974,18 +3900,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         saveTabsState();
         return;
     }
-    if (extra.mode === 'dictionary' || (text && text.match(/^Define: /i))) {
-        const word = displayQuery || (text ? text.replace(/^Define: /i, '').trim() : '');
-        if (word) {
-            await targetChatUI.handleDictionary(word);
-            if (_activeInputUI) {
-                _activeInputUI.isGenerating = false;
-                _activeInputUI._updateActionBtnState();
-            }
-            saveTabsState();
-            return;
-        }
-    }
     if (extra.mode === 'websource') {
         tabs.filter(t => t.sessionId === currentTab.sessionId).forEach(t => {
             t.chatUIInstance.openWebSource(extra.source, text);
@@ -4284,7 +4198,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         !extra.isRegenerate &&
         !extra.isRecheck &&
         extra.mode !== 'translate' &&
-        extra.mode !== 'dictionary' &&
         extra.mode !== 'proofread' &&
         extra.mode !== 'websource' &&
         currentTab?.sessionId
@@ -4564,9 +4477,9 @@ function setupGlobalListeners() {
             const isMatch = isShortcutMatchImmediate(event, shortcut);
             if (!isMatch) continue;
             if (isEditing) {
-                // If focus is in BlockNote or rich text editor, do not intercept native editing shortcuts (Cmd+B, Cmd+I, Cmd+U, etc.)
-                const isBlockNoteEditor = activeElement && activeElement.closest('.bn-editor, .blocknote-wrapper');
-                if (isBlockNoteEditor && (event.metaKey || event.ctrlKey)) {
+                // If focus is in TipTap or rich text editor, do not intercept native editing shortcuts (Cmd+B, Cmd+I, Cmd+U, etc.)
+                const isRichTextEditor = activeElement && activeElement.closest('.tiptap, .ProseMirror, .tiptap-editor-container');
+                if (isRichTextEditor && (event.metaKey || event.ctrlKey)) {
                     const isRichTextShortcut = ['b', 'i', 'u', 'z', 'y', 'x', 'c', 'v'].includes((event.key || '').toLowerCase());
                     if (isRichTextShortcut) continue;
                 }
@@ -5043,12 +4956,6 @@ function triggerRegenerate(targetUI = null) {
                 tUI._regenEntryType = 'translation';
             }
         }
-    } else if (entryType === 'lookup' || entryType === 'entry') {
-        const wordEl = lastEntry.querySelector('.nexus-dict-word');
-        if (wordEl) {
-            const word = wordEl.textContent.trim();
-            originalQuestion = `Look up and explain the meaning of: "${word}"`;
-        }
     }
     if (!originalQuestion) {
         const questionEl = lastEntry.querySelector('.nexus-chat-question');
@@ -5344,65 +5251,6 @@ function playBase64Audio(base64Data, speed = 1.0) {
     });
 }
 
-function initSpotlightDictLauncher() {
-    if (!nexusDictLauncherBtn) {
-        nexusDictLauncherBtn = document.createElement('div');
-        nexusDictLauncherBtn.className = 'nexus-dict-launcher';
-        nexusDictLauncherBtn.style.position = 'fixed';
-        nexusDictLauncherBtn.style.display = 'none';
-        nexusDictLauncherBtn.style.zIndex = '10001';
-        document.body.appendChild(nexusDictLauncherBtn);
-        nexusDictLauncherBtn.onclick = (e) => {
-            e.stopPropagation();
-            const word = nexusDictLauncherBtn.dataset.word;
-            console.log('[Spotlight Debug] Launcher clicked for word:', word);
-            const x = parseInt(nexusDictLauncherBtn.style.left);
-            const y = parseInt(nexusDictLauncherBtn.style.top) + 38;
-            showSpotlightDictionaryPopup(word, x, y);
-            hideSpotlightDictLauncher();
-        };
-    }
-    nexusDictLauncherBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>`;
-}
-
-function showSpotlightDictLauncher(x, y, word) {
-    initSpotlightDictLauncher();
-    nexusDictLauncherBtn.dataset.word = word;
-    nexusDictLauncherBtn.style.left = x + 'px';
-    nexusDictLauncherBtn.style.top = y + 'px';
-    nexusDictLauncherBtn.style.display = 'flex';
-    console.log('[Spotlight Debug] Showing Dict Launcher at:', x, y, 'word:', word);
-}
-
-function hideSpotlightDictLauncher() {
-    if (nexusDictLauncherBtn) nexusDictLauncherBtn.style.display = 'none';
-}
-
-function showSpotlightDictionaryPopup(word, x, y) {
-    console.log('[Spotlight Debug] Opening Dictionary Popup for:', word);
-    const existing = document.getElementById('nexus-dict-popup');
-    if (existing) existing.remove();
-    const popup = document.createElement('div');
-    popup.id = 'nexus-dict-popup';
-    popup.className = 'nexus-dict-popup nexus-mode-dictionary';
-    popup.style.position = 'fixed';
-    popup.style.top = y + 'px';
-    popup.style.left = x + 'px';
-    popup.style.zIndex = '10002';
-    popup.style.width = '420px';
-    popup.style.height = '420px';
-    popup.style.background = 'white';
-    popup.style.borderRadius = '12px';
-    popup.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)';
-    popup.style.overflow = 'hidden';
-    popup.style.border = '1px solid rgba(0,0,0,0.1)';
-    popup.innerHTML = `
-        <iframe src="https://dictionary.cambridge.org/dictionary/english/${encodeURIComponent(word)}"
-                style="width: 100%; height: 100%; border: none; background: white;"></iframe>
-    `;
-    document.body.appendChild(popup);
-}
-
 window.addEventListener('mousedown', (e) => {
     if (window.mouseupTimer) {
         clearTimeout(window.mouseupTimer);
@@ -5410,14 +5258,8 @@ window.addEventListener('mousedown', (e) => {
     const path = e.composedPath();
     const isInsideAskBtn = path.some(el => el.id === 'nexus-action-bar');
     const isInsideAskInput = path.some(el => el.id === 'nexus-ask-input-popup');
-    const isInsideDictLauncher = path.some(el => el.classList && el.classList.contains && el.classList.contains('nexus-dict-launcher'));
-    const isInsideDictPopup = document.getElementById('nexus-dict-popup')?.contains(e.target) ||
-        path.some(el => (el.id === 'nexus-dict-popup') || (el.classList && el.classList.contains && el.classList.contains('nexus-mode-dictionary')));
     if (!isInsideAskBtn && !isInsideAskInput) {
         if (window.NexusSelection) NexusSelection.hide();
-    }
-    if (!isInsideDictLauncher && !isInsideDictPopup) {
-        document.getElementById('nexus-dict-popup')?.remove();
     }
 }, true);
 
@@ -5429,9 +5271,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
         if (changes.askSelectionPopupEnabled) {
             askSelectionPopupEnabled = !!changes.askSelectionPopupEnabled.newValue;
         }
-        if (changes.nexus_youtube_trigger && changes.nexus_youtube_trigger.newValue) {
-            handleYouTubeTrigger(changes.nexus_youtube_trigger.newValue);
-        }
         if (changes.nexus_sparks) {
             if (typeof sidebarSparksRenderList === 'function') {
                 sidebarSparksRenderList();
@@ -5442,59 +5281,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
         }
     }
 });
-
-async function handleYouTubeTrigger(triggerInfo) {
-    console.log('[Spotlight YT] handleYouTubeTrigger calling with:', triggerInfo);
-    if (!triggerInfo || triggerInfo.action !== 'youtube_ask') return;
-    const activeTab = tabs && tabs[activeTabIndex];
-    console.log('[Spotlight YT] activeTabIndex:', activeTabIndex, 'activeTab exists:', !!activeTab);
-    if (!activeTab) {
-        setTimeout(() => handleYouTubeTrigger(triggerInfo), 200);
-        return;
-    }
-    const handleFoundTab = (ytTab) => {
-        console.log('[Spotlight YT] Processing YouTube tab:', ytTab ? ytTab.id : 'NOT FOUND');
-        if (ytTab) {
-            currentBrowserTab = {
-                tabId: ytTab.id,
-                title: ytTab.title || 'Untitled',
-                url: ytTab.url,
-                favIconUrl: ytTab.favIconUrl
-            };
-            console.log('[Spotlight YT] Pinning to active tab:', activeTab.id);
-            toggleWebSourcePin(currentBrowserTab, true, activeTab.id);
-            chrome.storage.local.remove('nexus_youtube_trigger');
-        } else {
-            console.warn('[Spotlight YT] Could not find any corresponding YouTube tab.');
-        }
-    };
-    if (triggerInfo.tabId) {
-        console.log('[Spotlight YT] Using direct tabId from trigger:', triggerInfo.tabId);
-        chrome.tabs.get(triggerInfo.tabId, (tab) => {
-            if (chrome.runtime.lastError || !tab) {
-                console.log('[Spotlight YT] Direct tabId lookup failed, falling back to query...');
-                performTabQuery();
-            } else {
-                handleFoundTab(tab);
-            }
-        });
-    } else {
-        performTabQuery();
-    }
-    function performTabQuery() {
-        console.log('[Spotlight YT] Querying tabs to find videoId:', triggerInfo.videoId);
-        chrome.tabs.query({ currentWindow: false }, (tabs) => {
-            const ytTab = tabs.find(t => {
-                const url = t.url || '';
-                if (triggerInfo.videoId) {
-                    return url.includes(`v=${triggerInfo.videoId}`) || url.includes(`/shorts/${triggerInfo.videoId}`);
-                }
-                return url.includes('youtube.com/watch') || url.includes('youtube.com/shorts');
-            });
-            handleFoundTab(ytTab);
-        });
-    }
-}
 
 window.loadHistoryIntoNewTab = async function (messages, meta, historySessionId, targetIndex = null) {
     if (typeof window.notesClosePage === 'function') window.notesClosePage();
@@ -6375,25 +6161,7 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             hideSidebarTooltip(e);
         }
     });
-    window.NexusCanvas = CanvasService;
-    window.NexusCanvas.init(() => tabs, () => activeTabIndex);
-
     document.addEventListener('click', (e) => {
-        const card = e.target.closest('.nexus-canvas-card');
-        if (card) {
-            const paneSec = document.getElementById('pane-secondary');
-            const isActive = paneSec && paneSec.classList.contains('canvas-active') && isSplitMode;
-            if (isActive) {
-                const currentTitleInput = document.getElementById('nexus-canvas-title');
-                const cardTitle = card.querySelector('.nexus-canvas-card-title')?.textContent || '';
-                if (currentTitleInput && currentTitleInput.value === cardTitle) {
-                    window.NexusCanvas.hideCanvas();
-                    return;
-                }
-            }
-            window.NexusCanvas.loadVersionFromCard(card, () => tabs, () => activeTabIndex);
-            return;
-        }
 
         const actionBtn = e.target.closest('.nexus-action-chip, .nexus-followup-btn');
         if (actionBtn) {
@@ -6500,26 +6268,6 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
             return;
         }
 
-        // Writing Block: Open / Create in Canvas
-        const writingCanvasBtn = e.target.closest('.nexus-writing-btn-canvas');
-        if (writingCanvasBtn) {
-            const block = writingCanvasBtn.closest('.nexus-writing-block');
-            const activePane = block ? block.querySelector('.nexus-writing-pane.is-active') : null;
-            const titleEl = block ? block.querySelector('.nexus-writing-title') : null;
-            const docTitle = titleEl ? titleEl.textContent.trim() : 'Draft Document';
-            if (activePane && window.NexusCanvas) {
-                const contentEl = activePane.querySelector('.nexus-writing-content');
-                const rawContent = activePane.getAttribute('data-raw-content') ? decodeURIComponent(activePane.getAttribute('data-raw-content')) : (contentEl ? contentEl.innerText : '');
-                if (typeof window.NexusCanvas.createCanvasDocument === 'function') {
-                    window.NexusCanvas.createCanvasDocument(docTitle, 'document', rawContent);
-                }
-                if (typeof window.NexusCanvas.openCanvas === 'function') {
-                    window.NexusCanvas.openCanvas();
-                }
-            }
-            return;
-        }
-
         const carouselDot = e.target.closest('.nexus-carousel-dot');
         if (carouselDot) {
             const container = carouselDot.closest('.nexus-carousel-container');
@@ -6535,176 +6283,5 @@ function startConcurrentAutoNaming(sessionId, modelObj, questionText, images, hi
         }
     });
 
-    let currentGeminiLiveClient = null;
-
-    function initGeminiLiveModal() {
-        const modal = document.getElementById('nexus-live-modal');
-        if (!modal) return;
-
-        modal.style.display = 'flex';
-
-        const statusDot = modal.querySelector('.live-status-dot');
-        const statusText = document.getElementById('nexus-live-status-text');
-        const closeBtn = document.getElementById('nexus-live-close-btn');
-        const micBtn = document.getElementById('nexus-live-mic-toggle');
-        const visionBtn = document.getElementById('nexus-live-vision-toggle');
-        const endBtn = document.getElementById('nexus-live-end-btn');
-        const voiceSelect = document.getElementById('nexus-live-voice-select');
-        const transcriptBox = document.getElementById('nexus-live-transcript-box');
-        const sphere = document.getElementById('nexus-live-sphere');
-
-        if (transcriptBox) {
-            transcriptBox.innerHTML = '<div class="transcript-placeholder">Start talking to Gemini Live...</div>';
-        }
-
-        chrome.storage.local.get(null, (res) => {
-            let apiKey = res.geminiApiKey || '';
-            const providers = res.providers || [];
-            if (!apiKey && Array.isArray(providers)) {
-                let provider = providers.find(p => (p.id === 'gemini' || p.type === 'gemini' || (typeof p.endpoint === 'string' && p.endpoint.includes('generativelanguage.googleapis.com'))) && p.apiKey && p.apiKey.trim().length > 0);
-                if (!provider) {
-                    provider = providers.find(p => p.apiKey && p.apiKey.trim().length > 0 && (p.name?.toLowerCase().includes('gemini') || p.id?.toLowerCase().includes('gemini')));
-                }
-                if (provider && provider.apiKey) {
-                    apiKey = provider.apiKey;
-                }
-            }
-
-            if (apiKey) {
-                const keys = apiKey.split(',').map(k => k.trim()).filter(Boolean);
-                if (keys.length > 0) apiKey = keys[0];
-            }
-
-            if (!apiKey) {
-                alert('Vui lòng cài đặt Gemini API Key trong Settings trước khi sử dụng Gemini Live!');
-                modal.style.display = 'none';
-                if (typeof NexusSettingsModal !== 'undefined') NexusSettingsModal.show();
-                return;
-            }
-
-            const selectedVoice = voiceSelect ? voiceSelect.value : 'Puck';
-
-            currentGeminiLiveClient = new GeminiLiveClient({
-                apiKey: apiKey,
-                modelName: 'gemini-3.1-flash-live-preview',
-                voiceName: selectedVoice,
-                onStatusChange: (status, message) => {
-                    if (statusText) statusText.textContent = message;
-                    if (statusDot) {
-                        statusDot.className = 'live-status-dot';
-                        if (status === 'listening') statusDot.classList.add('active');
-                        if (status === 'speaking') statusDot.classList.add('speaking');
-                    }
-                },
-                onTranscript: (speaker, text) => {
-                    if (!transcriptBox || !text) return;
-                    const placeholder = transcriptBox.querySelector('.transcript-placeholder');
-                    if (placeholder) placeholder.remove();
-
-                    const cleanText = text.trim();
-                    if (!cleanText) return;
-
-                    const lastEntry = transcriptBox.lastElementChild;
-                    if (lastEntry && lastEntry.dataset.speaker === speaker) {
-                        const contentSpan = lastEntry.querySelector('.transcript-content');
-                        if (contentSpan) {
-                            contentSpan.textContent += (contentSpan.textContent ? ' ' : '') + cleanText;
-                        } else {
-                            lastEntry.innerHTML += ' ' + cleanText;
-                        }
-                    } else {
-                        const div = document.createElement('div');
-                        div.className = 'transcript-entry';
-                        div.dataset.speaker = speaker;
-                        const label = speaker === 'user' ? 'You' : 'Gemini';
-                        div.innerHTML = `<strong>${label}:</strong> <span class="transcript-content">${cleanText}</span>`;
-                        transcriptBox.appendChild(div);
-                    }
-                    transcriptBox.scrollTop = transcriptBox.scrollHeight;
-                },
-                onVolumeWave: (volume) => {
-                    if (sphere) {
-                        const scale = 1 + Math.min(volume * 4, 1.2);
-                        sphere.style.transform = `scale(${scale})`;
-                    }
-                },
-                onError: (errMsg) => {
-                    if (statusText) statusText.textContent = 'Error: ' + errMsg;
-                }
-            });
-
-            currentGeminiLiveClient.connect();
-        });
-
-        const closeModal = () => {
-            if (currentGeminiLiveClient) {
-                currentGeminiLiveClient.disconnect();
-                currentGeminiLiveClient = null;
-            }
-            modal.style.display = 'none';
-        };
-
-        if (closeBtn) closeBtn.onclick = closeModal;
-        if (endBtn) endBtn.onclick = closeModal;
-
-        if (micBtn) {
-            let micMuted = false;
-            micBtn.onclick = () => {
-                micMuted = !micMuted;
-                micBtn.classList.toggle('active', micMuted);
-                if (currentGeminiLiveClient && currentGeminiLiveClient.mediaStream) {
-                    currentGeminiLiveClient.mediaStream.getAudioTracks().forEach(t => t.enabled = !micMuted);
-                }
-            };
-        }
-
-        if (visionBtn) {
-            let visionActive = false;
-            visionBtn.onclick = () => {
-                visionActive = !visionActive;
-                visionBtn.classList.toggle('active', visionActive);
-                if (currentGeminiLiveClient) {
-                    currentGeminiLiveClient.toggleVision(visionActive);
-                }
-            };
-        }
-
-        if (voiceSelect) {
-            voiceSelect.onchange = () => {
-                if (currentGeminiLiveClient) {
-                    currentGeminiLiveClient.voiceName = voiceSelect.value;
-                    currentGeminiLiveClient.disconnect();
-                    setTimeout(() => {
-                        initGeminiLiveModal();
-                    }, 300);
-                }
-            };
-        }
-
-        const textForm = document.getElementById('nexus-live-text-form');
-        const textInput = document.getElementById('nexus-live-text-input');
-        if (textForm && textInput) {
-            textForm.onsubmit = (e) => {
-                e.preventDefault();
-                const val = textInput.value.trim();
-                if (val && currentGeminiLiveClient) {
-                    currentGeminiLiveClient.sendTextMessage(val);
-                    if (transcriptBox) {
-                        const placeholder = transcriptBox.querySelector('.transcript-placeholder');
-                        if (placeholder) placeholder.remove();
-                        const div = document.createElement('div');
-                        div.className = 'transcript-entry';
-                        div.dataset.speaker = 'user';
-                        div.innerHTML = `<strong>You:</strong> <span class="transcript-content">${val}</span>`;
-                        transcriptBox.appendChild(div);
-                        transcriptBox.scrollTop = transcriptBox.scrollHeight;
-                    }
-                    textInput.value = '';
-                }
-            };
-        }
-    }
-
-    window.initGeminiLiveModal = initGeminiLiveModal;
-
 })();
+

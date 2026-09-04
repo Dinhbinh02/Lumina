@@ -1,11 +1,131 @@
 import { NexusChatDB } from './chat_db.js';
 import { NexusAttachmentDB } from './attachment_db.js';
-import { escapeHTMLAttr, createObjectUrlFromDataUrl, resolveImagePreviewSrc, reconstructGroups } from './chat_render_utils.js';
-import { CanvasService } from '../components/canvas/canvas_service.js';
-export { escapeHTMLAttr, createObjectUrlFromDataUrl, resolveImagePreviewSrc, reconstructGroups };
+// --- History DOM & Serialization Helpers ---
+(function () {
+    const globalObj = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {});
+    if (!globalObj.NexusRawTextRegistry) {
+        globalObj.NexusRawTextRegistry = new WeakMap();
+    }
 
+    if (typeof Element !== 'undefined' && Element.prototype) {
+        const originalSetAttribute = Element.prototype.setAttribute;
+        const originalGetAttribute = Element.prototype.getAttribute;
+        const originalRemoveAttribute = Element.prototype.removeAttribute;
 
+        Element.prototype.setAttribute = function (name, value) {
+            if (name === 'data-raw-text') {
+                globalObj.NexusRawTextRegistry.set(this, value);
+                const truncated = typeof value === 'string' && value.length > 1000 ? value.substring(0, 1000) + '... (truncated in DOM)' : value;
+                return originalSetAttribute.call(this, name, truncated);
+            }
+            return originalSetAttribute.call(this, name, value);
+        };
 
+        Element.prototype.getAttribute = function (name) {
+            if (name === 'data-raw-text') {
+                if (globalObj.NexusRawTextRegistry.has(this)) {
+                    return globalObj.NexusRawTextRegistry.get(this);
+                }
+            }
+            return originalGetAttribute.call(this, name);
+        };
+
+        Element.prototype.removeAttribute = function (name) {
+            if (name === 'data-raw-text') {
+                globalObj.NexusRawTextRegistry.delete(this);
+            }
+            return originalRemoveAttribute.call(this, name);
+        };
+    }
+})();
+
+export function escapeHTMLAttr(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+export function createObjectUrlFromDataUrl(dataUrl) {
+    if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return null;
+    const commaIdx = dataUrl.indexOf(',');
+    if (commaIdx === -1) return null;
+    const header = dataUrl.slice(0, commaIdx);
+    const base64 = dataUrl.slice(commaIdx + 1);
+    const mimeMatch = header.match(/^data:([^;]+);base64$/i);
+    if (!mimeMatch) return null;
+    try {
+        const mimeType = mimeMatch[1];
+        const binary = atob(base64);
+        const array = [];
+        for (let i = 0; i < binary.length; i++) {
+            array.push(binary.charCodeAt(i));
+        }
+        const blob = new Blob([new Uint8Array(array)], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const globalObj = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {});
+        globalObj.NexusActiveBlobUrls = globalObj.NexusActiveBlobUrls || [];
+        globalObj.NexusActiveBlobUrls.push(url);
+        return url;
+    } catch (e) {
+        console.error('Failed to create object URL from data URL:', e);
+        return null;
+    }
+}
+
+export function resolveImagePreviewSrc(item, src) {
+    if (!src || typeof src !== 'string') return src;
+    if (!src.startsWith('data:image/')) return src;
+    if (item && typeof item === 'object' && item._nexusBlobUrl) {
+        return item._nexusBlobUrl;
+    }
+    const blobUrl = createObjectUrlFromDataUrl(src);
+    if (blobUrl && item && typeof item === 'object') {
+        item._nexusBlobUrl = blobUrl;
+    }
+    return blobUrl || src;
+}
+
+export function reconstructGroups(messages) {
+    const qaGroups = [];
+    let index = 0;
+    const list = Array.isArray(messages) ? messages : [];
+    while (index < list.length) {
+        const group = [];
+        const msg = list[index];
+        if (msg && msg.type === 'context' && index + 1 < list.length) {
+            if (list[index + 1] && list[index + 1].type === 'question') {
+                group.push(msg);
+                index++;
+                group.push(list[index]);
+                index++;
+                while (index < list.length && list[index] && list[index].type !== 'context' && list[index].type !== 'question') {
+                    group.push(list[index]);
+                    index++;
+                }
+                qaGroups.push(group);
+                continue;
+            }
+        }
+        if (msg && msg.type === 'question') {
+            group.push(msg);
+            index++;
+            while (index < list.length && list[index] && list[index].type !== 'context' && list[index].type !== 'question') {
+                group.push(list[index]);
+                index++;
+            }
+            qaGroups.push(group);
+            continue;
+        }
+        group.push(msg);
+        index++;
+        qaGroups.push(group);
+    }
+    return qaGroups;
+}
 
 export const ChatHistoryManager = {
     STORAGE_KEY: 'nexus_chat_sessions',
@@ -69,9 +189,9 @@ export const ChatHistoryManager = {
                 }
                 return msg;
             });
-            
+
             await NexusChatDB.putMessages(activeSessionId, optimizedMessages);
-            
+
             const existingSession = await NexusChatDB.getSession(activeSessionId) || {};
             const isRenamed = existingSession.isRenamed || false;
             const autoNamed = existingSession.autoNamed || false;
@@ -99,7 +219,7 @@ export const ChatHistoryManager = {
             const contentForSnippet = latestAnswer ? String(latestAnswer.content || '') : (messages[0] ? String(messages[0].content || '') : 'No messages');
             const snippet = contentForSnippet.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 100);
             const latestTimestamp = messages.length > 0 ? messages[messages.length - 1].timestamp : timestamp;
-            
+
             const sessionMeta = {
                 id: activeSessionId,
                 title: finalTitle,
@@ -123,7 +243,7 @@ export const ChatHistoryManager = {
                 thinkingLevel: (extraSettings && extraSettings.thinkingLevel) || existingSession.thinkingLevel || null,
                 archived: existingSession.archived || false
             };
-            
+
             await NexusChatDB.putSession(sessionMeta);
 
             if (sparkId) {
@@ -139,22 +259,22 @@ export const ChatHistoryManager = {
                     await chrome.storage.local.set({ nexus_spark_last_settings: sparkSettings });
                 }
             }
-            
+
             if (typeof window !== 'undefined') {
                 window._localSavedSessions = window._localSavedSessions || {};
                 window._localSavedSessions[activeSessionId] = Date.now();
             }
-            
+
             const senderInstanceId = (typeof window !== 'undefined' && window._nexusWindowInstanceId) ? window._nexusWindowInstanceId : null;
             if (!suppressBroadcast) {
-                chrome.runtime.sendMessage({ action: 'nexus_session_updated', sessionId: activeSessionId, source: 'local_save', senderInstanceId }).catch(() => {});
+                chrome.runtime.sendMessage({ action: 'nexus_session_updated', sessionId: activeSessionId, source: 'local_save', senderInstanceId }).catch(() => { });
             }
-            chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated', senderInstanceId }).catch(() => {});
+            chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated', senderInstanceId }).catch(() => { });
         } catch (error) {
             console.error('Failed to save chat history:', error);
         }
     },
-    
+
     createCompletedStepperHTML(query, sourcesCount) {
         const checkIcon = '<svg class="nexus-step-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
         return `
@@ -273,23 +393,23 @@ export const ChatHistoryManager = {
         }
         const history = historyContainer || currentPopup.querySelector('.nexus-chat-history');
         if (!history) return;
-        
+
         const globalObj = typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : {});
         if (globalObj.NexusActiveBlobUrls && globalObj.NexusActiveBlobUrls.length > 0) {
             globalObj.NexusActiveBlobUrls.forEach(url => {
                 try {
                     URL.revokeObjectURL(url);
-                } catch (e) {}
+                } catch (e) { }
             });
             globalObj.NexusActiveBlobUrls = [];
         }
-        
+
         const restoreId = Math.random().toString(36).substr(2, 9);
         history.__activeRestoreId = restoreId;
-        
+
         history.innerHTML = '';
         if (chatData.context) currentContext = chatData.context;
-        
+
         let sparksMap = {};
         if (chatData.sparkId) {
             try {
@@ -299,9 +419,9 @@ export const ChatHistoryManager = {
                 console.error('Failed to load sparks in restoreChat', e);
             }
         }
-        
+
         const processPromises = [];
-        
+
         if (typeof document !== 'undefined' && !document.getElementById('nexus-lazy-load-styles')) {
             const style = document.createElement('style');
             style.id = 'nexus-lazy-load-styles';
@@ -495,7 +615,7 @@ export const ChatHistoryManager = {
                                 answerDiv.setAttribute('data-raw-text', versionContent);
                                 const displayContent = versionContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
                                 const isLmdxComponent = /^<(?:Sequence|Step|Timeline|TimelineEvent|GenerateWidget|ElicitationsGroup|Elicitation|FollowUp|Carousel|Image|WritingBlock|Option|Comparison|Aspect|Metrics|Metric|BentoGrid|BentoItem)/i.test(displayContent.trim());
-                                const isRawHtml = displayContent.trim().startsWith('<') && !displayContent.trim().startsWith('<div class="nexus-canvas-card"') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(displayContent.trim());
+                                const isRawHtml = displayContent.trim().startsWith('<') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(displayContent.trim());
 
                                 if (isRawHtml) {
                                     answerDiv.innerHTML = displayContent;
@@ -548,11 +668,10 @@ export const ChatHistoryManager = {
                             const answerDiv = document.createElement('div');
                             answerDiv.className = 'nexus-chat-answer';
                             answerDiv.setAttribute('data-raw-text', answerMsg.content);
-                            const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                             let displayContent = answerMsg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
-                            displayContent = CanvasService.cleanCanvasTagsFromMarkdown(displayContent, timeStr);
                             const isLmdxComponent = /^<(?:Sequence|Step|Timeline|TimelineEvent|GenerateWidget|ElicitationsGroup|Elicitation|FollowUp|Carousel|Image|WritingBlock|Option|Comparison|Aspect|Metrics|Metric|BentoGrid|BentoItem)/i.test(displayContent.trim());
-                            const isRawHtml = displayContent.trim().startsWith('<') && !displayContent.trim().startsWith('<div class="nexus-canvas-card"') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(displayContent.trim());
+                            const isRawHtml = displayContent.trim().startsWith('<') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(displayContent.trim());
 
                             if (isRawHtml) {
                                 answerDiv.innerHTML = displayContent;
@@ -619,11 +738,10 @@ export const ChatHistoryManager = {
                     const answerDiv = document.createElement('div');
                     answerDiv.className = 'nexus-chat-answer';
                     answerDiv.setAttribute('data-raw-text', msg.content);
-                    const timeStr = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     let displayContent = msg.content.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
-                    displayContent = CanvasService.cleanCanvasTagsFromMarkdown(displayContent, timeStr);
                     const isLmdxComponent = /^<(?:Sequence|Step|Timeline|TimelineEvent|GenerateWidget|ElicitationsGroup|Elicitation|FollowUp|Carousel|Image|WritingBlock|Option|Comparison|Aspect|Metrics|Metric|BentoGrid|BentoItem)/i.test(displayContent.trim());
-                    const isRawHtml = displayContent.trim().startsWith('<') && !displayContent.trim().startsWith('<div class="nexus-canvas-card"') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(displayContent.trim());
+                    const isRawHtml = displayContent.trim().startsWith('<') && !isLmdxComponent && /<\/[a-z0-9]+>$/i.test(displayContent.trim());
 
                     if (isRawHtml) {
                         answerDiv.innerHTML = displayContent;
@@ -680,10 +798,10 @@ export const ChatHistoryManager = {
             const initialPageSize = 10;
             const initialGroups = qaGroups.slice(-initialPageSize);
             const remainingGroups = qaGroups.slice(0, -initialPageSize);
-            
+
             historyContainer.__remainingSessionId = chatData.sessionId;
             historyContainer.__loadedGroupsCount = initialPageSize;
-            
+
             const loadMoreDiv = document.createElement('div');
             loadMoreDiv.className = 'nexus-load-more-history';
             loadMoreDiv.innerHTML = `
@@ -691,7 +809,7 @@ export const ChatHistoryManager = {
             `;
             if (history.__activeRestoreId !== restoreId) return;
             history.appendChild(loadMoreDiv);
-            
+
             for (const group of initialGroups) {
                 if (history.__activeRestoreId !== restoreId) return;
                 await renderGroup(group, history);
@@ -702,40 +820,40 @@ export const ChatHistoryManager = {
                 loadMoreDiv.dataset.loading = 'true';
                 const spinner = loadMoreDiv.querySelector('.nexus-load-more-spinner');
                 if (spinner) spinner.style.display = 'block';
-                
+
                 const loadedCount = historyContainer.__loadedGroupsCount || 10;
                 const allMessages = await NexusChatDB.getMessages(historyContainer.__remainingSessionId).catch(() => []);
                 const allGroups = reconstructGroups(allMessages);
                 const remaining = allGroups.slice(0, -loadedCount);
-                
+
                 if (remaining.length === 0) {
                     loadMoreDiv.remove();
                     return;
                 }
-                
+
                 const chunkSize = 15;
                 const chunk = remaining.slice(-chunkSize);
                 historyContainer.__loadedGroupsCount = loadedCount + chunk.length;
-                
+
                 const oldScrollHeight = historyContainer.scrollHeight;
                 const oldScrollTop = historyContainer.scrollTop;
-                
+
                 const fragment = document.createDocumentFragment();
                 for (const group of chunk) {
                     await renderGroup(group, fragment);
                 }
-                
+
                 if (loadMoreDiv.nextSibling) {
                     history.insertBefore(fragment, loadMoreDiv.nextSibling);
                 } else {
                     history.appendChild(fragment);
                 }
-                
+
                 const newScrollHeight = historyContainer.scrollHeight;
                 historyContainer.scrollTop = (newScrollHeight - oldScrollHeight) + oldScrollTop;
-                
+
                 loadMoreDiv.dataset.loading = 'false';
-                
+
                 if (remaining.length <= chunk.length) {
                     loadMoreObserver.disconnect();
                     loadMoreDiv.remove();
@@ -747,7 +865,7 @@ export const ChatHistoryManager = {
                     await loadNextChunk();
                 }
             }, { root: historyContainer, threshold: 0.1 });
-            
+
             loadMoreObserver.observe(loadMoreDiv);
             loadMoreDiv.addEventListener('click', loadNextChunk);
         }
@@ -863,8 +981,8 @@ export const ChatHistoryManager = {
                     });
                 }
             });
-            chrome.runtime.sendMessage({ action: 'nexus_sessions_deleted', deletedIds: [sessionId] }).catch(() => {});
-            chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+            chrome.runtime.sendMessage({ action: 'nexus_sessions_deleted', deletedIds: [sessionId] }).catch(() => { });
+            chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => { });
             if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
                 NexusSync.triggerDebouncedSync();
             }
@@ -882,7 +1000,7 @@ export const ChatHistoryManager = {
                 meta.isRenamed = true;
                 meta.updatedAt = Date.now();
                 await NexusChatDB.putSession(meta);
-                chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+                chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => { });
                 if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
                     NexusSync.triggerDebouncedSync();
                 }
@@ -928,7 +1046,7 @@ export const ChatHistoryManager = {
                 }
                 await this.deleteSessionWithAttachments(sessionId);
             }
-            chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+            chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => { });
             if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
                 NexusSync.triggerDebouncedSync();
             }
@@ -951,7 +1069,7 @@ export const ChatHistoryManager = {
             if (months === 0) return;
             const retentionMs = months * 30 * 24 * 60 * 60 * 1000;
             const cutoffTime = Date.now() - retentionMs;
-            
+
             const sessions = await NexusChatDB.getAllSessions();
             const deletedSessionIds = [];
             for (const [id, session] of Object.entries(sessions)) {
@@ -963,7 +1081,7 @@ export const ChatHistoryManager = {
             }
             if (deletedSessionIds.length > 0) {
                 chrome.runtime.sendMessage({ action: 'cleanup_opfs_files' });
-                chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => {});
+                chrome.runtime.sendMessage({ action: 'nexus_sessions_index_updated' }).catch(() => { });
                 if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
                     NexusSync.triggerDebouncedSync();
                 }
@@ -1000,7 +1118,7 @@ export const ChatHistoryManager = {
                     for (const item of metadata) {
                         if (item && item.key && item.key.startsWith(sessionPrefix)) {
                             if (!activeIds.has(item.key)) {
-                                await NexusAttachmentDB.delete(item.key).catch(() => {});
+                                await NexusAttachmentDB.delete(item.key).catch(() => { });
                             }
                         }
                     }

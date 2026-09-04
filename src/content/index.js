@@ -1,12 +1,10 @@
-import { NEXUS_DEFAULT_SHORTCUTS } from '../shared/constants.js';
+import { NEXUS_DEFAULT_SHORTCUTS } from '../utils/constants.js';
 import { EventCleanupManager } from './event_cleanup.js';
 import { ShadowHostManager } from './shadow_host.js';
-import { YouTubeButtonManager } from './youtube_bridge.js';
 import { extractMainContent, nexusEstimateTokens, getActiveSelection, getSmartSelectionText, getSentenceContext, getParagraphContext } from './page_reader.js';
 import { playCombinedAudio, stopAudio } from './audio_player.js';
-import { NexusAnnotation } from '../helpers/annotation_utils.js';
-import { NexusSelection } from '../helpers/selection_utils.js';
-import { NexusDictionaryPopup } from '../components/dictionary/dictionary_popup.js';
+import { NexusAnnotation } from './annotation_utils.js';
+import { NexusSelection } from './selection_utils.js';
 
 (() => {
     window.katexLoaded = true;
@@ -95,7 +93,7 @@ import { NexusDictionaryPopup } from '../components/dictionary/dictionary_popup.
     if (window.NexusSelection) {
         NexusSelection.init({
             shadowRoot: nexusShadowRoot,
-            onSubmit: (query, displayQuery, isDictionary, sourceEntry, range, isTranslate, isAudio) => {
+            onSubmit: (query, displayQuery, sourceEntry, range, isTranslate, isAudio) => {
                 if (isAudio) {
                     playCombinedAudio(displayQuery);
                     return;
@@ -104,21 +102,7 @@ import { NexusDictionaryPopup } from '../components/dictionary/dictionary_popup.
                     triggerSidePanelQuery(query, displayQuery, 'translate', range);
                     return;
                 }
-                if (isDictionary) {
-                    const selection = window.getSelection();
-                    const text = selection.toString().trim() || displayQuery;
-                    if (text) {
-                        const rangeToUse = range || (selection.rangeCount > 0 ? selection.getRangeAt(0) : null);
-                        const rect = rangeToUse ? rangeToUse.getBoundingClientRect() : { left: window.innerWidth / 2, bottom: window.innerHeight / 2 };
-                        NexusDictionaryPopup.show(text, {
-                            x: rect.left,
-                            y: rect.bottom + 5,
-                            source: 'dictionary'
-                        });
-                        return;
-                    }
-                }
-                triggerSidePanelQuery(query, displayQuery, isDictionary ? 'dictionary' : 'qa', range);
+                triggerSidePanelQuery(query, displayQuery, 'qa', range);
             }
         });
     }
@@ -259,20 +243,10 @@ import { NexusDictionaryPopup } from '../components/dictionary/dictionary_popup.
         }
     });
 
-    const ytButtonManager = new YouTubeButtonManager();
-    document.addEventListener('yt-navigate-finish', () => {
-        if (window.location.hostname.includes('youtube.com')) {
-            ytButtonManager.init();
-        }
-    });
-    if (window.location.hostname.includes('youtube.com')) {
-        setTimeout(() => ytButtonManager.init(), 1000);
-    }
 
     document.addEventListener('click', (e) => {
         if (isExtensionDisabled) return;
-        const path = e.composedPath();
-        const isInsideNexus = path.some(el => el.id === 'nexus-action-bar' || el.id === 'nexus-ask-input-popup' || el.id === 'nexus-shadow-host' || el.id === 'nexus-comment-hover-tooltip' || (el.tagName && el.tagName.toLowerCase() === 'nexus-shadow-host'));
+        const isInsideNexus = path.some(el => el.id === 'nexus-action-bar' || el.id === 'nexus-shadow-host' || (el.tagName && el.tagName.toLowerCase() === 'nexus-shadow-host'));
         if (isInsideNexus || (window.NexusSelection && NexusSelection.isInteractingWithActionBar)) return;
 
         if (window.NexusAnnotation) {

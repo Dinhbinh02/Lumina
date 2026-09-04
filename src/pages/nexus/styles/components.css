@@ -352,36 +352,7 @@
   margin-bottom: 0;
 }
 
-/* 4. Canvas Type Badges */
-.nexus-canvas-badge.badge-html,
-.nexus-canvas-card.badge-html .nexus-canvas-card-icon {
-  color: #ea4335;
-}
 
-.nexus-canvas-badge.badge-js,
-.nexus-canvas-card.badge-js .nexus-canvas-card-icon {
-  color: #fbbc04;
-}
-
-.nexus-canvas-badge.badge-react,
-.nexus-canvas-card.badge-react .nexus-canvas-card-icon {
-  color: #06b6d4;
-}
-
-.nexus-canvas-badge.badge-css,
-.nexus-canvas-card.badge-css .nexus-canvas-card-icon {
-  color: #4285f4;
-}
-
-.nexus-canvas-badge.badge-py,
-.nexus-canvas-card.badge-py .nexus-canvas-card-icon {
-  color: #34a853;
-}
-
-.nexus-canvas-badge.badge-doc,
-.nexus-canvas-card.badge-doc .nexus-canvas-card-icon {
-  color: var(--nexus-text-secondary);
-}
 
 /* ==========================================================================
    5. Interactive Sandbox Widgets (<GenerateWidget>)
