@@ -623,6 +623,7 @@ export class SyncManager {
                 collectionsCount: Array.isArray(remoteData.nexus_notes_collections) ? remoteData.nexus_notes_collections.length : 0,
                 highlightsCount: Object.keys(remoteData).filter(k => k.startsWith('highlights_')).length,
                 ttsCount: Array.isArray(remoteData.nexus_tts_recordings) ? remoteData.nexus_tts_recordings.filter(r => r && !r.isDeleted).length : 0,
+                appsCount: (remoteData.nexus_custom_apps && typeof remoteData.nexus_custom_apps === 'object') ? Object.keys(remoteData.nexus_custom_apps).length : 0,
                 attachmentsCount: activeAttachmentIds.size
             };
             await chrome.storage.local.set({
@@ -642,6 +643,7 @@ export class SyncManager {
                 }
                 chrome.runtime.sendMessage({ action: 'nexus_notes_updated' }).catch(() => {});
                 chrome.runtime.sendMessage({ action: 'nexus_highlights_updated' }).catch(() => {});
+                chrome.runtime.sendMessage({ action: 'nexus_apps_updated' }).catch(() => {});
                 if (ttsUpdated) {
                     chrome.runtime.sendMessage({ action: 'nexus_tts_updated' }).catch(() => {});
                 }
@@ -773,6 +775,7 @@ export class SyncManager {
                 collectionsCount: Array.isArray(localData.nexus_notes_collections) ? localData.nexus_notes_collections.length : 0,
                 highlightsCount: Object.keys(localData).filter(k => k.startsWith('highlights_')).length,
                 ttsCount: Array.isArray(localData.nexus_tts_recordings) ? localData.nexus_tts_recordings.filter(r => r && !r.isDeleted).length : 0,
+                appsCount: (localData.nexus_custom_apps && typeof localData.nexus_custom_apps === 'object') ? Object.keys(localData.nexus_custom_apps).length : 0,
                 attachmentsCount: Array.from(uploadedBlobSet).filter(n => n.startsWith('att_') || n.startsWith('blob_att_')).length
             };
             await chrome.storage.local.set({

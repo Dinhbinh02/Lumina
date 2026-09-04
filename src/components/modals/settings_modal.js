@@ -2433,10 +2433,12 @@ export class NexusSettingsModal {
         let sessionCount = 0;
         let noteCount = 0;
         let highlightCount = 0;
+        let appsCount = 0;
         if (cloudStats) {
           sessionCount = cloudStats.chatsCount || 0;
           noteCount = cloudStats.notesCount || 0;
           highlightCount = cloudStats.highlightsCount || 0;
+          appsCount = cloudStats.appsCount || 0;
         } else if (res.last_sync_time) {
           if (typeof NexusChatDB !== 'undefined') {
             const sessions = await NexusChatDB.getAllSessions().catch(() => ({}));
@@ -2449,16 +2451,21 @@ export class NexusSettingsModal {
           if (Array.isArray(res.nexus_highlights)) {
             highlightCount = res.nexus_highlights.length;
           }
+          const customAppsRes = await chrome.storage.local.get(['nexus_custom_apps']).catch(() => ({}));
+          appsCount = Object.keys(customAppsRes?.nexus_custom_apps || {}).length;
         }
         if (itemsEl) {
           itemsEl.textContent = `${sessionCount} ${sessionCount === 1 ? 'chat' : 'chats'}`;
         }
         if (breakdownEl) {
-          if (highlightCount > 0) {
-            breakdownEl.textContent = `${noteCount} notes · ${highlightCount} hl`;
-          } else {
-            breakdownEl.textContent = `${noteCount} ${noteCount === 1 ? 'note' : 'notes'}`;
+          const parts = [`${noteCount} ${noteCount === 1 ? 'note' : 'notes'}`];
+          if (appsCount > 0) {
+            parts.push(`${appsCount} ${appsCount === 1 ? 'app' : 'apps'}`);
           }
+          if (highlightCount > 0) {
+            parts.push(`${highlightCount} hl`);
+          }
+          breakdownEl.textContent = parts.join(' · ');
         }
       } catch (e) {
         if (itemsEl) itemsEl.textContent = 'Active';

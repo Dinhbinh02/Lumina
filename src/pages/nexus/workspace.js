@@ -2813,6 +2813,17 @@ async function init() {
             if (typeof nexusTTSPanelInstance !== 'undefined' && nexusTTSPanelInstance) {
                 if (typeof nexusTTSPanelInstance.loadRecordings === 'function') nexusTTSPanelInstance.loadRecordings();
             }
+        } else if (request.action === 'nexus_apps_updated') {
+            if (typeof nexusAppsPanelInstance !== 'undefined' && nexusAppsPanelInstance) {
+                nexusAppsPanelInstance.loadCustomApps().then(() => {
+                    if (typeof nexusAppsPanelInstance.renderCatalog === 'function') nexusAppsPanelInstance.renderCatalog();
+                    if (nexusAppsPanelInstance.currentApp && nexusAppsPanelInstance.customApps[nexusAppsPanelInstance.currentApp.id]) {
+                        nexusAppsPanelInstance.currentApp = nexusAppsPanelInstance.customApps[nexusAppsPanelInstance.currentApp.id];
+                        if (typeof nexusAppsPanelInstance.renderChatMessages === 'function') nexusAppsPanelInstance.renderChatMessages();
+                        if (typeof nexusAppsPanelInstance.refreshStudioPreview === 'function') nexusAppsPanelInstance.refreshStudioPreview();
+                    }
+                });
+            }
         } else if (request.action === 'nexus_highlights_updated') {
             if (typeof window.NexusAnnotationUI !== 'undefined' && typeof window.NexusAnnotationUI.reload === 'function') {
                 window.NexusAnnotationUI.reload();

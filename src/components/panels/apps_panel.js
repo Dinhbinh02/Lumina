@@ -516,6 +516,23 @@ export class AppsPanel {
         }
 
         this.bindStudioInputActions();
+
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
+            chrome.storage.onChanged.addListener((changes, area) => {
+                if (area === 'local' && changes[APPS_STORAGE_KEY]) {
+                    this.customApps = changes[APPS_STORAGE_KEY].newValue || {};
+                    this.renderCatalog();
+                    if (this.currentApp && this.customApps[this.currentApp.id]) {
+                        const updated = this.customApps[this.currentApp.id];
+                        this.currentApp = updated;
+                        if (this.studioTitleInput) this.studioTitleInput.value = updated.name || 'Untitled App';
+                        if (this.studioCodeEditor) this.studioCodeEditor.value = updated.code || '';
+                        this.renderChatMessages();
+                        this.refreshStudioPreview();
+                    }
+                }
+            });
+        }
     }
 
     async initStudioModelSelector() {
@@ -696,6 +713,9 @@ export class AppsPanel {
     async saveCustomApps() {
         try {
             await chrome.storage.local.set({ [APPS_STORAGE_KEY]: this.customApps });
+            if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
+                NexusSync.triggerDebouncedSync();
+            }
         } catch (e) {
             console.error('[AppsPanel] Failed to save custom apps:', e);
         }

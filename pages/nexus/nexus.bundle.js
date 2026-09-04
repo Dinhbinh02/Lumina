@@ -18210,6 +18210,7 @@ ${script}`;
           collectionsCount: Array.isArray(remoteData.nexus_notes_collections) ? remoteData.nexus_notes_collections.length : 0,
           highlightsCount: Object.keys(remoteData).filter((k) => k.startsWith("highlights_")).length,
           ttsCount: Array.isArray(remoteData.nexus_tts_recordings) ? remoteData.nexus_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
+          appsCount: remoteData.nexus_custom_apps && typeof remoteData.nexus_custom_apps === "object" ? Object.keys(remoteData.nexus_custom_apps).length : 0,
           attachmentsCount: activeAttachmentIds.size
         };
         await chrome.storage.local.set({
@@ -18231,6 +18232,8 @@ ${script}`;
           chrome.runtime.sendMessage({ action: "nexus_notes_updated" }).catch(() => {
           });
           chrome.runtime.sendMessage({ action: "nexus_highlights_updated" }).catch(() => {
+          });
+          chrome.runtime.sendMessage({ action: "nexus_apps_updated" }).catch(() => {
           });
           if (ttsUpdated) {
             chrome.runtime.sendMessage({ action: "nexus_tts_updated" }).catch(() => {
@@ -18357,6 +18360,7 @@ ${script}`;
           collectionsCount: Array.isArray(localData.nexus_notes_collections) ? localData.nexus_notes_collections.length : 0,
           highlightsCount: Object.keys(localData).filter((k) => k.startsWith("highlights_")).length,
           ttsCount: Array.isArray(localData.nexus_tts_recordings) ? localData.nexus_tts_recordings.filter((r) => r && !r.isDeleted).length : 0,
+          appsCount: localData.nexus_custom_apps && typeof localData.nexus_custom_apps === "object" ? Object.keys(localData.nexus_custom_apps).length : 0,
           attachmentsCount: Array.from(uploadedBlobSet).filter((n) => n.startsWith("att_") || n.startsWith("blob_att_")).length
         };
         await chrome.storage.local.set({
@@ -31672,6 +31676,22 @@ When modifying an existing app (adding features, changing colors, tweaking layou
         });
       }
       this.bindStudioInputActions();
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.onChanged) {
+        chrome.storage.onChanged.addListener((changes, area) => {
+          if (area === "local" && changes[APPS_STORAGE_KEY]) {
+            this.customApps = changes[APPS_STORAGE_KEY].newValue || {};
+            this.renderCatalog();
+            if (this.currentApp && this.customApps[this.currentApp.id]) {
+              const updated = this.customApps[this.currentApp.id];
+              this.currentApp = updated;
+              if (this.studioTitleInput) this.studioTitleInput.value = updated.name || "Untitled App";
+              if (this.studioCodeEditor) this.studioCodeEditor.value = updated.code || "";
+              this.renderChatMessages();
+              this.refreshStudioPreview();
+            }
+          }
+        });
+      }
     }
     async initStudioModelSelector() {
       try {
@@ -31841,6 +31861,9 @@ ${content}
     async saveCustomApps() {
       try {
         await chrome.storage.local.set({ [APPS_STORAGE_KEY]: this.customApps });
+        if (typeof NexusSync !== "undefined" && typeof NexusSync.triggerDebouncedSync === "function") {
+          NexusSync.triggerDebouncedSync();
+        }
       } catch (e) {
         console.error("[AppsPanel] Failed to save custom apps:", e);
       }
@@ -37481,10 +37504,12 @@ Markets reached historic highs this morning following breakthroughs in artificia
           let sessionCount = 0;
           let noteCount = 0;
           let highlightCount = 0;
+          let appsCount = 0;
           if (cloudStats) {
             sessionCount = cloudStats.chatsCount || 0;
             noteCount = cloudStats.notesCount || 0;
             highlightCount = cloudStats.highlightsCount || 0;
+            appsCount = cloudStats.appsCount || 0;
           } else if (res.last_sync_time) {
             if (typeof NexusChatDB !== "undefined") {
               const sessions = await NexusChatDB.getAllSessions().catch(() => ({}));
@@ -37497,16 +37522,21 @@ Markets reached historic highs this morning following breakthroughs in artificia
             if (Array.isArray(res.nexus_highlights)) {
               highlightCount = res.nexus_highlights.length;
             }
+            const customAppsRes = await chrome.storage.local.get(["nexus_custom_apps"]).catch(() => ({}));
+            appsCount = Object.keys(customAppsRes?.nexus_custom_apps || {}).length;
           }
           if (itemsEl) {
             itemsEl.textContent = `${sessionCount} ${sessionCount === 1 ? "chat" : "chats"}`;
           }
           if (breakdownEl) {
-            if (highlightCount > 0) {
-              breakdownEl.textContent = `${noteCount} notes \xB7 ${highlightCount} hl`;
-            } else {
-              breakdownEl.textContent = `${noteCount} ${noteCount === 1 ? "note" : "notes"}`;
+            const parts = [`${noteCount} ${noteCount === 1 ? "note" : "notes"}`];
+            if (appsCount > 0) {
+              parts.push(`${appsCount} ${appsCount === 1 ? "app" : "apps"}`);
             }
+            if (highlightCount > 0) {
+              parts.push(`${highlightCount} hl`);
+            }
+            breakdownEl.textContent = parts.join(" \xB7 ");
           }
         } catch (e) {
           if (itemsEl) itemsEl.textContent = "Active";
@@ -48346,6 +48376,17 @@ Output only the revised text.`;
         if (typeof nexusTTSPanelInstance !== "undefined" && nexusTTSPanelInstance) {
           if (typeof nexusTTSPanelInstance.loadRecordings === "function") nexusTTSPanelInstance.loadRecordings();
         }
+      } else if (request.action === "nexus_apps_updated") {
+        if (typeof nexusAppsPanelInstance !== "undefined" && nexusAppsPanelInstance) {
+          nexusAppsPanelInstance.loadCustomApps().then(() => {
+            if (typeof nexusAppsPanelInstance.renderCatalog === "function") nexusAppsPanelInstance.renderCatalog();
+            if (nexusAppsPanelInstance.currentApp && nexusAppsPanelInstance.customApps[nexusAppsPanelInstance.currentApp.id]) {
+              nexusAppsPanelInstance.currentApp = nexusAppsPanelInstance.customApps[nexusAppsPanelInstance.currentApp.id];
+              if (typeof nexusAppsPanelInstance.renderChatMessages === "function") nexusAppsPanelInstance.renderChatMessages();
+              if (typeof nexusAppsPanelInstance.refreshStudioPreview === "function") nexusAppsPanelInstance.refreshStudioPreview();
+            }
+          });
+        }
       } else if (request.action === "nexus_highlights_updated") {
         if (typeof window.NexusAnnotationUI !== "undefined" && typeof window.NexusAnnotationUI.reload === "function") {
           window.NexusAnnotationUI.reload();
@@ -52035,6 +52076,7 @@ ${selectedAns.text}`;
       notes: { collectionsCount: 0, notesCount: 0 },
       highlights: { urlCount: 0 },
       tts: { recordingsCount: 0 },
+      apps: { count: 0, list: [] },
       attachments: { count: 0 }
     };
     const allLocal = await chrome.storage.local.get(null);
@@ -52042,6 +52084,15 @@ ${selectedAns.text}`;
       if (isExcludedKey(k) || k.startsWith("nexus_session_")) continue;
       const size = JSON.stringify(v).length;
       stats.storage[k] = { size, preview: JSON.stringify(v).slice(0, 80) };
+    }
+    try {
+      const customAppsRes = await chrome.storage.local.get(["nexus_custom_apps"]);
+      const customApps = customAppsRes.nexus_custom_apps || {};
+      const appList = Object.values(customApps);
+      stats.apps.count = appList.length;
+      stats.apps.list = appList.map((a) => ({ id: a.id, name: a.name, updatedAt: a.updatedAt ? new Date(a.updatedAt).toLocaleString() : "?" }));
+    } catch (e) {
+      stats.apps.error = e.message;
     }
     if (typeof NexusChatDB !== "undefined") {
       try {
@@ -52101,6 +52152,7 @@ ${selectedAns.text}`;
       notes: { collectionsCount: 0, notesCount: 0 },
       highlights: { urlCount: 0 },
       tts: { recordingsCount: 0 },
+      apps: { count: 0, list: [] },
       attachments: { count: 0 },
       driveFiles: []
     };
@@ -52140,6 +52192,10 @@ ${selectedAns.text}`;
     stats.highlights.urlCount = Object.keys(data).filter((k) => k.startsWith("highlights_")).length;
     const cloudTts = data.nexus_tts_recordings || [];
     stats.tts.recordingsCount = cloudTts.filter((r) => r && !r.isDeleted).length;
+    const cloudApps = data.nexus_custom_apps || {};
+    const appList = Object.values(cloudApps);
+    stats.apps.count = appList.length;
+    stats.apps.list = appList.map((a) => ({ id: a.id, name: a.name, updatedAt: a.updatedAt ? new Date(a.updatedAt).toLocaleString() : "?" }));
     const attFiles = (driveFiles || []).filter((f) => f.name.startsWith("att_") && f.name.endsWith(".bin"));
     stats.attachments.count = attFiles.length;
     return { stats, activeToken, rawData: data };
@@ -52202,6 +52258,7 @@ ${selectedAns.text}`;
       "Note collections": localStats.notes.collectionsCount,
       "Highlighted URLs": localStats.highlights.urlCount,
       "TTS recordings": localStats.tts.recordingsCount,
+      "Custom apps": localStats.apps.count,
       "Attachments": localStats.attachments.count
     });
     if (localStats.chats.sessions.length > 0) {
@@ -52242,6 +52299,7 @@ ${selectedAns.text}`;
       "Note collections": cloudStats.notes.collectionsCount,
       "Highlighted URLs": cloudStats.highlights.urlCount,
       "TTS recordings": cloudStats.tts.recordingsCount,
+      "Custom apps": cloudStats.apps.count,
       "Attachments": cloudStats.attachments.count
     });
     if (cloudStats.chats.sessions.length > 0) {
@@ -52257,6 +52315,8 @@ ${selectedAns.text}`;
       "Highlights (cloud)": cloudStats.highlights.urlCount,
       "TTS (local)": localStats.tts.recordingsCount,
       "TTS (cloud)": cloudStats.tts.recordingsCount,
+      "Apps (local)": localStats.apps.count,
+      "Apps (cloud)": cloudStats.apps.count,
       "Attachments (local)": localStats.attachments.count,
       "Attachments (cloud)": cloudStats.attachments.count
     };

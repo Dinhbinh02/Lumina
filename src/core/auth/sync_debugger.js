@@ -8,6 +8,7 @@ async function gatherLocalStats() {
         notes: { collectionsCount: 0, notesCount: 0 },
         highlights: { urlCount: 0 },
         tts: { recordingsCount: 0 },
+        apps: { count: 0, list: [] },
         attachments: { count: 0 }
     };
 
@@ -17,6 +18,16 @@ async function gatherLocalStats() {
         if (isExcludedKey(k) || k.startsWith('nexus_session_')) continue;
         const size = JSON.stringify(v).length;
         stats.storage[k] = { size, preview: JSON.stringify(v).slice(0, 80) };
+    }
+
+    try {
+        const customAppsRes = await chrome.storage.local.get(['nexus_custom_apps']);
+        const customApps = customAppsRes.nexus_custom_apps || {};
+        const appList = Object.values(customApps);
+        stats.apps.count = appList.length;
+        stats.apps.list = appList.map(a => ({ id: a.id, name: a.name, updatedAt: a.updatedAt ? new Date(a.updatedAt).toLocaleString() : '?' }));
+    } catch (e) {
+        stats.apps.error = e.message;
     }
 
     if (typeof NexusChatDB !== 'undefined') {
@@ -83,6 +94,7 @@ async function gatherCloudStats(token) {
         notes: { collectionsCount: 0, notesCount: 0 },
         highlights: { urlCount: 0 },
         tts: { recordingsCount: 0 },
+        apps: { count: 0, list: [] },
         attachments: { count: 0 },
         driveFiles: []
     };
@@ -132,6 +144,11 @@ async function gatherCloudStats(token) {
 
     const cloudTts = data.nexus_tts_recordings || [];
     stats.tts.recordingsCount = cloudTts.filter(r => r && !r.isDeleted).length;
+
+    const cloudApps = data.nexus_custom_apps || {};
+    const appList = Object.values(cloudApps);
+    stats.apps.count = appList.length;
+    stats.apps.list = appList.map(a => ({ id: a.id, name: a.name, updatedAt: a.updatedAt ? new Date(a.updatedAt).toLocaleString() : '?' }));
 
     const attFiles = (driveFiles || []).filter(f => f.name.startsWith('att_') && f.name.endsWith('.bin'));
     stats.attachments.count = attFiles.length;
@@ -208,6 +225,7 @@ export async function debugSync() {
         'Note collections': localStats.notes.collectionsCount,
         'Highlighted URLs': localStats.highlights.urlCount,
         'TTS recordings': localStats.tts.recordingsCount,
+        'Custom apps': localStats.apps.count,
         'Attachments': localStats.attachments.count
     });
 
@@ -256,6 +274,7 @@ export async function debugSync() {
         'Note collections': cloudStats.notes.collectionsCount,
         'Highlighted URLs': cloudStats.highlights.urlCount,
         'TTS recordings': cloudStats.tts.recordingsCount,
+        'Custom apps': cloudStats.apps.count,
         'Attachments': cloudStats.attachments.count
     });
 
@@ -274,6 +293,8 @@ export async function debugSync() {
         'Highlights (cloud)': cloudStats.highlights.urlCount,
         'TTS (local)': localStats.tts.recordingsCount,
         'TTS (cloud)': cloudStats.tts.recordingsCount,
+        'Apps (local)': localStats.apps.count,
+        'Apps (cloud)': cloudStats.apps.count,
         'Attachments (local)': localStats.attachments.count,
         'Attachments (cloud)': cloudStats.attachments.count
     };
