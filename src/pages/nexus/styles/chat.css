@@ -466,41 +466,6 @@ body {
   mask-size: contain;
 }
 
-.nexus-icon-copy {
-  -webkit-mask-image: url("../../../assets/icons/nexus/copy.svg");
-  mask-image: url("../../../assets/icons/nexus/copy.svg");
-}
-
-.nexus-icon-copy-alt {
-  -webkit-mask-image: url("../../../assets/icons/nexus/copy-alt.svg");
-  mask-image: url("../../../assets/icons/nexus/copy-alt.svg");
-}
-
-.nexus-icon-plus {
-  -webkit-mask-image: url("../../../assets/icons/nexus/plus.svg");
-  mask-image: url("../../../assets/icons/nexus/plus.svg");
-}
-
-.nexus-icon-refresh {
-  -webkit-mask-image: url("../../../assets/icons/nexus/refresh.svg");
-  mask-image: url("../../../assets/icons/nexus/refresh.svg");
-}
-
-.nexus-icon-text-check {
-  -webkit-mask-image: url("../../../assets/icons/nexus/text-check.svg");
-  mask-image: url("../../../assets/icons/nexus/text-check.svg");
-}
-
-.nexus-icon-thumbtack {
-  -webkit-mask-image: url("../../../assets/icons/nexus/star.svg");
-  mask-image: url("../../../assets/icons/nexus/star.svg");
-}
-
-.nexus-icon-thumbtack-filled {
-  -webkit-mask-image: url("../../../assets/icons/nexus/star.svg");
-  mask-image: url("../../../assets/icons/nexus/star.svg");
-}
-
 .nexus-action-item .nexus-svg-icon {
   width: 17px !important;
   height: 17px !important;
@@ -577,7 +542,6 @@ body {
   flex-shrink: 0;
 }
 
-.nexus-proofread-toggle svg,
 .nexus-googleai-toggle svg,
 .nexus-translate-toggle svg {
   display: none !important;
@@ -1215,6 +1179,7 @@ body {
   max-width: 100% !important;
   word-wrap: break-word !important;
   cursor: initial !important;
+  padding: 0 !important;
 }
 
 .nexus-spark-message-header {
@@ -1454,78 +1419,6 @@ body {
   min-width: 100%;
   font-weight: var(--nexus-weight-regular) !important;
   font-family: var(--nexus-font-family-monospace) !important;
-}
-
-.nexus-chat-answer pre code .hljs-comment,
-.nexus-chat-answer pre code .hljs-quote {
-  color: #6272a4 !important;
-  font-style: italic !important;
-}
-
-.nexus-chat-answer pre code .hljs-keyword,
-.nexus-chat-answer pre code .hljs-selector-tag,
-.nexus-chat-answer pre code .hljs-addition {
-  color: #ff79c6 !important;
-  font-weight: var(--nexus-weight-bold) !important;
-}
-
-.nexus-chat-answer pre code .hljs-string,
-.nexus-chat-answer pre code .hljs-meta {
-  color: #50fa7b !important;
-}
-
-.nexus-chat-answer pre code .hljs-number,
-.nexus-chat-answer pre code .hljs-literal {
-  color: #bd93f9 !important;
-}
-
-.nexus-chat-answer pre code .hljs-built_in,
-.nexus-chat-answer pre code .hljs-class,
-.nexus-chat-answer pre code .hljs-title {
-  color: #8be9fd !important;
-}
-
-.nexus-chat-answer pre code .hljs-function .hljs-title {
-  color: #50fa7b !important;
-}
-
-.nexus-chat-answer pre code .hljs-params {
-  color: #ffb86c !important;
-}
-
-.nexus-chat-answer pre code .hljs-variable,
-.nexus-chat-answer pre code .hljs-template-variable,
-.nexus-chat-answer pre code .hljs-tag,
-.nexus-chat-answer pre code .hljs-name,
-.nexus-chat-answer pre code .hljs-selector-id,
-.nexus-chat-answer pre code .hljs-selector-class {
-  color: #ff79c6 !important;
-}
-
-.nexus-chat-answer pre code .hljs-attr,
-.nexus-chat-answer pre code .hljs-attribute,
-.nexus-chat-answer pre code .hljs-symbol,
-.nexus-chat-answer pre code .hljs-bullet {
-  color: #f1fa8c !important;
-}
-
-.nexus-chat-answer pre code .hljs-section {
-  color: #8be9fd !important;
-}
-
-.nexus-chat-answer pre code .hljs-type {
-  color: #8be9fd !important;
-}
-
-.nexus-chat-answer pre code .hljs-deletion {
-  color: #ff5555 !important;
-}
-
-.nexus-chat-answer pre ::selection,
-.nexus-chat-answer pre code ::selection,
-.nexus-chat-answer pre span ::selection {
-  background: color-mix(in srgb, rgb(98, 114, 164) 40%, #282a36) !important;
-  color: inherit !important;
 }
 
 .nexus-chat-answer ol,
@@ -1959,23 +1852,12 @@ body {
 }
 
 .nexus-tools-toggle.active svg,
-.nexus-tools-toggle.active-proofread svg,
 .nexus-tools-toggle.active-translate svg {
   display: none !important;
 }
 
-.nexus-tools-toggle.active-proofread {
-  background: #fff9e6 !important;
-  color: #856404 !important;
-  border: none !important;
-}
-
 .nexus-tools-toggle.active:hover {
   background: rgba(var(--nexus-primary-rgb), 0.25) !important;
-}
-
-.nexus-tools-toggle.active-proofread:hover {
-  background: #fff4d1 !important;
 }
 
 [data-theme="dark"] .nexus-tools-toggle.active {
@@ -1983,18 +1865,8 @@ body {
   background: rgba(var(--nexus-primary-rgb), 0.3) !important;
 }
 
-[data-theme="dark"] .nexus-tools-toggle.active-proofread {
-  background: #2a2618 !important;
-  color: #ffc107 !important;
-  border: none !important;
-}
-
 [data-theme="dark"] .nexus-tools-toggle.active:hover {
   background: rgba(var(--nexus-primary-rgb), 0.35) !important;
-}
-
-[data-theme="dark"] .nexus-tools-toggle.active-proofread:hover {
-  background: #363120 !important;
 }
 
 .nexus-upload-btn:hover,
@@ -2162,7 +2034,6 @@ body {
   color: var(--nexus-text-primary) !important;
 }
 
-.nexus-proofread-toggle.active,
 .nexus-translate-toggle.active,
 .nexus-websource-toggle.active {
   color: var(--nexus-primary) !important;
@@ -2632,6 +2503,95 @@ body {
     opacity: 1;
   }
 }
+
+/* ==========================================================================
+   Nexus Thinking Collapsible Container (Unified)
+   ========================================================================== */
+.nexus-thinking-container {
+  display: flex;
+  flex-direction: column;
+  margin: 4px 0 12px 0;
+  border-radius: var(--nexus-radius-md, 10px);
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+[data-theme="dark"] .nexus-thinking-container {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.nexus-thinking-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--nexus-text-secondary, #666);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nexus-thinking-header:hover {
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--nexus-text-primary, #111);
+}
+
+[data-theme="dark"] .nexus-thinking-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.nexus-thinking-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nexus-thinking-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nexus-text-secondary, #888);
+  flex-shrink: 0;
+}
+
+.nexus-thinking-chevron {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--nexus-text-secondary, #888);
+  flex-shrink: 0;
+}
+
+.nexus-thinking-container.collapsed .nexus-thinking-chevron {
+  transform: rotate(-90deg);
+}
+
+.nexus-thinking-content {
+  padding: 0 12px 10px 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--nexus-text-secondary, #666);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  padding-top: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+[data-theme="dark"] .nexus-thinking-content {
+  border-top-color: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.nexus-thinking-container.collapsed .nexus-thinking-content {
+  display: none;
+}
+
 
 .nexus-mic-btn:hover {
   background: rgba(255, 255, 255, 0.18);
@@ -3876,20 +3836,6 @@ b .katex * {
   color: var(--nexus-text-secondary) !important;
 }
 
-.nexus-proofread-text {
-  font-size: 1.14em !important;
-  color: #202124;
-  line-height: 1.65;
-  width: 100%;
-  box-sizing: border-box;
-  word-wrap: break-word;
-  white-space: pre-wrap;
-  outline: none;
-  cursor: text;
-  padding: 10px;
-  padding-right: 52px;
-  background: transparent;
-}
 
 .nexus-web-search {
   display: flex;
@@ -4086,14 +4032,6 @@ b .katex * {
   color: inherit !important;
 }
 
-.nexus-proofread-toggle {
-  background: rgba(255, 204, 0, 0.2) !important;
-  color: #a37a00 !important;
-}
-
-.nexus-proofread-toggle:hover {
-  background: rgba(255, 204, 0, 0.3) !important;
-}
 
 .nexus-tools-wrapper:hover .nexus-tools-dropdown {
   display: flex !important;
@@ -4325,32 +4263,6 @@ b .katex * {
   display: none !important;
 }
 
-.nexus-chat-question.proofread-question,
-.nexus-chat-question[data-type="proofread"] {
-  background: #fff9e6 !important;
-  border: 1.5px solid transparent !important;
-  color: var(--nexus-text-primary) !important;
-}
-
-.nexus-chat-question.proofread-question:hover,
-.nexus-chat-question[data-type="proofread"]:hover {
-  background: #fff4d1 !important;
-}
-
-.nexus-chat-question.proofread-question.is-editing {
-  border: 1.5px solid #FFC107 !important;
-  background: var(--nexus-chat-bg, #ffffff) !important;
-}
-
-[data-theme="dark"] .nexus-chat-question.proofread-question,
-[data-theme="dark"] .nexus-chat-question[data-type="proofread"] {
-  background: #2a2618 !important;
-}
-
-[data-theme="dark"] .nexus-chat-question.proofread-question:hover,
-[data-theme="dark"] .nexus-chat-question[data-type="proofread"]:hover {
-  background: #363120 !important;
-}
 
 .nexus-web-tab-picker-list {
   max-height: 245px;
@@ -5054,7 +4966,8 @@ b .katex * {
   margin-left: -4px !important;
 }
 
-.nexus-answer-action-btn {
+.nexus-answer-action-btn,
+.nexus-question-action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5068,36 +4981,61 @@ b .katex * {
   transition: all 0.15s ease;
 }
 
-.nexus-answer-action-btn .nexus-svg-icon {
+.nexus-answer-action-btn .nexus-svg-icon,
+.nexus-question-action-btn .nexus-svg-icon {
   width: 14px;
   height: 14px;
 }
 
 .nexus-answer-action-btn:hover,
+.nexus-question-action-btn:hover,
 .nexus-actions button:hover {
   background: #efefef !important;
   color: var(--nexus-text-primary) !important;
 }
 
 [data-theme="dark"] .nexus-answer-action-btn:hover,
+[data-theme="dark"] .nexus-question-action-btn:hover,
 [data-theme="dark"] .nexus-actions button:hover {
   background: rgba(255, 255, 255, 0.1) !important;
   color: var(--nexus-text-primary) !important;
 }
 
-.nexus-answer-action-btn.is-active {
+.nexus-answer-action-btn.is-active,
+.nexus-question-action-btn.is-active {
   color: var(--nexus-primary-color) !important;
 }
 
-.nexus-media-skeleton {
-  width: 380px;
+.nexus-shimmer-skeleton,
+.nexus-media-skeleton,
+.nexus-widget-skeleton,
+.nexus-forecast-loading-state,
+.nexus-crypto-chart-empty,
+.nexus-gold-chart-empty {
+  width: 100%;
   max-width: 100%;
   margin: 0 auto 0.5em auto;
-  height: 200px;
-  background: linear-gradient(90deg, var(--nexus-ui-bg-light) 25%, var(--nexus-ui-border) 50%, var(--nexus-ui-bg-light) 75%);
+  min-height: 140px;
+  background: linear-gradient(90deg, var(--nexus-bg-secondary, rgba(0,0,0,0.03)) 25%, var(--nexus-border-subtle, rgba(0,0,0,0.08)) 50%, var(--nexus-bg-secondary, rgba(0,0,0,0.03)) 75%);
   background-size: 200% 100%;
   animation: nexus-media-skeleton-shimmer 1.5s infinite linear;
   border-radius: var(--nexus-radius-sm, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nexus-text-muted, #888);
+  font-size: 0.9em;
+}
+
+[data-theme="dark"] .nexus-shimmer-skeleton,
+[data-theme="dark"] .nexus-media-skeleton,
+[data-theme="dark"] .nexus-widget-skeleton,
+[data-theme="dark"] .nexus-forecast-loading-state,
+[data-theme="dark"] .nexus-crypto-chart-empty,
+[data-theme="dark"] .nexus-gold-chart-empty {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  color: var(--nexus-text-muted, #aaa);
 }
 
 @keyframes nexus-media-skeleton-shimmer {

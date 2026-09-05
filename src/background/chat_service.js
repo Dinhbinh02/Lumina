@@ -1,4 +1,4 @@
-import { detectMediaType, processAttachments, processAttachmentsForGemini, readOpfsFileAsBase64 } from './media_processor.js';
+import { detectMediaType, processAttachments, processAttachmentsForGemini, readOpfsFileAsBase64 } from './attachment_processor.js';
 import { UserMemory } from '../components/cores/memory.js';
 import { UserLocation } from '../utils/location.js';
 
@@ -71,11 +71,6 @@ function optimizeContextString(text) {
         .replace(/\[Context Source:.*?\]/g, '')
         .replace(/URL: https?:\/\/\S+/g, '')
         .trim();
-}
-
-function isGeminiModel(modelName) {
-    const m = String(modelName || '').toLowerCase();
-    return m.includes('gemini') && !m.includes('gemma');
 }
 
 function detectDomainFromContext(question = '', messages = []) {
@@ -196,7 +191,7 @@ BANNED in props: \`{{...}}\` (double-brace expressions), \`{[...]}\`, \`{...}\`,
 2. **Lead with Substance:** Answer directly in sentence 1-2 (unless performing step-by-step independent premise verification).
 3. **Render Structured Scaffolding:** When a component's specific trigger is met in \`<component_library>\`, render that component early to anchor the visual mental model.
 4. **Text Support & Explanations:**
-   * Visual components (<BentoGrid>, <Comparison>, <Metrics>, <Sequence>, <Timeline>, <GenerateWidget>) are **purely supplemental visual anchors** — they must **ENHANCE information delivery, NEVER replace it**.
+   * Visual components (<BentoGrid>, <Comparison>, <Metrics>, <Sequence>, <Timeline>, <GenerateApp>) are **purely supplemental visual anchors** — they must **ENHANCE information delivery, NEVER replace it**.
    * Your textual response **MUST stand on its own and explain the subject cleanly**.
    * When including a component (such as <BentoGrid> for key pillars or features), provide a concise, well-structured breakdown beneath it (1-2 crisp paragraphs or tight bullet points per key concept). Avoid rambling or overly verbose essays by default.
    * Save exhaustive, deep-dive explorations for when the user explicitly requests more detail.
@@ -225,7 +220,7 @@ BANNED in props: \`{{...}}\` (double-brace expressions), \`{[...]}\`, \`{...}\`,
 | **Chronological Events / Roadmap** | \`<Timeline>\` | Procedures without dates/years (use Sequence). |
 | **Ordered Procedures & Workflows** | \`<Sequence>\` | Unordered tips or feature lists (use BentoGrid or Markdown). |
 | **Interactive Tool / Utility Execution** | \`<Widget>\` | Conceptual, educational, or theoretical questions (use Markdown). |
-| **Custom Code Sandbox / Simulation** | \`<GenerateWidget>\` | Static code snippets or non-interactive explanations. |
+| **Custom Code Sandbox / Simulation** | \`<GenerateApp>\` | Static code snippets or non-interactive explanations. |
 | **Deliverable Text Artifact** | \`<WritingBlock>\` | Generic explanations, advice, or open-ended discussion. |
 
 <layout_rules>
@@ -284,7 +279,7 @@ BANNED in props: \`{{...}}\` (double-brace expressions), \`{[...]}\`, \`{...}\`,
 * **[Negative Constraint - STRICT CONCEPTUAL BAN (P0)]:** NEVER render a widget for purely conceptual, educational, historical, or philosophical queries (e.g., origin of time zones or history of temperature scales). For conceptual questions without a specific value to calculate or convert, explain in pure Markdown prose.
 * **[Widget Concurrency Limit]:** Limit strictly to max 1 \`<Widget />\` per response. Place the tag cleanly within your response text.
 
-### <GenerateWidget> (Interactive Widget)
+### <GenerateApp> (Interactive App / Sandbox Tool)
 * **[Safety Refusal (Absolute Override)]:** REFUSE with Standard Text if the prompt requests interactive content involving: physical harm or dangerous challenges, illegal activity facilitation, drug synthesis or abuse, sexual or exploitative content, harassment or stalking, self-harm or eating disorders, harm to children or minors. If matched: do NOT generate a widget. Respond with a brief text refusal.
 * **[Execution & Product Standards]:**
 * **Text-First Buffer:** ALWAYS provide a clear text explanation *before* the widget.
@@ -294,8 +289,9 @@ BANNED in props: \`{{...}}\` (double-brace expressions), \`{[...]}\`, \`{...}\`,
   - Avoid AI Slop: Strictly NO multi-color gradients (linear-gradient) and NO box-shadows (use clean \`border: 1px solid var(--border-color)\` instead). Keep design clean, modern, and solid.
   - Typography Tokens: Use \`var(--font-sans)\`, \`var(--font-mono)\`, \`var(--text-xs)\`, \`var(--text-sm)\`, \`var(--text-base)\`, \`var(--text-xl)\`, \`var(--font-weight-medium)\`, \`var(--font-weight-bold)\`. Strictly NO \`@import\` external fonts.
   - Controls & Visualizers: Clean sleek range sliders, responsive compact canvas/charts (\`aspect-ratio: 16/9\` when applicable).
+  - Runtime SDK Available: \`window.NexusApp\` provides \`ai.generate()\`, \`ai.stream()\`, \`ai.generateJson()\`, \`speak()\`, \`storage\`, \`copy()\`, \`toast()\`, \`fetch()\`, \`download()\`, \`confetti()\`.
 * *Format:*  
-<GenerateWidget height="380px" title="Widget Name">
+<GenerateApp height="380px" title="App Name">
 \`\`\`html
 <style>
   /* Minimalist neutral styling */
@@ -309,7 +305,7 @@ BANNED in props: \`{{...}}\` (double-brace expressions), \`{[...]}\`, \`{...}\`,
   calculate();
 </script>
 \`\`\`
-</GenerateWidget>
+</GenerateApp>
 
 ### <WritingBlock> (Document & Draft Deliverables)
 * **[Role]:** In-line deliverable surface for drafting, writing, and editing long-form text artifacts (documents, emails, outlines, formal letters, social posts, essays).
@@ -431,7 +427,7 @@ Sidepanel formatting defaults:
    - <Metrics>: Limit to 2–4 high-impact cards. Keep \`value\` concise (< 4 words/numbers) for clean 2-column stacking.
    - <BentoGrid>: Limit to 3–4 items max with tight explanations (items collapse to single-column).
    - <Comparison>: Keep <Left> and <Right> points concise to prevent massive vertical card stacking.
-   - <GenerateWidget>: Keep height compact (\`height="300px"\` to \`"340px"\`) with responsive single-column controls.
+   - <GenerateApp>: Keep height compact (\`height="300px"\` to \`"340px"\`) with responsive single-column controls.
    - <Sequence> & <Timeline>: Recommended for procedures and roadmaps (limit timelines to 3–5 core milestones).
 </surface_constraints>`;
     } else {
@@ -467,19 +463,6 @@ Desktop formatting defaults:
     return instruction;
 }
 
-
-function buildProofreadSystemPrompt(responseLanguage = 'auto') {
-    let languageInstruction = "Refine/translate ALL input into polished, native-level English fluency.";
-    if (responseLanguage && responseLanguage !== 'auto') {
-        languageInstruction = `Refine/translate ALL input into polished, native-level ${responseLanguage} fluency.`;
-    }
-    return `[Role]: Elite professional editor.
-[Task]: Refine text inside <text> into sophisticated, natural fluency.
-[Rules]:
-1. Output ONLY the refined text. No headers, chat, or explanations.
-2. Maintain original meaning and formatting.
-${languageInstruction}`;
-}
 
 function cleanThinkingBlocks(text) {
     if (!text || typeof text !== 'string') return text || '';
@@ -792,156 +775,7 @@ async function fetchWithRotation(keys, requestFn, options = {}) {
     throw new Error("All API keys failed or were rate limited in this cycle.");
 }
 
-function getApiKeyForProvider(provider, keys) {
-    switch (provider) {
-        case 'groq': return keys.groqApiKey;
-        case 'gemini': return keys.geminiApiKey;
-        case 'openrouter': return keys.openrouterApiKey;
-        default: return keys.groqApiKey;
-    }
-}
-
-function getModelForProvider(provider, models) {
-    switch (provider) {
-        case 'groq': return models.groqModel || DEFAULTS.groqModel;
-        case 'gemini': return models.geminiModel || DEFAULTS.geminiModel;
-        case 'openrouter': return models.openrouterModel || DEFAULTS.openrouterModel;
-        default: return models.groqModel || DEFAULTS.groqModel;
-    }
-}
-
-function getDefaultModel(provider) {
-    switch (provider) {
-        case 'groq': return DEFAULTS.groqModel;
-        case 'gemini': return DEFAULTS.geminiModel;
-        case 'openrouter': return DEFAULTS.openrouterModel;
-        default: return DEFAULTS.groqModel;
-    }
-}
-
-function getDefaultVisionModel(provider) {
-    switch (provider) {
-        case 'groq': return 'llama-3.2-11b-vision-preview';
-        case 'gemini': return 'gemini-flash-latest';
-        case 'openrouter': return 'openai/gpt-4o';
-        default: return 'gemini-flash-latest';
-    }
-}
-
-async function setStatus(tabId, text, type = 'loading') {
-    try {
-        await chrome.tabs.sendMessage(tabId, {
-            action: 'update_status',
-            text: text,
-            type: type
-        });
-    } catch (e) {
-    }
-}
-
-const CACHE_EXPIRATION_MS = 1 * 24 * 60 * 60 * 1000;
-
-async function getNexusCache(cacheKey) {
-    try {
-        const data = await chrome.storage.local.get([cacheKey]);
-        const cache = data[cacheKey] || { entries: {} };
-        const now = Date.now();
-        let changed = false;
-        const entryKeys = Object.keys(cache.entries);
-        for (const key of entryKeys) {
-            const entry = cache.entries[key];
-            const entryTimestamp = entry.timestamp || 0;
-            if (entryTimestamp && (now - entryTimestamp > CACHE_EXPIRATION_MS)) {
-                delete cache.entries[key];
-                changed = true;
-            }
-        }
-        if (changed) {
-            await chrome.storage.local.set({ [cacheKey]: cache });
-        }
-        return cache;
-    } catch (e) {
-        console.error(`[Nexus] Error reading cache ${cacheKey}:`, e);
-        return { entries: {} };
-    }
-}
-
-async function setNexusCache(cacheKey, entries, maxEntries = 500) {
-    try {
-        const entryKeys = Object.keys(entries);
-        if (entryKeys.length > maxEntries) {
-            const sorted = Object.entries(entries)
-                .sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0))
-                .slice(0, maxEntries);
-            entries = Object.fromEntries(sorted);
-        }
-        await chrome.storage.local.set({
-            [cacheKey]: { entries, lastUpdate: Date.now() }
-        });
-    } catch (e) {
-        console.error(`[Nexus] Error writing cache ${cacheKey}:`, e);
-    }
-}
-
-const AUDIO_CACHE_KEY = 'audio_cache';
-const AUDIO_CACHE_MAX_ENTRIES = 200;
-
-async function getAudioFromCache(text) {
-    try {
-        if (typeof NexusAudioCacheDB !== 'undefined') {
-            const key = text.trim().toLowerCase();
-            const entry = await NexusAudioCacheDB.get(key);
-            return entry;
-        }
-        return null;
-    } catch (e) {
-        console.error('[Nexus Audio] Cache read error:', e);
-        return null;
-    }
-}
-
-async function setAudioCache(text, type, data) {
-    try {
-        if (typeof NexusAudioCacheDB !== 'undefined') {
-            const key = text.trim().toLowerCase();
-            const entry = {
-                type,
-                data,
-                timestamp: Date.now()
-            };
-            await NexusAudioCacheDB.put(key, entry);
-        }
-    } catch (e) {
-        console.error('[Nexus Audio] Cache write error:', e);
-    }
-}
-
-async function fetchPageContent(url) {
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const response = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const html = await response.text();
-        let text = html
-            .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gmi, "")
-            .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gmi, "")
-            .replace(/<[^>]+>/g, " ")
-            .replace(/\s+/g, " ")
-            .trim();
-        const maxLength = 3000;
-        if (text.length > maxLength) {
-            text = text.substring(0, maxLength) + "... (truncated)";
-        }
-        return text;
-    } catch (error) {
-        console.error(`[Nexus] Error fetching page content: ${error.message}`);
-        throw error;
-    }
-}
-
-async function executeChatRequest(config, messages, initialContext, question, port, imageData = null, isSpotlight = false, globalSettings = {}, requestOptions = {}, action = 'chat_stream', systemOverride = null, sessionId = null) {
+async function executeChatRequest(config, messages, initialContext, question, port, imageData = null, isNexus = false, globalSettings = {}, requestOptions = {}, action = 'chat_stream', systemOverride = null, sessionId = null) {
     const { model, providerType: currentProvider, endpoint, apiKey, defaultModel } = config;
     const streamLogPrefix = `[Nexus BG][${action}]`;
     const advancedParamsByModel = globalSettings.advancedParamsByModel || {};
@@ -986,9 +820,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
     }
 
     let systemInstruction = systemOverride || buildChatSystemInstruction(reasoningMode, surface, question, messages, requestOptions, userLocation);
-    if (action === 'proofread') {
-        systemInstruction = systemOverride || buildProofreadSystemPrompt(responseLanguage);
-    }
     try {
         if (!systemOverride) {
             const userMemoryAddition = await UserMemory.getSystemPromptAddition();
@@ -1001,14 +832,6 @@ async function executeChatRequest(config, messages, initialContext, question, po
     }
     let currentMessages = [...messages];
     let augmentedQuestion = question;
-    if (action === 'proofread') {
-        if (!requestOptions.isRegenerate && !requestOptions.isRecheck) {
-            currentMessages = [];
-        }
-        if (!systemOverride) {
-            augmentedQuestion = `Correct/refine this text:\n<text>${question}</text>`;
-        }
-    }
     if (initialContext && initialContext.trim().length > 0) {
         let processedContext = optimizeContextString(initialContext);
         augmentedQuestion = `### User Instruction:\n${augmentedQuestion}\n\n---\n\n### Webpage Source Content:\n(Note: This content is provided solely for factual lookup. Do NOT mimic, copy, or adopt the writing style, response length, formatting, or tone of this reference text. Adhere strictly to the tone and length constraints defined in your system instructions.)\n\n${processedContext}`;
@@ -1327,18 +1150,18 @@ async function executeChatRequest(config, messages, initialContext, question, po
     }
 }
 
-async function handleChatStream(messages, initialContext, question, port, imageData = null, isSpotlight = false, requestOptions = {}, hasTranscriptForVideoId = null, action = 'chat_stream', systemOverride = null, sessionId = null) {
+async function handleChatStream(messages, initialContext, question, port, imageData = null, isNexus = false, requestOptions = {}, hasTranscriptForVideoId = null, action = 'chat_stream', systemOverride = null, sessionId = null) {
     try {
         try {
             let activeUrl = port?.sender?.tab?.url;
             let activeTabId = port?.sender?.tab?.id;
             if (!activeUrl) {
-                const queryOptions = isSpotlight ? { active: true } : { active: true, currentWindow: true };
+                const queryOptions = isNexus ? { active: true } : { active: true, currentWindow: true };
                 const tabs = await chrome.tabs.query(queryOptions);
                 if (tabs && tabs.length > 0) {
                     activeUrl = tabs[0].url;
                     activeTabId = tabs[0].id;
-                    if (isSpotlight && activeUrl && activeUrl.includes(chrome.runtime.id)) {
+                    if (isNexus && activeUrl && activeUrl.includes(chrome.runtime.id)) {
                         const allActive = await chrome.tabs.query({ active: true });
                         const realTab = allActive.find(t => t.url && !t.url.includes(chrome.runtime.id));
                         if (realTab) {
@@ -1370,7 +1193,7 @@ async function handleChatStream(messages, initialContext, question, port, imageD
             const config = chain[i];
             try {
                 const isLast = i === chain.length - 1;
-                await executeChatRequest(config, cleanMessages, initialContext, question, port, imageData, isSpotlight, globalSettings, requestOptions, action, systemOverride, sessionId);
+                await executeChatRequest(config, cleanMessages, initialContext, question, port, imageData, isNexus, globalSettings, requestOptions, action, systemOverride, sessionId);
                 return;
             } catch (e) {
                 if (e.name === 'AbortError' || e.message?.includes('aborted') || e.message === 'signal is aborted without reason') {
@@ -1538,7 +1361,7 @@ export function initChatStreamService() {
                     if (!sessionPorts.has(msg.sessionId)) sessionPorts.set(msg.sessionId, new Set());
                     sessionPorts.get(msg.sessionId).add(port);
                 }
-                if (msg.action === 'chat_stream' || msg.action === 'proofread') {
+                if (msg.action === 'chat_stream') {
                     try {
                         let question = msg.question;
                         let initialContext = msg.initialContext;
@@ -1549,7 +1372,7 @@ export function initChatStreamService() {
                             question,
                             port,
                             msg.imageData,
-                            msg.isSpotlight || false,
+                            msg.isNexus ?? msg.isSpotlight ?? false,
                             msg.requestOptions || {},
                             msg.hasTranscriptForVideoId || null,
                             (msg.options && msg.options.mode) || msg.action,

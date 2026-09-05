@@ -163,7 +163,7 @@
       <g transform="translate(18, 38)">
         <rect class="box-item-amber" x="0" y="0" width="382" height="44" />
         <text class="sketch-text" x="10" y="18">Selection Floating Action Bar</text>
-        <text class="sketch-subtext" x="10" y="33">Translate / Explain / Proofread DOM Actions</text>
+        <text class="sketch-subtext" x="10" y="33">Translate / Explain / Summarize DOM Actions</text>
       </g>
 
       <g transform="translate(18, 92)">

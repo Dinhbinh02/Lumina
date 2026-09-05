@@ -297,33 +297,21 @@ export function initComponentParser() {
                     }
                 },
                 renderer(token) {
-                    const safeTitle = escapeHtml(token.title || 'Interactive Widget');
+                    const safeTitle = escapeHtml(token.title || 'Interactive App');
                     if (!token.isComplete) {
-                        return `<div class="nexus-widget-wrapper nexus-widget-loading" style="min-height: 200px;">
+                        return `<div class="nexus-widget-wrapper nexus-widget-loading" style="min-height: 180px;">
                             <div class="nexus-widget-header">
                                 <div class="nexus-widget-header-left">
                                     <span class="nexus-widget-title">${safeTitle}</span>
                                 </div>
-                                <div class="nexus-widget-header-right">
-                                    <div class="nexus-widget-blueprint-badge">
-                                        <span class="nexus-blueprint-dot"></span>
-                                        <span>BUILDING</span>
-                                    </div>
-                                </div>
                             </div>
-                            <div class="nexus-widget-blueprint-body">
-                                <div class="nexus-blueprint-scanline"></div>
-                                <div class="nexus-blueprint-terminal">
-                                    <span class="nexus-blueprint-prompt">&gt; compiling sandbox runtime</span>
-                                    <span class="nexus-blueprint-cursor">_</span>
-                                </div>
-                            </div>
+                            <div class="nexus-shimmer-skeleton nexus-widget-skeleton" style="min-height: 140px; margin: 0; border-radius: 0;"></div>
                         </div>`;
                     }
                     if (typeof WidgetRunner !== 'undefined') {
                         return WidgetRunner.renderWidgetCard(token.body, token.height, token.title);
                     }
-                    return `<div class="nexus-widget-placeholder">[Interactive Widget: ${safeTitle}]</div>`;
+                    return `<div class="nexus-widget-placeholder">[Interactive App: ${safeTitle}]</div>`;
                 }
             },
 

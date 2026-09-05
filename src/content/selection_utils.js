@@ -334,8 +334,8 @@ export const NexusSelection = {
         if (this.onHide) this.onHide();
     },
     setScrollLock(lock) {
-        const isSpotlight = document.body.classList.contains('nexus-page') || window.location.pathname.includes('nexus.html');
-        if (isSpotlight) return;
+        const isNexusPage = document.body.classList.contains('nexus-page') || window.location.pathname.includes('nexus.html');
+        if (isNexusPage) return;
         if (lock) {
             if (!this.inputBackdrop) {
                 this.inputBackdrop = document.createElement('div');

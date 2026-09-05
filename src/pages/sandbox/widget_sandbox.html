@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nexus Sandbox</title>
+  <title>Nexus Sandbox Runtime</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -87,6 +87,7 @@
       margin: auto;
     }
 
+    /* Form Controls */
     input, select, button, textarea {
       font-family: inherit;
       font-size: var(--text-base);
@@ -131,13 +132,13 @@
     .nexus-btn-primary {
       background: #ffffff !important;
       color: #000000 !important;
-      border: none !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
       font-weight: var(--font-weight-bold) !important;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+      box-shadow: none !important;
     }
 
     .nexus-btn-primary:hover {
-      background: #f0f0f0 !important;
+      background: #e4e4e7 !important;
       transform: translateY(-1px);
     }
 
@@ -145,18 +146,20 @@
       background: rgba(255, 255, 255, 0.06);
       border: 1px solid rgba(255, 255, 255, 0.1);
       color: var(--text-color);
+      box-shadow: none;
     }
 
-    /* Nexus Card & Layout System */
+    /* Card & Container Defaults */
     .nexus-card, .card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
-      border-radius: 18px;
-      padding: 16px 20px;
-      margin: 0 auto 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 0 auto;
+      box-shadow: none !important;
       box-sizing: border-box;
-      max-width: 480px;
+      max-width: 520px;
+      width: 100%;
       user-select: none;
     }
 
@@ -209,7 +212,6 @@
       white-space: nowrap;
     }
 
-    /* Hero Display Values */
     .nexus-hero-block {
       display: flex;
       flex-direction: column;
@@ -236,7 +238,6 @@
       margin-top: 2px;
     }
 
-    /* Input Fields */
     .nexus-input-box, input[type="text"], input[type="number"] {
       background: var(--input-bg);
       border: 1px solid var(--border-color-input);
@@ -256,7 +257,6 @@
       border-color: rgba(255, 255, 255, 0.35);
     }
 
-    /* Segmented Controls / Tabs */
     .nexus-segmented-control {
       display: flex;
       align-items: center;
@@ -294,7 +294,6 @@
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     }
 
-    /* Stat Grid & Summary */
     .grid, .nexus-stat-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -332,18 +331,652 @@
       display: block;
       max-width: 100%;
     }
+
+    /* Toast Notification Container */
+    #nexus-toast-container {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+      width: max-content;
+      max-width: 90vw;
+    }
+
+    .nexus-toast-item {
+      pointer-events: auto;
+      background: rgba(24, 24, 27, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(-8px) scale(0.96);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .nexus-toast-item.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .nexus-toast-item.success { border-color: rgba(16, 185, 129, 0.5); color: #a7f3d0; }
+    .nexus-toast-item.error { border-color: rgba(244, 63, 94, 0.5); color: #fecdd3; }
+    .nexus-toast-item.warning { border-color: rgba(245, 158, 11, 0.5); color: #fde68a; }
+
+    /* Diagnostics & Error Banner */
+    #nexus-runtime-error-banner {
+      display: none;
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #fecdd3;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.4;
+      z-index: 99999;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+    #nexus-runtime-error-banner .error-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 600;
+      color: #fb7185;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    #nexus-runtime-error-banner .error-close-btn {
+      background: none;
+      border: none;
+      color: #fecdd3;
+      cursor: pointer;
+      padding: 2px 6px;
+      font-size: 12px;
+      border-radius: 4px;
+    }
+    #nexus-runtime-error-banner .error-close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
   </style>
 </head>
 
 <body>
+  <div id="nexus-toast-container"></div>
   <div id="sandbox-root"></div>
+  <div id="nexus-runtime-error-banner">
+    <div class="error-header">
+      <span>Runtime Warning</span>
+      <button class="error-close-btn" onclick="document.getElementById('nexus-runtime-error-banner').style.display='none'">✕</button>
+    </div>
+    <div id="nexus-runtime-error-msg"></div>
+  </div>
+
   <script>
+    // ==========================================
+    // 1. STORAGE RESILIENCY & PERSISTENCE BRIDGE
+    // ==========================================
+    let currentAppId = 'default_app';
+    const memoryStore = Object.create(null);
+
+    (function initStoragePolyfill() {
+      function createMemoryStorage() {
+        return {
+          getItem: (key) => (key in memoryStore ? memoryStore[key] : null),
+          setItem: (key, val) => {
+            memoryStore[key] = String(val);
+            window.parent.postMessage({
+              type: 'NEXUS_STORAGE_SET',
+              appId: currentAppId,
+              key: key,
+              value: String(val)
+            }, '*');
+          },
+          removeItem: (key) => {
+            delete memoryStore[key];
+            window.parent.postMessage({
+              type: 'NEXUS_STORAGE_REMOVE',
+              appId: currentAppId,
+              key: key
+            }, '*');
+          },
+          clear: () => {
+            for (const k in memoryStore) delete memoryStore[k];
+            window.parent.postMessage({
+              type: 'NEXUS_STORAGE_CLEAR',
+              appId: currentAppId
+            }, '*');
+          },
+          key: (i) => Object.keys(memoryStore)[i] || null,
+          get length() { return Object.keys(memoryStore).length; }
+        };
+      }
+
+      try {
+        const testKey = '__nexus_storage_test__';
+        window.localStorage.setItem(testKey, '1');
+        window.localStorage.removeItem(testKey);
+      } catch (_) {
+        try {
+          Object.defineProperty(window, 'localStorage', {
+            value: createMemoryStorage(),
+            writable: true,
+            configurable: true
+          });
+          Object.defineProperty(window, 'sessionStorage', {
+            value: createMemoryStorage(),
+            writable: true,
+            configurable: true
+          });
+        } catch (e) {
+          window.localStorage = createMemoryStorage();
+          window.sessionStorage = createMemoryStorage();
+        }
+      }
+    })();
+
+    // ==========================================
+    // 2. SPEECH SYNTHESIS (TTS) COMPLETE BRIDGE
+    // ==========================================
+    (function initTTSBridge() {
+      const activeUtterances = new Map();
+      let utteranceCounter = 0;
+
+      class NexusUtterance extends EventTarget {
+        constructor(text = '') {
+          super();
+          this.id = 'utt_' + (++utteranceCounter) + '_' + Date.now();
+          this.text = String(text);
+          this.lang = 'zh-CN';
+          this.rate = 1.0;
+          this.pitch = 1.0;
+          this.volume = 1.0;
+          this.voice = null;
+          this.onstart = null;
+          this.onend = null;
+          this.onerror = null;
+          this.onpause = null;
+          this.onresume = null;
+          this.onboundary = null;
+          this.onmark = null;
+        }
+
+        _dispatch(type, extra = {}) {
+          const evt = new CustomEvent(type, { detail: extra });
+          Object.assign(evt, extra);
+          if (typeof this['on' + type] === 'function') {
+            try { this['on' + type](evt); } catch (err) { console.warn('[TTS Utterance Callback Error]', err); }
+          }
+          this.dispatchEvent(evt);
+        }
+      }
+
+      if (typeof window.SpeechSynthesisUtterance === 'undefined') {
+        window.SpeechSynthesisUtterance = NexusUtterance;
+      }
+
+      const synth = {
+        paused: false,
+        speaking: false,
+        pending: false,
+        onvoiceschanged: null,
+        _voices: [],
+
+        getVoices() {
+          return this._voices;
+        },
+
+        speak(utterance) {
+          if (!utterance || !utterance.text) return;
+          const id = utterance.id || ('utt_' + (++utteranceCounter));
+          utterance.id = id;
+          activeUtterances.set(id, utterance);
+
+          this.speaking = true;
+          this.paused = false;
+
+          window.parent.postMessage({
+            type: 'NEXUS_TTS_SPEAK',
+            id: id,
+            text: utterance.text,
+            lang: utterance.lang || 'zh-CN',
+            rate: typeof utterance.rate === 'number' ? utterance.rate : 0.85,
+            pitch: typeof utterance.pitch === 'number' ? utterance.pitch : 1.0,
+            volume: typeof utterance.volume === 'number' ? utterance.volume : 1.0,
+            voiceName: utterance.voice ? utterance.voice.name : null
+          }, '*');
+        },
+
+        cancel() {
+          this.speaking = false;
+          this.paused = false;
+          activeUtterances.clear();
+          window.parent.postMessage({ type: 'NEXUS_TTS_CANCEL' }, '*');
+        },
+
+        pause() {
+          this.paused = true;
+          window.parent.postMessage({ type: 'NEXUS_TTS_PAUSE' }, '*');
+        },
+
+        resume() {
+          this.paused = false;
+          window.parent.postMessage({ type: 'NEXUS_TTS_RESUME' }, '*');
+        }
+      };
+
+      try {
+        Object.defineProperty(window, 'speechSynthesis', {
+          value: synth,
+          writable: true,
+          configurable: true
+        });
+      } catch (_) {
+        window.speechSynthesis = synth;
+      }
+
+      window.addEventListener('message', (event) => {
+        if (!event.data) return;
+        if (event.data.type === 'NEXUS_TTS_EVENT') {
+          const { id, eventType, extra } = event.data;
+          const utt = activeUtterances.get(id);
+          if (utt) {
+            if (eventType === 'start') {
+              synth.speaking = true;
+              synth.paused = false;
+              utt._dispatch('start', extra);
+            } else if (eventType === 'end') {
+              synth.speaking = false;
+              synth.paused = false;
+              utt._dispatch('end', extra);
+              activeUtterances.delete(id);
+            } else if (eventType === 'error') {
+              synth.speaking = false;
+              synth.paused = false;
+              utt._dispatch('error', extra);
+              activeUtterances.delete(id);
+            } else if (eventType === 'pause') {
+              synth.paused = true;
+              utt._dispatch('pause', extra);
+            } else if (eventType === 'resume') {
+              synth.paused = false;
+              utt._dispatch('resume', extra);
+            }
+          }
+        } else if (event.data.type === 'NEXUS_TTS_VOICES_LOADED') {
+          synth._voices = event.data.voices || [];
+          if (typeof synth.onvoiceschanged === 'function') {
+            try { synth.onvoiceschanged(); } catch (_) {}
+          }
+        }
+      });
+    })();
+
+    // ==========================================
+    // 3. AI ENGINE & PENDING PROMISES
+    // ==========================================
+    const pendingAIStreams = new Map();
+    const pendingAIGenerations = new Map();
+    const pendingBrowserQueries = new Map();
+    const pendingFetchRequests = new Map();
+    let aiCounter = 0;
+    let browserCounter = 0;
+    let fetchCounter = 0;
+
+    function nexusFetch(url, options = {}) {
+      return new Promise((resolve, reject) => {
+        const requestId = 'req_' + (++fetchCounter) + '_' + Date.now();
+        pendingFetchRequests.set(requestId, { resolve, reject });
+
+        window.parent.postMessage({
+          type: 'NEXUS_FETCH_REQUEST',
+          requestId: requestId,
+          url: url,
+          options: {
+            method: options.method || 'GET',
+            headers: options.headers || {},
+            body: options.body || null
+          }
+        }, '*');
+
+        setTimeout(() => {
+          if (pendingFetchRequests.has(requestId)) {
+            pendingFetchRequests.delete(requestId);
+            reject(new Error('Network request timed out'));
+          }
+        }, 30000);
+      });
+    }
+
+    // ==========================================
+    // 4. NEXUS APP STANDARD SDK (AI NATIVE)
+    // ==========================================
+    window.NexusApp = {
+      // AI Engine API
+      ai: {
+        async generate({ prompt, model = null, systemPrompt = null, temperature = 0.7, maxTokens = 4096, imageBase64 = null }) {
+          if (!prompt) return '';
+          return new Promise((resolve, reject) => {
+            const requestId = 'ai_gen_' + (++aiCounter) + '_' + Date.now();
+            pendingAIGenerations.set(requestId, { resolve, reject });
+
+            window.parent.postMessage({
+              type: 'NEXUS_AI_GENERATE_REQUEST',
+              requestId: requestId,
+              prompt: prompt,
+              model: model || null,
+              systemPrompt: systemPrompt || null,
+              temperature: temperature,
+              maxTokens: maxTokens,
+              imageBase64: imageBase64
+            }, '*');
+
+            setTimeout(() => {
+              if (pendingAIGenerations.has(requestId)) {
+                pendingAIGenerations.delete(requestId);
+                reject(new Error('AI generation timed out'));
+              }
+            }, 60000);
+          });
+        },
+
+        stream({ prompt, model = null, systemPrompt = null, temperature = 0.7, maxTokens = 4096, imageBase64 = null, onChunk, onDone, onError }) {
+          if (!prompt) return { abort: () => {} };
+          const requestId = 'ai_stream_' + (++aiCounter) + '_' + Date.now();
+          let fullText = '';
+
+          pendingAIStreams.set(requestId, {
+            onChunk: (chunk) => {
+              fullText += chunk;
+              if (typeof onChunk === 'function') onChunk(chunk, fullText);
+            },
+            onDone: () => {
+              pendingAIStreams.delete(requestId);
+              if (typeof onDone === 'function') onDone(fullText);
+            },
+            onError: (err) => {
+              pendingAIStreams.delete(requestId);
+              if (typeof onError === 'function') onError(err);
+            }
+          });
+
+          window.parent.postMessage({
+            type: 'NEXUS_AI_STREAM_REQUEST',
+            requestId: requestId,
+            prompt: prompt,
+            model: model || null,
+            systemPrompt: systemPrompt || null,
+            temperature: temperature,
+            maxTokens: maxTokens,
+            imageBase64: imageBase64
+          }, '*');
+
+          return {
+            abort: () => {
+              pendingAIStreams.delete(requestId);
+              window.parent.postMessage({ type: 'NEXUS_AI_ABORT_REQUEST', requestId: requestId }, '*');
+            }
+          };
+        },
+
+        async generateJson({ prompt, schema, model = null, systemPrompt = null }) {
+          const schemaStr = typeof schema === 'object' ? JSON.stringify(schema, null, 2) : String(schema || '{}');
+          const finalSys = (systemPrompt ? `${systemPrompt}\n\n` : '') +
+            `Respond with pure JSON matching this schema:\n${schemaStr}\nDo not wrap in markdown or backticks.`;
+
+          const raw = await this.generate({ prompt, model, systemPrompt: finalSys, temperature: 0.2 });
+          let clean = raw.trim();
+          if (clean.startsWith('```')) {
+            clean = clean.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+          }
+          return JSON.parse(clean);
+        },
+
+        async translate(text, targetLang = 'Vietnamese') {
+          return this.generate({
+            prompt: `Translate the following text accurately to ${targetLang}:\n\n${text}`,
+            systemPrompt: 'You are a professional translator. Output only the translated text.'
+          });
+        },
+
+        async summarize(text, maxWords = 100) {
+          return this.generate({
+            prompt: `Summarize the following content in under ${maxWords} words:\n\n${text}`,
+            systemPrompt: 'You are a concise executive summarizer.'
+          });
+        }
+      },
+
+      // Browser Context API
+      browser: {
+        async getSelectedText() {
+          return new Promise((resolve) => {
+            const queryId = 'brw_' + (++browserCounter) + '_' + Date.now();
+            pendingBrowserQueries.set(queryId, resolve);
+            window.parent.postMessage({ type: 'NEXUS_BROWSER_GET_SELECTED_TEXT', queryId }, '*');
+            setTimeout(() => {
+              if (pendingBrowserQueries.has(queryId)) {
+                pendingBrowserQueries.delete(queryId);
+                resolve('');
+              }
+            }, 3000);
+          });
+        },
+
+        async getPageContent() {
+          return new Promise((resolve) => {
+            const queryId = 'brw_' + (++browserCounter) + '_' + Date.now();
+            pendingBrowserQueries.set(queryId, resolve);
+            window.parent.postMessage({ type: 'NEXUS_BROWSER_GET_PAGE_CONTENT', queryId }, '*');
+            setTimeout(() => {
+              if (pendingBrowserQueries.has(queryId)) {
+                pendingBrowserQueries.delete(queryId);
+                resolve({ title: '', text: '' });
+              }
+            }, 5000);
+          });
+        },
+
+        openTab(url, active = true) {
+          window.parent.postMessage({ type: 'NEXUS_BROWSER_OPEN_TAB', url: String(url), active }, '*');
+        }
+      },
+
+      sendPrompt(text) {
+        window.parent.postMessage({ type: 'NEXUS_APP_PROMPT', prompt: text }, '*');
+      },
+
+      toast(message, type = 'info', duration = 2800) {
+        const container = document.getElementById('nexus-toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = `nexus-toast-item ${type}`;
+        
+        let icon = '';
+        if (type === 'success') icon = '✓ ';
+        else if (type === 'error') icon = '✕ ';
+        else if (type === 'warning') icon = '⚠ ';
+
+        toast.textContent = icon + message;
+        container.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('show'));
+
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 300);
+        }, duration);
+      },
+
+      async copy(text, showToast = true) {
+        try {
+          window.parent.postMessage({ type: 'NEXUS_CLIPBOARD_WRITE', text: String(text) }, '*');
+          const textArea = document.createElement('textarea');
+          textArea.value = String(text);
+          textArea.style.position = 'fixed';
+          textArea.style.opacity = '0';
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          try { document.execCommand('copy'); } catch (_) {}
+          document.body.removeChild(textArea);
+          if (showToast) this.toast('Copied to clipboard', 'success', 1800);
+          return true;
+        } catch (e) {
+          if (showToast) this.toast('Copy failed', 'error');
+          return false;
+        }
+      },
+
+      speak(text, lang = 'zh-CN', rate = 0.85) {
+        if (!text) return;
+        const utt = new window.SpeechSynthesisUtterance(text);
+        utt.lang = lang;
+        utt.rate = rate;
+        window.speechSynthesis.speak(utt);
+      },
+
+      cancelSpeech() {
+        window.speechSynthesis.cancel();
+      },
+
+      fetch(url, options) {
+        return nexusFetch(url, options);
+      },
+
+      download(filename, data, mimeType = 'text/plain') {
+        window.parent.postMessage({
+          type: 'NEXUS_DOWNLOAD_REQUEST',
+          filename: filename,
+          data: typeof data === 'object' && !(data instanceof Blob) ? JSON.stringify(data, null, 2) : data,
+          mimeType: mimeType
+        }, '*');
+      },
+
+      storage: {
+        get(key, defaultValue = null) {
+          return key in memoryStore ? memoryStore[key] : defaultValue;
+        },
+        set(key, value) {
+          window.localStorage.setItem(key, value);
+        },
+        remove(key) {
+          window.localStorage.removeItem(key);
+        },
+        clear() {
+          window.localStorage.clear();
+        }
+      },
+
+      setupCanvas(canvas, options = {}) {
+        if (!canvas) return;
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        const width = options.width || rect.width || 300;
+        const height = options.height || rect.height || 150;
+
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.scale(dpr, dpr);
+        }
+        return ctx;
+      },
+
+      confetti() {
+        // Built-in lightweight micro-confetti
+        const colors = ['#10b981', '#38bdf8', '#f59e0b', '#f43f5e', '#a855f7', '#ec4899'];
+        for (let i = 0; i < 35; i++) {
+          const p = document.createElement('div');
+          p.style.position = 'fixed';
+          p.style.left = `${Math.random() * 100}vw`;
+          p.style.top = '-10px';
+          p.style.width = `${Math.random() * 8 + 6}px`;
+          p.style.height = `${Math.random() * 8 + 6}px`;
+          p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+          p.style.zIndex = '999999';
+          p.style.pointerEvents = 'none';
+          p.style.transition = `all ${Math.random() * 1.5 + 1}s cubic-bezier(0.25, 1, 0.5, 1)`;
+          document.body.appendChild(p);
+
+          requestAnimationFrame(() => {
+            p.style.transform = `translateY(${window.innerHeight + 20}px) rotate(${Math.random() * 720}deg)`;
+            p.style.opacity = '0';
+          });
+          setTimeout(() => p.remove(), 2600);
+        }
+      }
+    };
+
+    // Polyfill navigator.clipboard
+    if (typeof navigator !== 'undefined') {
+      try {
+        if (!navigator.clipboard) {
+          navigator.clipboard = {
+            writeText: (t) => window.NexusApp.copy(t, false),
+            readText: async () => ''
+          };
+        } else {
+          navigator.clipboard.writeText = (t) => window.NexusApp.copy(t, false);
+        }
+      } catch (_) {}
+    }
+
+    // Safe dialogs to prevent freeze
+    window.alert = (msg) => { window.NexusApp.toast(String(msg), 'info'); };
+    window.confirm = (msg) => { console.log('[Sandbox Confirm]', msg); return true; };
+    window.prompt = (msg, def) => { console.log('[Sandbox Prompt]', msg); return def || ''; };
+
+    // ==========================================
+    // 5. AUDIO CONTEXT AUTO-UNLOCK
+    // ==========================================
+    (function initAudioUnlock() {
+      const unlock = () => {
+        if (typeof window.AudioContext !== 'undefined') {
+          if (window.__nexusAudioCtx && window.__nexusAudioCtx.state === 'suspended') {
+            window.__nexusAudioCtx.resume();
+          }
+        }
+      };
+      window.addEventListener('click', unlock, { once: false, passive: true });
+      window.addEventListener('touchstart', unlock, { once: false, passive: true });
+      window.addEventListener('keydown', unlock, { once: false, passive: true });
+    })();
+
+    // ==========================================
+    // 6. RESIZING & LAYOUT ENGINE
+    // ==========================================
     function notifyHeight() {
       const root = document.getElementById('sandbox-root');
       if (!root) return;
       const computed = window.getComputedStyle(document.body);
-      const padTop = parseFloat(computed.paddingTop) || 12;
-      const padBottom = parseFloat(computed.paddingBottom) || 12;
+      const padTop = parseFloat(computed.paddingTop) || 16;
+      const padBottom = parseFloat(computed.paddingBottom) || 16;
       const contentHeight = Math.ceil(root.getBoundingClientRect().height);
       const fullHeight = Math.ceil(contentHeight + padTop + padBottom);
       if (fullHeight > 40) {
@@ -352,17 +985,17 @@
     }
 
     if (typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver(() => {
-        notifyHeight();
-      });
+      const ro = new ResizeObserver(() => notifyHeight());
       document.addEventListener('DOMContentLoaded', () => {
         const root = document.getElementById('sandbox-root');
         if (root) ro.observe(root);
+        ro.observe(document.body);
       });
     }
 
-    let currentRenderedCode = null;
-
+    // ==========================================
+    // 7. THEME & TOKEN ENGINE
+    // ==========================================
     function applyThemeTokens(isDark, fontSize) {
       if (fontSize) {
         const fsStr = String(fontSize).trim();
@@ -387,11 +1020,20 @@
       document.body.style.color = text;
     }
 
-    async function renderContent(rawCode, isDark, fontSize) {
+    // ==========================================
+    // 8. CONTENT & SCRIPT EXECUTION ENGINE
+    // ==========================================
+    let currentRenderedCode = null;
+
+    async function renderContent(rawCode, isDark, fontSize, appId, storedData) {
       if (!rawCode) return;
+      if (appId) currentAppId = appId;
+      if (storedData && typeof storedData === 'object') {
+        Object.assign(memoryStore, storedData);
+      }
+
       applyThemeTokens(isDark, fontSize);
 
-      // Guard: if same code already executed, do not re-run scripts
       if (currentRenderedCode === rawCode) {
         return;
       }
@@ -400,6 +1042,7 @@
       const container = document.getElementById('sandbox-root');
       container.innerHTML = rawCode;
 
+      // LaTeX Math Auto-render
       if (typeof window.renderMathInElement === 'function') {
         try {
           window.renderMathInElement(container, {
@@ -415,25 +1058,26 @@
         }
       }
 
-      // Re-insert scripts sequentially (waiting for external scripts with src to load first)
+      // Re-insert & execute scripts sequentially
       const scripts = Array.from(container.querySelectorAll('script'));
       for (const oldScript of scripts) {
         await new Promise((resolve) => {
           const newScript = document.createElement('script');
           Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-          
+
           if (oldScript.src) {
             newScript.onload = () => {
               notifyHeight();
               resolve();
             };
             newScript.onerror = () => {
-              console.warn("External script failed to load:", oldScript.src);
+              console.warn('[Sandbox] External script failed to load:', oldScript.src);
               resolve();
             };
             oldScript.parentNode.replaceChild(newScript, oldScript);
           } else {
-            newScript.textContent = oldScript.textContent;
+            const code = oldScript.textContent;
+            newScript.textContent = `(function(){\ntry {\n${code}\n} catch(e) {\n  console.error('[Sandbox Script Error]', e);\n  window.parent.postMessage({ type: 'NEXUS_WIDGET_ERROR', message: e.message, stack: e.stack }, '*');\n}\n})();`;
             oldScript.parentNode.replaceChild(newScript, oldScript);
             resolve();
           }
@@ -445,21 +1089,85 @@
       setTimeout(notifyHeight, 300);
     }
 
+    // Error Handlers
+    window.addEventListener('error', (event) => {
+      window.parent.postMessage({
+        type: 'NEXUS_WIDGET_ERROR',
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        stack: event.error ? event.error.stack : null
+      }, '*');
+    });
+
+    window.addEventListener('unhandledrejection', (event) => {
+      window.parent.postMessage({
+        type: 'NEXUS_WIDGET_ERROR',
+        message: event.reason?.message || String(event.reason),
+        stack: event.reason?.stack || null
+      }, '*');
+    });
+
+    // Parent Message Dispatcher
     window.addEventListener('message', (event) => {
-      if (event.data && event.data.type === 'NEXUS_WIDGET_RENDER') {
-        renderContent(event.data.code, event.data.isDark, event.data.fontSize);
-      } else if (event.data && event.data.type === 'NEXUS_WIDGET_THEME_UPDATE') {
+      if (!event.data) return;
+      const { type } = event.data;
+
+      if (type === 'NEXUS_WIDGET_RENDER') {
+        renderContent(event.data.code, event.data.isDark, event.data.fontSize, event.data.appId, event.data.storedData);
+      } else if (type === 'NEXUS_WIDGET_THEME_UPDATE') {
         applyThemeTokens(event.data.isDark, event.data.fontSize);
         setTimeout(notifyHeight, 50);
+      } else if (type === 'NEXUS_FETCH_RESPONSE') {
+        const { requestId, success, data, status, statusText, error } = event.data;
+        const pending = pendingFetchRequests.get(requestId);
+        if (pending) {
+          pendingFetchRequests.delete(requestId);
+          if (success) {
+            pending.resolve({
+              ok: status >= 200 && status < 300,
+              status: status,
+              statusText: statusText,
+              data: data,
+              text: async () => typeof data === 'string' ? data : JSON.stringify(data),
+              json: async () => typeof data === 'string' ? JSON.parse(data) : data
+            });
+          } else {
+            pending.reject(new Error(error || 'Fetch failed'));
+          }
+        }
+      } else if (type === 'NEXUS_AI_STREAM_CHUNK') {
+        const { requestId, chunk } = event.data;
+        const listener = pendingAIStreams.get(requestId);
+        if (listener) listener.onChunk(chunk);
+      } else if (type === 'NEXUS_AI_STREAM_DONE') {
+        const { requestId } = event.data;
+        const listener = pendingAIStreams.get(requestId);
+        if (listener) listener.onDone();
+      } else if (type === 'NEXUS_AI_STREAM_ERROR') {
+        const { requestId, error } = event.data;
+        const listener = pendingAIStreams.get(requestId);
+        if (listener) listener.onError(new Error(error || 'AI generation failed'));
+      } else if (type === 'NEXUS_AI_GENERATE_RESPONSE') {
+        const { requestId, success, result, error } = event.data;
+        const pending = pendingAIGenerations.get(requestId);
+        if (pending) {
+          pendingAIGenerations.delete(requestId);
+          if (success) pending.resolve(result);
+          else pending.reject(new Error(error || 'AI generation failed'));
+        }
+      } else if (type === 'NEXUS_BROWSER_QUERY_RESPONSE') {
+        const { queryId, result } = event.data;
+        const resolver = pendingBrowserQueries.get(queryId);
+        if (resolver) {
+          pendingBrowserQueries.delete(queryId);
+          resolver(result);
+        }
       }
     });
 
-    if (typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver(() => notifyHeight());
-      ro.observe(document.body);
-    }
-
-    // Notify parent iframe container that sandbox is ready
+    // Announce ready to parent
     window.parent.postMessage({ type: 'NEXUS_WIDGET_READY' }, '*');
     setTimeout(notifyHeight, 50);
   </script>

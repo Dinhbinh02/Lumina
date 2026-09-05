@@ -1,4 +1,5 @@
 import { NexusMenu } from '../ui/index.js';
+import { NexusChatUI } from '../cores/chat_ui.js';
 
 export const DEFAULT_SPARKS = {
     'spark_ielts_writing_task1': {
@@ -338,6 +339,9 @@ async function sparksRenderList() {
 async function sparksOpenEditor(sparkId = null) {
     const sparks = await sparksLoad();
     const spark = sparkId ? (sparks[sparkId] || null) : null;
+    if (typeof window.NexusViewManager !== 'undefined' && typeof window.NexusViewManager.updateUrl === 'function') {
+        window.NexusViewManager.updateUrl('sparks', { sparkId: spark?.id || sparkId || 'new' });
+    }
     document.getElementById('sparks-editor-overlay')?.remove();
     const overlay = document.createElement('div');
     overlay.id = 'sparks-editor-overlay';
@@ -418,47 +422,6 @@ async function sparksOpenEditor(sparkId = null) {
             <div class="sparks-editor-preview">
                 <div class="sparks-editor-resizer" id="sparks-editor-resizer">
                     <div class="sparks-editor-resizer-handle"></div>
-                </div>
-                <div class="sparks-preview-header">
-                    <div class="nexus-model-selector" id="sparks-preview-model-selector">
-                        <button class="nexus-model-btn" id="sparks-preview-model-btn">
-                            <span class="nexus-current-model" id="sparks-preview-model-label">Loading...</span>
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M6 9l6 6 6-6"/>
-                            </svg>
-                        </button>
-                        <div class="nexus-model-dropdown" id="sparks-preview-model-dropdown"></div>
-                    </div>
-                </div>
-                <div class="sparks-preview-chat" id="sparks-preview-chat">
-                    <div class="sparks-preview-empty" id="sparks-preview-empty">
-                        <div class="spark-welcome">
-                            <div class="spark-welcome__avatar" id="sparks-preview-welcome-avatar" style="${welcomeBgStyle}">${welcomeAvatarHTML}</div>
-                            <h1 class="spark-welcome__title" id="sparks-preview-welcome-title">${escapeHtml(spark?.name || 'New Spark')}</h1>
-                            <p class="spark-welcome__description" id="sparks-preview-welcome-description" style="color: var(--nexus-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45; display: ${spark?.description ? 'block' : 'none'};">${escapeHtml(spark?.description || '')}</p>
-                        </div>
-                    </div>
-                    <div class="nexus-chat-history sparks-preview-messages" id="sparks-preview-messages"></div>
-                </div>
-                <div class="nexus-chat-input-wrapper sparks-preview-input-area">
-                    <div class="nexus-input-container">
-                        <div class="nexus-input-bar">
-                            <div class="nexus-left-actions">
-                                 <button class="nexus-upload-btn" id="sparks-preview-upload" title="Upload File" disabled style="cursor: not-allowed; opacity: 0.5;">
-                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                 </button>
-                            </div>
-                            <textarea class="nexus-chat-input sparks-preview-input" id="sparks-preview-input" placeholder="Test your Spark…" rows="1" disabled></textarea>
-                            <div class="nexus-trailing-group">
-                                <button class="nexus-mic-btn" id="sparks-preview-mic" title="Voice Input" disabled style="cursor: not-allowed; opacity: 0.5;">
-                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="6" height="10" rx="3"></rect><path d="M5 12a7 7 0 0 0 14 0"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
-                                </button>
-                                <button class="nexus-action-btn sparks-preview-send" id="sparks-preview-send" disabled title="Send Message">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -571,48 +534,158 @@ async function sparksOpenEditor(sparkId = null) {
     });
     overlay.querySelector('#sparks-editor-back').addEventListener('click', () => {
         overlay.remove();
+        if (typeof window.NexusViewManager !== 'undefined' && typeof window.NexusViewManager.updateUrl === 'function') {
+            window.NexusViewManager.updateUrl('sparks', {});
+        }
     });
     const titleLabel = overlay.querySelector('.sparks-editor-title-row span');
-    const previewEmpty = overlay.querySelector('#sparks-preview-empty');
-    const previewInput = overlay.querySelector('#sparks-preview-input');
-    const previewSend = overlay.querySelector('#sparks-preview-send');
+
+    // Mount unified NexusChatUI to previewPane
+    const sparkChatUI = NexusChatUI.mount(previewPane, {
+        mode: 'spark_preview',
+        placeholder: 'Test your Spark…',
+        features: {
+            fileUpload: true,
+            modelSelector: true,
+            voiceInput: true
+        },
+        onSubmit: async (text, files, options) => {
+            if (previewStreaming || (!text.trim() && (!files || files.length === 0))) return;
+            const welcomeEl = sparkChatUI.historyEl?.querySelector('.spark-welcome, #sparks-preview-empty');
+            if (welcomeEl) welcomeEl.remove();
+
+            sparkChatUI.appendQuestion(text, files);
+            sparkChatUI.createAnswerDiv();
+            sparkChatUI.showLoading();
+
+            const systemPrompt = buildSystemPrompt();
+            previewStreaming = true;
+            updatePreviewState();
+
+            let model = sparkChatUI.activeTabModel?.model;
+            let providerId = sparkChatUI.activeTabModel?.providerId;
+            if (!model || !providerId) {
+                const storageData = await chrome.storage.local.get(['lastUsedModel', 'providers']);
+                if (storageData?.lastUsedModel?.model && storageData?.lastUsedModel?.providerId) {
+                    model = storageData.lastUsedModel.model;
+                    providerId = storageData.lastUsedModel.providerId;
+                } else if (typeof window.getActiveNexusTab === 'function' && window.getActiveNexusTab()?.selectedModel) {
+                    const curTab = window.getActiveNexusTab();
+                    model = curTab.selectedModel.model;
+                    providerId = curTab.selectedModel.providerId;
+                } else if (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined' && tabs[activeTabIndex]?.selectedModel) {
+                    model = tabs[activeTabIndex].selectedModel.model;
+                    providerId = tabs[activeTabIndex].selectedModel.providerId;
+                }
+                if (!providerId && storageData?.providers && storageData.providers.length > 0) {
+                    const activeProv = storageData.providers.find(p => p.enabled !== false && p.apiKey);
+                    if (activeProv) {
+                        providerId = activeProv.id;
+                        model = activeProv.model || 'gemini-2.0-flash';
+                    }
+                }
+            }
+
+            const sessionId = 'spark_preview_' + Date.now();
+            let fullResponseText = '';
+
+            try {
+                const port = chrome.runtime.connect({ name: 'nexus-chat-stream' });
+                port.onMessage.addListener((msg) => {
+                    if (msg.error) {
+                        sparkChatUI.appendError(msg.error);
+                        previewStreaming = false;
+                        updatePreviewState();
+                        return;
+                    }
+                    if (msg.action === 'chunk' && msg.chunk) {
+                        fullResponseText += msg.chunk;
+                        sparkChatUI.appendChunk(msg.chunk);
+                    }
+                    if (msg.action === 'done') {
+                        sparkChatUI.finishResponse();
+                        previewStreaming = false;
+                        previewHistory.push({ role: 'user', text, files });
+                        previewHistory.push({ role: 'assistant', text: fullResponseText });
+                        updatePreviewState();
+                        requestAnimationFrame(() => {
+                            if (sparkChatUI.inputEl) sparkChatUI.inputEl.focus();
+                        });
+                    }
+                });
+
+                port.postMessage({
+                    action: 'chat_stream',
+                    sessionId: sessionId,
+                    question: text,
+                    files: files || [],
+                    systemOverride: systemPrompt,
+                    requestOptions: {
+                        model: model,
+                        providerId: providerId
+                    }
+                });
+            } catch (err) {
+                sparkChatUI.appendError('Could not connect to streaming service.');
+                console.error('[Sparks preview]', err);
+                previewStreaming = false;
+                updatePreviewState();
+            }
+        }
+    });
+
+    function renderSparkWelcome() {
+        if (!sparkChatUI || !sparkChatUI.historyEl) return;
+        const color = getSparkColor(spark?.name || 'New Spark');
+        const welcomeAvatarHTML = currentAvatar
+            ? `<img src="${currentAvatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`
+            : (spark?.name || '?')[0].toUpperCase();
+        const welcomeBgStyle = currentAvatar ? 'background: transparent;' : `background: ${color}`;
+
+        const welcome = document.createElement('div');
+        welcome.className = 'spark-welcome';
+        welcome.id = 'sparks-preview-empty';
+        welcome.innerHTML = `
+            <div class="spark-welcome__avatar" id="sparks-preview-welcome-avatar" style="${welcomeBgStyle}">${welcomeAvatarHTML}</div>
+            <h1 class="spark-welcome__title" id="sparks-preview-welcome-title">${escapeHtml(spark?.name || 'New Spark')}</h1>
+            <p class="spark-welcome__description" id="sparks-preview-welcome-description" style="color: var(--nexus-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45; display: ${spark?.description ? 'block' : 'none'};">${escapeHtml(spark?.description || '')}</p>
+        `;
+        sparkChatUI.historyEl.innerHTML = '';
+        sparkChatUI.historyEl.appendChild(welcome);
+    }
+    renderSparkWelcome();
+
     const updatePreviewState = () => {
         const hasName = nameInput.value.trim().length > 0;
-        previewInput.disabled = !hasName;
-        previewSend.disabled = !hasName;
-        const uploadBtn = overlay.querySelector('#sparks-preview-upload');
-        const micBtn = overlay.querySelector('#sparks-preview-mic');
-        if (uploadBtn) {
-            uploadBtn.disabled = !hasName;
-            uploadBtn.style.opacity = hasName ? '1' : '0.5';
-            uploadBtn.style.cursor = hasName ? 'pointer' : 'not-allowed';
+        if (sparkChatUI && sparkChatUI.inputEl) {
+            sparkChatUI.inputEl.disabled = !hasName || previewStreaming;
         }
-        if (micBtn) {
-            micBtn.disabled = !hasName;
-            micBtn.style.opacity = hasName ? '0.6' : '0.5';
-            micBtn.style.cursor = hasName ? 'pointer' : 'not-allowed';
+        if (sparkChatUI && typeof sparkChatUI._updateActionBtnState === 'function') {
+            sparkChatUI._updateActionBtnState();
         }
-        if (previewHistory.length > 0) {
-            previewEmpty.style.display = 'none';
-        } else {
-            previewEmpty.style.display = 'flex';
+        const sendBtn = sparkChatUI?.container?.querySelector('.nexus-action-btn.send');
+        if (sendBtn && !hasName) {
+            sendBtn.disabled = true;
         }
     };
-    const welcomeTitle = overlay.querySelector('#sparks-preview-welcome-title');
-    const welcomeAvatar = overlay.querySelector('#sparks-preview-welcome-avatar');
+
     function updateWelcomeAvatarLetter(nameVal) {
         const firstLetter = (nameVal || '?')[0].toUpperCase();
+        const welcomeAvatar = overlay.querySelector('#sparks-preview-welcome-avatar');
         if (welcomeAvatar && !currentAvatar) {
             welcomeAvatar.textContent = firstLetter;
+            welcomeAvatar.style.background = getSparkColor(nameVal || 'New Spark');
         }
         const previewLetter = overlay.querySelector('#spark-avatar-preview .spark-avatar-letter');
         if (previewLetter && !currentAvatar) {
             previewLetter.textContent = firstLetter;
         }
     }
+
     nameInput.addEventListener('input', () => {
         const nameVal = nameInput.value.trim();
         titleLabel.textContent = nameVal || 'New Spark';
+        const welcomeTitle = overlay.querySelector('#sparks-preview-welcome-title');
         if (welcomeTitle) {
             welcomeTitle.textContent = nameVal || 'New Spark';
         }
@@ -620,20 +693,25 @@ async function sparksOpenEditor(sparkId = null) {
         updatePreviewState();
         updateSaveButtonState();
     });
-    const welcomeDesc = overlay.querySelector('#sparks-preview-welcome-description');
-    if (descriptionInput && welcomeDesc) {
+
+    if (descriptionInput) {
         descriptionInput.addEventListener('input', () => {
             const descVal = descriptionInput.value.trim();
-            welcomeDesc.textContent = descVal;
-            welcomeDesc.style.display = descVal ? 'block' : 'none';
+            const welcomeDesc = overlay.querySelector('#sparks-preview-welcome-description');
+            if (welcomeDesc) {
+                welcomeDesc.textContent = descVal;
+                welcomeDesc.style.display = descVal ? 'block' : 'none';
+            }
             updateSaveButtonState();
         });
     }
+
     if (instructionsInput) {
         instructionsInput.addEventListener('input', () => {
             updateSaveButtonState();
         });
     }
+
     updatePreviewState();
     updateSaveButtonState();
     const fileInput = overlay.querySelector('#sparks-file-input');
@@ -728,9 +806,11 @@ async function sparksOpenEditor(sparkId = null) {
         };
         await sparksSave(sparks);
         overlay.remove();
+        if (typeof window.NexusViewManager !== 'undefined' && typeof window.NexusViewManager.updateUrl === 'function') {
+            window.NexusViewManager.updateUrl('sparks', {});
+        }
         sparksRenderList();
     });
-    const messagesEl = overlay.querySelector('#sparks-preview-messages');
     function buildSystemPrompt() {
         let sys = overlay.querySelector('#spark-instructions-input').value.trim();
         if (currentFiles.length > 0) {
@@ -744,166 +824,6 @@ async function sparksOpenEditor(sparkId = null) {
         }
         return sys;
     }
-    function appendPreviewMessage(role, text) {
-        if (role === 'user') {
-            const row = document.createElement('div');
-            row.className = 'nexus-question-row';
-            const qDiv = document.createElement('div');
-            qDiv.className = 'nexus-chat-question';
-            qDiv.textContent = text;
-            row.appendChild(qDiv);
-            messagesEl.appendChild(row);
-            messagesEl.scrollTop = messagesEl.scrollHeight;
-            return qDiv;
-        } else {
-            const aDiv = document.createElement('div');
-            aDiv.className = 'nexus-chat-answer';
-            aDiv.textContent = text;
-            messagesEl.appendChild(aDiv);
-            messagesEl.scrollTop = messagesEl.scrollHeight;
-            return aDiv;
-        }
-    }
-    let sparkSelectedModel = null;
-    async function initSparkPreviewModelSelector() {
-        const btn = overlay.querySelector('#sparks-preview-model-btn');
-        const label = overlay.querySelector('#sparks-preview-model-label');
-        const dropdown = overlay.querySelector('#sparks-preview-model-dropdown');
-        if (!btn || !dropdown || !label) return;
-        const data = await chrome.storage.local.get(['providers', 'advancedParamsByModel', 'lastUsedModel']);
-        const chain = window.NexusModelHelper ? window.NexusModelHelper.buildModelChain(data) : [];
-        let currentModel = data.lastUsedModel?.model;
-        let currentProviderId = data.lastUsedModel?.providerId;
-        if (!currentModel && chain.length > 0) {
-            currentModel = chain[0].model;
-            currentProviderId = chain[0].providerId;
-        }
-        if (currentModel) {
-            sparkSelectedModel = { model: currentModel, providerId: currentProviderId };
-            const foundItem = chain.find(c => c.model === currentModel && c.providerId === currentProviderId) || chain.find(c => c.model === currentModel);
-            label.textContent = foundItem ? (foundItem.displayName || foundItem.model) : currentModel;
-        }
-        const renderDropdown = () => {
-            dropdown.innerHTML = chain.map(item => {
-                const isSelected = sparkSelectedModel && sparkSelectedModel.model === item.model && sparkSelectedModel.providerId === item.providerId;
-                return `
-                    <div class="nexus-model-item ${isSelected ? 'active' : ''}" data-model="${escapeHtml(item.model)}" data-provider-id="${escapeHtml(item.providerId)}">
-                        <div class="nexus-model-item-info">
-                            <div class="nexus-model-name">${escapeHtml(item.displayName)}</div>
-                            <div class="nexus-model-provider">${escapeHtml(item.providerName || item.providerId)}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            dropdown.querySelectorAll('.nexus-model-item').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const m = el.dataset.model;
-                    const p = el.dataset.providerId;
-                    sparkSelectedModel = { model: m, providerId: p };
-                    const foundItem = chain.find(c => c.model === m && c.providerId === p) || chain.find(c => c.model === m);
-                    label.textContent = foundItem ? (foundItem.displayName || foundItem.model) : m;
-                    dropdown.classList.remove('active');
-                });
-            });
-        };
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isActive = dropdown.classList.contains('active');
-            document.querySelectorAll('.nexus-model-dropdown.active').forEach(d => d.classList.remove('active'));
-            if (!isActive) {
-                renderDropdown();
-                dropdown.classList.add('active');
-            }
-        });
-        document.addEventListener('click', (e) => {
-            if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.remove('active');
-            }
-        });
-    }
-    initSparkPreviewModelSelector();
-    async function sendPreviewMessage() {
-        if (previewStreaming) return;
-        const input = overlay.querySelector('#sparks-preview-input');
-        const text = input.value.trim();
-        if (!text) return;
-        input.value = '';
-        input.style.height = 'auto';
-        appendPreviewMessage('user', text);
-        const systemPrompt = buildSystemPrompt();
-        const historyForAPI = previewHistory.map(h => ({ role: h.role, parts: [{ text: h.text }] }));
-        previewHistory.push({ role: 'user', text });
-        updatePreviewState();
-        const aiDiv = appendPreviewMessage('assistant', '');
-        aiDiv.innerHTML = NexusTemplates.thinkingDots();
-        previewStreaming = true;
-        previewSend.disabled = true;
-        try {
-            let model = sparkSelectedModel?.model;
-            let providerId = sparkSelectedModel?.providerId;
-            if (!model || !providerId) {
-                const storageData = await chrome.storage.local.get(['lastUsedModel', 'providers']);
-                if (storageData?.lastUsedModel?.model && storageData?.lastUsedModel?.providerId) {
-                    model = storageData.lastUsedModel.model;
-                    providerId = storageData.lastUsedModel.providerId;
-                } else if (typeof window.getActiveNexusTab === 'function' && window.getActiveNexusTab()?.selectedModel) {
-                    const curTab = window.getActiveNexusTab();
-                    model = curTab.selectedModel.model;
-                    providerId = curTab.selectedModel.providerId;
-                } else if (typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined' && tabs[activeTabIndex]?.selectedModel) {
-                    model = tabs[activeTabIndex].selectedModel.model;
-                    providerId = tabs[activeTabIndex].selectedModel.providerId;
-                }
-                if (!providerId && storageData?.providers && storageData.providers.length > 0) {
-                    const activeProv = storageData.providers.find(p => p.enabled !== false && p.apiKey);
-                    if (activeProv) {
-                        providerId = activeProv.id;
-                        model = activeProv.model || 'gemini-2.0-flash';
-                    }
-                }
-            }
-            const messages = [
-                ...(systemPrompt ? [{ role: 'user', parts: [{ text: `[System Instructions]\n${systemPrompt}` }] }, { role: 'model', parts: [{ text: 'Understood. I will follow these instructions.' }] }] : []),
-                ...historyForAPI,
-                { role: 'user', parts: [{ text }] }
-            ];
-            const response = await chrome.runtime.sendMessage({
-                action: 'preview_spark',
-                messages,
-                model,
-                providerId
-            });
-            let replyText = '';
-            if (response?.text) {
-                replyText = response.text;
-            } else if (response?.error) {
-                replyText = `Error: ${response.error}`;
-            } else {
-                replyText = '(No response)';
-            }
-            aiDiv.textContent = replyText;
-            previewHistory.push({ role: 'assistant', text: replyText });
-        } catch (err) {
-            aiDiv.textContent = 'Could not get a response. Check your API connection.';
-            console.error('[Sparks preview]', err);
-        } finally {
-            previewStreaming = false;
-            if (nameInput.value.trim()) previewSend.disabled = false;
-        }
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-    previewSend.addEventListener('click', sendPreviewMessage);
-    previewInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendPreviewMessage();
-        }
-    });
-    previewInput.addEventListener('input', () => {
-        previewInput.style.height = 'auto';
-        previewInput.style.height = Math.min(previewInput.scrollHeight, 100) + 'px';
-    });
 }
 async function sidebarSparksRenderList() {
     const container = document.getElementById('sidebar-sparks-list');
@@ -1335,7 +1255,7 @@ function initSparks() {
     document.getElementById('sidebar-new-chat-btn')?.addEventListener('click', () => {
         const activeTab = (typeof window.getActiveNexusTab === 'function')
             ? window.getActiveNexusTab()
-            : ((typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null));
+            : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
         if (activeTab) {
             activeTab.sparkId = null;
             if (typeof renderTabs === 'function') renderTabs();
@@ -1347,7 +1267,7 @@ function initSparks() {
     document.getElementById('topbar-new-chat-btn')?.addEventListener('click', () => {
         const activeTab = (typeof window.getActiveNexusTab === 'function')
             ? window.getActiveNexusTab()
-            : ((typeof window.getActiveSpotlightTab === 'function') ? window.getActiveSpotlightTab() : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null));
+            : ((typeof tabs !== 'undefined' && typeof activeTabIndex !== 'undefined') ? tabs[activeTabIndex] : null);
         if (activeTab) {
             activeTab.sparkId = null;
             if (typeof renderTabs === 'function') renderTabs();
@@ -1383,6 +1303,7 @@ if (typeof window !== 'undefined') {
     window.renderSparkWelcomeScreen = renderSparkWelcomeScreen;
     window.sparksClosePage = sparksClosePage;
     window.sparksOpenPage = sparksOpenPage;
+    window.sparksOpenEditor = sparksOpenEditor;
     window.sidebarSparksRenderList = sidebarSparksRenderList;
 }
 

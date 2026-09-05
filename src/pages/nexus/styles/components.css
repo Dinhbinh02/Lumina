@@ -459,130 +459,6 @@
   display: block;
 }
 
-.nexus-widget-blueprint-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--nexus-font-mono);
-  font-size: var(--nexus-text-xs, 0.75em);
-  font-weight: var(--nexus-weight-semibold, 600);
-  letter-spacing: 0.05em;
-  color: var(--nexus-text-secondary);
-  background: var(--nexus-surface-hover, rgba(0, 0, 0, 0.04));
-  border: 1px solid var(--nexus-border-color);
-  padding: 2px 8px;
-  border-radius: var(--nexus-radius-sm, 6px);
-}
-
-.nexus-blueprint-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--nexus-primary-color);
-  animation: nexus-blueprint-pulse 1.2s infinite ease-in-out;
-}
-
-@keyframes nexus-blueprint-pulse {
-
-  0%,
-  100% {
-    opacity: 0.3;
-    transform: scale(0.85);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-}
-
-.nexus-widget-blueprint-body {
-  position: relative;
-  width: 100%;
-  height: 180px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--nexus-ui-bg);
-  background-image:
-    linear-gradient(to right, var(--nexus-border-color) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--nexus-border-color) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-.nexus-blueprint-scanline {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--nexus-text-primary), transparent);
-  opacity: 0.4;
-  box-shadow: 0 0 8px var(--nexus-text-primary);
-  animation: nexus-blueprint-scan 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  pointer-events: none;
-}
-
-@keyframes nexus-blueprint-scan {
-  0% {
-    top: 0%;
-    opacity: 0;
-  }
-
-  15% {
-    opacity: 0.6;
-  }
-
-  85% {
-    opacity: 0.6;
-  }
-
-  100% {
-    top: 100%;
-    opacity: 0;
-  }
-}
-
-.nexus-blueprint-terminal {
-  position: relative;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 14px;
-  border-radius: var(--nexus-radius-sm, 6px);
-  background: var(--nexus-ui-bg);
-  border: 1px solid var(--nexus-border-color);
-  font-family: var(--nexus-font-mono);
-  font-size: var(--nexus-text-xs, 0.75em);
-  color: var(--nexus-text-secondary);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-}
-
-.nexus-blueprint-prompt {
-  letter-spacing: 0.02em;
-}
-
-.nexus-blueprint-cursor {
-  display: inline-block;
-  font-weight: var(--nexus-weight-bold);
-  color: var(--nexus-primary-color);
-  animation: nexus-cursor-blink 0.8s steps(2, start) infinite;
-}
-
-@keyframes nexus-cursor-blink {
-
-  0%,
-  100% {
-    opacity: 0;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
 .nexus-spin-once svg {
   animation: nexus-spinner-rotate 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -6407,3 +6283,350 @@
 .nexus-pt-tile.is-cat-transition { border-color: rgba(245, 158, 11, 0.3); }
 .nexus-pt-tile.is-cat-post_transition { border-color: rgba(99, 102, 241, 0.3); }
 .nexus-pt-tile.is-cat-actinide { border-color: rgba(236, 72, 153, 0.3); }
+
+/* ==========================================================================
+   Highlight.js Syntax Highlighting (Universal Theme)
+   ========================================================================== */
+
+pre code,
+.hljs {
+  color: #f8f8f2 !important;
+  background: transparent !important;
+}
+
+.hljs-comment,
+.hljs-quote,
+pre code .hljs-comment,
+pre code .hljs-quote {
+  color: #6272a4 !important;
+  font-style: italic !important;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-addition,
+pre code .hljs-keyword,
+pre code .hljs-selector-tag,
+pre code .hljs-addition {
+  color: #ff79c6 !important;
+  font-weight: var(--nexus-weight-bold, 600) !important;
+}
+
+.hljs-string,
+.hljs-meta,
+pre code .hljs-string,
+pre code .hljs-meta {
+  color: #50fa7b !important;
+}
+
+.hljs-number,
+.hljs-literal,
+pre code .hljs-number,
+pre code .hljs-literal {
+  color: #bd93f9 !important;
+}
+
+.hljs-built_in,
+.hljs-class,
+.hljs-title,
+pre code .hljs-built_in,
+pre code .hljs-class,
+pre code .hljs-title {
+  color: #8be9fd !important;
+}
+
+.hljs-function .hljs-title,
+pre code .hljs-function .hljs-title {
+  color: #50fa7b !important;
+}
+
+.hljs-params,
+pre code .hljs-params {
+  color: #ffb86c !important;
+}
+
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+pre code .hljs-variable,
+pre code .hljs-template-variable,
+pre code .hljs-tag,
+pre code .hljs-name,
+pre code .hljs-selector-id,
+pre code .hljs-selector-class {
+  color: #ff79c6 !important;
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-symbol,
+.hljs-bullet,
+pre code .hljs-attr,
+pre code .hljs-attribute,
+pre code .hljs-symbol,
+pre code .hljs-bullet {
+  color: #f1fa8c !important;
+}
+
+.hljs-section,
+.hljs-type,
+pre code .hljs-section,
+pre code .hljs-type {
+  color: #8be9fd !important;
+}
+
+.hljs-deletion,
+pre code .hljs-deletion {
+  color: #ff5555 !important;
+}
+
+pre ::selection,
+pre code ::selection,
+pre span ::selection {
+  background: color-mix(in srgb, rgb(98, 114, 164) 40%, #282a36) !important;
+  color: inherit !important;
+}
+
+/* ==========================================================================
+   Global Nexus Modal & Dialog System (Unified)
+   ========================================================================== */
+
+.nexus-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2147483647;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nexus-modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nexus-modal-box {
+  background: var(--nexus-ui-bg, #ffffff);
+  border: 1px solid var(--nexus-border-subtle, rgba(0, 0, 0, 0.1));
+  border-radius: 14px;
+  padding: 20px 24px;
+  width: 90%;
+  max-width: 440px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: scale(0.95) translateY(6px);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .nexus-modal-box {
+  background: var(--nexus-card-bg, #1c1c1f);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+}
+
+.nexus-modal-overlay.active .nexus-modal-box {
+  transform: scale(1) translateY(0);
+}
+
+.nexus-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.nexus-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--nexus-text-primary, #0f172a);
+  margin: 0;
+}
+
+[data-theme="dark"] .nexus-modal-title {
+  color: #ffffff;
+}
+
+.nexus-modal-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--nexus-text-tertiary, #64748b);
+  transition: all 0.15s ease;
+}
+
+.nexus-modal-close-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--nexus-text-primary);
+}
+
+[data-theme="dark"] .nexus-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.nexus-modal-desc {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--nexus-text-secondary, #64748b);
+  margin: 0;
+}
+
+[data-theme="dark"] .nexus-modal-desc {
+  color: #94a3b8;
+}
+
+.nexus-modal-body {
+  font-size: 13.5px;
+  color: var(--nexus-text-secondary);
+  line-height: 1.5;
+}
+
+.nexus-modal-diff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--nexus-question-bg, rgba(0, 0, 0, 0.02));
+  border-radius: 8px;
+  border: 1px solid var(--nexus-border-subtle, rgba(0, 0, 0, 0.06));
+}
+
+[data-theme="dark"] .nexus-modal-diff-list {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.nexus-modal-diff-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--nexus-font-mono, 'Google Sans Code', monospace);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.nexus-modal-file-icon {
+  width: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.nexus-modal-file-icon.html { color: #f97316; font-size: 13px; }
+.nexus-modal-file-icon.js { color: #eab308; font-size: 12px; font-weight: 800; }
+.nexus-modal-file-icon.css { color: #0ea5e9; font-size: 14px; }
+
+.nexus-modal-filename {
+  color: var(--nexus-text-primary, #1e293b);
+  flex: 1;
+}
+
+[data-theme="dark"] .nexus-modal-filename {
+  color: #f1f5f9;
+}
+
+.nexus-modal-diff-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.nexus-modal-stat-add { color: #10b981; }
+.nexus-modal-stat-del { color: #ef4444; }
+
+.nexus-modal-input {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--nexus-ui-border, #ccc);
+  background: var(--nexus-ui-bg, #fff);
+  color: var(--nexus-text-primary);
+  font-size: 13.5px;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+[data-theme="dark"] .nexus-modal-input {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.nexus-modal-input:focus {
+  border-color: var(--nexus-primary-color);
+}
+
+.nexus-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.nexus-modal-btn {
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--nexus-text-secondary);
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nexus-modal-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--nexus-text-primary);
+}
+
+[data-theme="dark"] .nexus-modal-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.nexus-modal-btn-primary {
+  background: #0066cc;
+  color: #ffffff !important;
+}
+
+.nexus-modal-btn-primary:hover {
+  background: #0052a3;
+}
+
+.nexus-modal-btn-danger {
+  background: #ea4335;
+  color: #ffffff !important;
+}
+
+.nexus-modal-btn-danger:hover {
+  background: #d93025;
+}

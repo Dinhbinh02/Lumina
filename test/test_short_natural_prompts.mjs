@@ -11,11 +11,11 @@ const keyMatches = apiKeysFile.match(/AQ\.[A-Za-z0-9_-]+|AIzaSy[A-Za-z0-9_-]+/g)
 const API_KEY = keyMatches ? keyMatches[0] : '';
 const MODEL = 'gemini-flash-lite-latest';
 
-// Read exact system instruction from chat_stream_service.js
-const chatStreamServiceCode = fs.readFileSync(path.join(__dirname, '../src/background/chat_stream_service.js'), 'utf8');
+// Read exact system instruction from chat_service.js
+const chatStreamServiceCode = fs.readFileSync(path.join(__dirname, '../src/background/chat_service.js'), 'utf8');
 const fnCode = `
 function detectDomainFromContext() { return 'general'; }
-${chatStreamServiceCode.slice(chatStreamServiceCode.indexOf('function buildChatSystemInstruction('), chatStreamServiceCode.indexOf('function buildProofreadSystemPrompt('))}
+${chatStreamServiceCode.slice(chatStreamServiceCode.indexOf('function buildChatSystemInstruction('), chatStreamServiceCode.indexOf('function cleanThinkingBlocks('))}
 return buildChatSystemInstruction(false, 'desktop', 'general chat', []);
 `;
 

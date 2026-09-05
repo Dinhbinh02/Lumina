@@ -11,10 +11,6 @@ try {
     NexusTooltip.init();
 } catch (_) { }
 
-
-const container = document.querySelector('.nexus-chat-container');
-const fileInput = document.getElementById('file-input');
-
 function bindContainerWheelForward(containerEl) {
     if (!containerEl || containerEl.__nexusWheelBound) return;
     containerEl.__nexusWheelBound = true;
@@ -163,32 +159,20 @@ window.NexusSelectionScope = {
 
 const pageContextCache = new Map();
 
-const isSplitMode = false;
-const hoveredPane = 'primary';
-const secondaryActiveTabIndex = -1;
-const chatUISecondary = null;
-const sharedInputUISecondary = null;
-
 let chatUI = null;
 let sharedInputUI = null;
 
 function getHoveredInputEl() {
-    const appsStudioInput = document.getElementById('apps-studio-prompt-input');
+    const appsStudioInput = document.querySelector('.apps-studio-left-pane .nexus-chat-input') || document.getElementById('apps-studio-prompt-input');
     if (appsStudioInput && !appsStudioInput.disabled && appsStudioInput.offsetParent !== null) {
         return appsStudioInput;
     }
-    const sparkInput = document.getElementById('sparks-preview-input');
+    const sparkInput = document.querySelector('.sparks-editor-preview .nexus-chat-input') || document.getElementById('sparks-preview-input');
     if (sparkInput && !sparkInput.disabled && sparkInput.offsetParent !== null) {
         return sparkInput;
     }
     return sharedInputUI?.inputEl;
 }
-
-function getShortcutTargetTab() {
-    return tabs[activeTabIndex] || null;
-}
-
-let sidebarTargetTabId = null;
 
 window.getActiveNexusTab = function () {
     return (typeof tabs !== 'undefined' && activeTabIndex >= 0) ? tabs[activeTabIndex] : null;
@@ -197,9 +181,6 @@ window.getActiveNexusTab = function () {
 window.getSharedInputUI = function () {
     return typeof sharedInputUI !== 'undefined' ? sharedInputUI : null;
 };
-
-function updatePaneHighlight() {
-}
 
 let port = null;
 let shortcuts = {};
@@ -216,7 +197,6 @@ let webTabPickerOutsideHandler = null;
 let webTabPickerKeyHandler = null;
 let minHeightReflowRaf = null;
 
-let nexusAskSourcePane = 'primary';
 let groupCounter = 1;
 let isInitializing = false;
 let handledQueryIds = new Set();
@@ -227,17 +207,6 @@ let modifierKeyPressedAlone = false;
 let lastSubmitTime = 0;
 let lastSubmitText = "";
 let readWebpageEnabled = false;
-
-const GROUP_COLORS = [
-    '#4285f4',
-    '#34a853',
-    '#fbbc05',
-    '#ea4335',
-    '#a142f4',
-    '#24c1e0',
-    '#ff6d01',
-    '#ff33b5'
-];
 
 function applyFontSize(size) {
     if (typeof NexusChatUI !== 'undefined' && typeof NexusChatUI.applyFontSize === 'function') {
@@ -297,7 +266,7 @@ function readWebSelectionFromStorage(scopeKey) {
             }))
             : [];
     } catch (error) {
-        console.warn('[Spotlight] Failed to read web selection from localStorage:', error);
+        console.warn('[Nexus] Failed to read web selection from localStorage:', error);
         return [];
     }
 }
@@ -315,11 +284,6 @@ function writeWebSelectionToStorage(scopeKey, selection) {
     } else {
         localStorage.removeItem(key);
     }
-}
-
-function deleteWebSelectionFromStorage(scopeKey) {
-    const key = getWebSelectionStorageKey(scopeKey);
-    localStorage.removeItem(key);
 }
 
 function getWebSelectionForScope(nexusTabId) {
@@ -555,35 +519,6 @@ function refreshWebSourceTokensForTab(tabId) {
     }
 }
 
-function isSelectionInsideEditable() {
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0 && sel.toString().trim().length > 0) {
-        let node = sel.anchorNode;
-        while (node && node !== document.documentElement) {
-            if (node.nodeType === 1) {
-                if (['INPUT', 'TEXTAREA', 'SELECT'].includes(node.tagName) ||
-                    node.isContentEditable ||
-                    node.getAttribute('contenteditable') === 'true' ||
-                    node.getAttribute('role') === 'textbox'
-                ) {
-                    return true;
-                }
-            }
-            node = node.parentNode || (node.host && node.host.nodeType === 1 ? node.host : null);
-        }
-    }
-    const active = document.activeElement;
-    if (active && (
-        ['INPUT', 'TEXTAREA', 'SELECT', 'CANVAS'].includes(active.tagName) ||
-        active.isContentEditable ||
-        active.getAttribute('contenteditable') === 'true' ||
-        active.getAttribute('role') === 'textbox'
-    )) {
-        return true;
-    }
-    return false;
-}
-
 function bindHistoryScroll(tab) {
     if (!tab || !tab.historyEl || tab.historyEl.__nexusScrollBound) return;
     tab.historyEl.__nexusScrollBound = true;
@@ -797,16 +732,16 @@ async function handleRemoteSync(changes, areaName) {
                         const historyEl = document.createElement('div');
                         historyEl.className = 'nexus-chat-scroll-content';
                         historyEl.style.display = 'none';
-                        const primaryContainer = document.querySelector('.nexus-chat-container') || container;
-                        primaryContainer.appendChild(historyEl);
+                        const primaryContainer = document.querySelector('.nexus-chat-container');
+                        if (primaryContainer) primaryContainer.appendChild(historyEl);
                         const newTab = {
                             id: meta.id,
                             title: meta.title || 'New Tab',
                             sessionId: meta.sessionId,
                             sparkId: meta.sparkId || null,
                             historyEl: historyEl,
-                            chatUIInstance: new NexusChatUI(container, {
-                                isSpotlight: true,
+                            chatUIInstance: new NexusChatUI(primaryContainer, {
+                                isNexus: true,
                                 skipInputSetup: true,
                                 onSubmit: (text, images, extra) => handleSubmit(text, images, extra, newTab)
                             }),
@@ -901,11 +836,7 @@ async function ensureTabHistoryLoaded(tab) {
                         tab.chatUIInstance.thinkingLevel = resolved.thinkingLevel || null;
                     }
                     if (sharedInputUI && tab === tabs[activeTabIndex]) {
-                        sharedInputUI.historyEl = tab.historyEl;
-                        sharedInputUI.activeTabModel = resolved.selectedModel ? { ...resolved.selectedModel } : null;
-                        sharedInputUI.thinkingLevel = resolved.thinkingLevel || null;
-                        if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
-                        if (typeof sharedInputUI.refreshReasoningSelector === 'function') sharedInputUI.refreshReasoningSelector();
+                        sharedInputUI.attachTab(tab);
                     }
                     const chatData = {
                         ...meta,
@@ -954,7 +885,7 @@ async function initTabs() {
     if (topBar) {
         topBar.style.removeProperty('display');
     }
-    const mainContainer = document.querySelector('.nexus-chat-container') || container;
+    const mainContainer = document.querySelector('.nexus-chat-container');
     if (mainContainer) {
         mainContainer.querySelectorAll('.nexus-chat-scroll-content').forEach(el => el.remove());
     }
@@ -988,7 +919,7 @@ async function initTabs() {
                     await chrome.storage.local.set(toSet);
                 }
             } catch (e) {
-                console.warn('[Spotlight] Failed to copy global keys to namespace keys:', e);
+                console.warn('[Nexus] Failed to copy global keys to namespace keys:', e);
             }
         }
         const data = await chrome.storage.local.get([
@@ -1037,8 +968,8 @@ async function initTabs() {
             historyEl: initialHistory,
             selectedModel: activeModel,
             thinkingLevel: activeThinking,
-            chatUIInstance: new NexusChatUI(container, {
-                isSpotlight: true,
+            chatUIInstance: new NexusChatUI(mainContainer, {
+                isNexus: true,
                 skipInputSetup: true,
                 onSubmit: (text, images, extra) => handleSubmit(text, images, extra, singleTab)
             }),
@@ -1062,9 +993,9 @@ async function initTabs() {
         }, 0);
         activeTabIndex = 0;
     } catch (e) {
-        console.error('[Spotlight] initTabs failed:', e);
+        console.error('[Nexus] initTabs failed:', e);
     }
-    const primaryC = document.querySelector('.nexus-chat-container') || container;
+    const primaryC = document.querySelector('.nexus-chat-container');
     bindContainerWheelForward(primaryC);
     const newTabBtn = document.getElementById('new-tab-btn');
     if (newTabBtn) {
@@ -1123,9 +1054,7 @@ function switchTab(targetIndex, skipScrollRestore = false) {
     if (targetIndex < 0 || targetIndex >= tabs.length) return;
     const currentTab = tabs[activeTabIndex];
     if (currentTab && sharedInputUI) {
-        if (sharedInputUI.getInputState) currentTab.inputState = sharedInputUI.getInputState();
-        currentTab.selectedModel = sharedInputUI.activeTabModel || currentTab.selectedModel || null;
-        currentTab.thinkingLevel = sharedInputUI.thinkingLevel || currentTab.thinkingLevel || null;
+        sharedInputUI.saveTabState(currentTab);
     }
     tabs.forEach(t => {
         if (t.historyEl) t.historyEl.style.display = 'none';
@@ -1133,8 +1062,8 @@ function switchTab(targetIndex, skipScrollRestore = false) {
     activeTabIndex = targetIndex;
     const activeTab = tabs[activeTabIndex];
     ensureTabHistoryLoaded(activeTab);
-    const mainContainer = document.querySelector('.nexus-chat-container') || container;
-    if (activeTab.historyEl && !mainContainer.contains(activeTab.historyEl)) {
+    const mainContainer = document.querySelector('.nexus-chat-container');
+    if (activeTab.historyEl && mainContainer && !mainContainer.contains(activeTab.historyEl)) {
         mainContainer.appendChild(activeTab.historyEl);
     }
     if (activeTab.historyEl) activeTab.historyEl.style.display = 'block';
@@ -1145,12 +1074,7 @@ function switchTab(targetIndex, skipScrollRestore = false) {
     activeTab.selectedModel = activeTab.selectedModel || savedSettings.selectedModel || null;
     activeTab.thinkingLevel = activeTab.thinkingLevel || savedSettings.thinkingLevel || null;
     if (sharedInputUI) {
-        sharedInputUI.historyEl = activeTab.historyEl;
-        sharedInputUI.restoreInputState(activeTab.inputState || null);
-        sharedInputUI.activeTabModel = activeTab.selectedModel ? { ...activeTab.selectedModel } : null;
-        sharedInputUI.thinkingLevel = activeTab.thinkingLevel || null;
-        if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
-        if (typeof sharedInputUI.refreshReasoningSelector === 'function') sharedInputUI.refreshReasoningSelector();
+        sharedInputUI.attachTab(activeTab);
     }
     updateInputPlaceholder();
     syncTabUI(activeTab, false, skipScrollRestore);
@@ -1219,15 +1143,6 @@ function closeTab(tabId) {
         switchTab(nextIndex);
     }
     saveTabsState();
-}
-
-function updateTabTitle(chatUIInstance, title) {
-    const tab = tabs.find(t => t.chatUIInstance === chatUIInstance);
-    if (tab) {
-        tab.title = title;
-        renderTabs();
-        saveTabsState();
-    }
 }
 
 function saveTabsState(forceSaveChat = false, saveHistory = true) {
@@ -1473,27 +1388,6 @@ let startX = 0;
 let draggedElement = null;
 let initialRects = [];
 let totalDeltaX = 0;
-let groupPreviewTargetIndex = -1;
-
-function getGroupColor(sessionId, tabIndex) {
-    if (isSplitMode) {
-        if (tabIndex === activeTabIndex || tabIndex === secondaryActiveTabIndex) {
-            return '#0056D2';
-        }
-    }
-    const sessionCount = {};
-    tabs.forEach(t => {
-        sessionCount[t.sessionId] = (sessionCount[t.sessionId] || 0) + 1;
-    });
-    if (sessionCount[sessionId] <= 1) return null;
-    const groupSessionIds = Object.keys(sessionCount)
-        .filter(id => sessionCount[id] > 1)
-        .sort((a, b) => {
-            return tabs.findIndex(t => t.sessionId === a) - tabs.findIndex(t => t.sessionId === b);
-        });
-    const index = groupSessionIds.indexOf(sessionId);
-    return GROUP_COLORS[index % GROUP_COLORS.length];
-}
 
 function renderTabs() {
     const list = document.getElementById('tabs-list');
@@ -1638,7 +1532,7 @@ function handleMouseUp() {
     renderTabs();
 }
 
-function initSpotlightAskSelection() {
+function initAskSelection() {
     let lastMouseX = 0;
     let lastMouseY = 0;
     document.addEventListener('mousemove', (e) => {
@@ -1653,7 +1547,7 @@ function initSpotlightAskSelection() {
             shadowRoot: null,
             onSubmit: (query, displayQuery, sourceEntry, range, isTranslate, isAudio) => {
                 if (isAudio) {
-                    playSpotlightAudio(displayQuery);
+                    playTTSAudio(displayQuery);
                     return;
                 }
                 if (isTranslate) {
@@ -1710,18 +1604,12 @@ function initSpotlightAskSelection() {
                 return;
             }
 
-            const isInsideProofread = range && (range.startContainer.parentElement?.closest('.nexus-proofread-editable') || range.startContainer.closest?.('.nexus-proofread-editable'));
-
-            if ((!askSelectionPopupEnabled && !isInsideProofread) || text.length === 0) {
+            if (!askSelectionPopupEnabled || text.length === 0) {
                 const isHighlight = e.target.closest('.nexus-highlight') || (window.NexusAnnotation && NexusAnnotation.getHighlightAtCoords(e.clientX, e.clientY));
                 if (window.NexusSelection && !isHighlight) NexusSelection.hide();
                 return;
             }
 
-            const secondaryPane = document.getElementById('pane-secondary');
-            nexusAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
-                ? 'secondary'
-                : 'primary';
             if (window.NexusSelection) {
                 NexusSelection.show(e.clientX, e.clientY, text, range);
             }
@@ -1751,14 +1639,8 @@ function initSpotlightAskSelection() {
             );
             if (!isInsideAnswer) return;
 
-            const isInsideProofread = range && (range.startContainer.parentElement?.closest('.nexus-proofread-editable') || range.startContainer.closest?.('.nexus-proofread-editable'));
+            if (!askSelectionPopupEnabled) return;
 
-            if (!askSelectionPopupEnabled && !isInsideProofread) return;
-
-            const secondaryPane = document.getElementById('pane-secondary');
-            nexusAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
-                ? 'secondary'
-                : 'primary';
             if (window.NexusSelection) {
                 if (NexusSelection.btn && NexusSelection.btn.style.display === 'flex') {
                     NexusSelection.show(undefined, undefined, text, range, false);
@@ -2255,9 +2137,6 @@ function scheduleVisibleTabsMinHeightReflow() {
     minHeightReflowRaf = requestAnimationFrame(() => {
         minHeightReflowRaf = null;
         const visibleTabIndexes = [activeTabIndex];
-        if (isSplitMode && secondaryActiveTabIndex >= 0) {
-            visibleTabIndexes.push(secondaryActiveTabIndex);
-        }
         visibleTabIndexes.forEach((index) => {
             const tab = tabs[index];
             if (!tab?.historyEl || typeof tab.chatUIInstance?.setInitialEntryHeight !== 'function') return;
@@ -2354,7 +2233,7 @@ async function init() {
         try {
             window.NexusSelection.hide();
         } catch (e) {
-            console.warn('[Spotlight] Failed to hide stale selection popup:', e);
+            console.warn('[Nexus] Failed to hide stale selection popup:', e);
         }
     }
     document.querySelectorAll('.nexus-overlay-backdrop').forEach(el => el.remove());
@@ -2391,12 +2270,12 @@ async function init() {
             el.classList.toggle('has-scrollbar', hasScroll);
         }
     });
-    initSpotlightAskSelection();
+    initAskSelection();
     const inputArea = document.getElementById('input-area');
     if (inputArea) {
         inputArea.innerHTML = NexusChatUI.getChatInputHTML(true);
         sharedInputUI = new NexusChatUI(inputArea, {
-            isSpotlight: true,
+            isNexus: true,
             isPrimaryInput: true,
             alwaysExpanded: true,
             onSubmit: (text, images, extra) => {
@@ -2424,7 +2303,7 @@ async function init() {
             }
         }
     } catch (e) {
-        console.error('[Spotlight] Failed to check pending query before initTabs:', e);
+        console.error('[Nexus] Failed to check pending query before initTabs:', e);
     }
     await initTabs();
     if (tabs.length === 0) {
@@ -2433,18 +2312,12 @@ async function init() {
         if (tabs[activeTabIndex]) {
             chatUI = tabs[activeTabIndex].chatUIInstance;
             if (sharedInputUI) {
-                sharedInputUI.historyEl = tabs[activeTabIndex].historyEl;
-                sharedInputUI.activeTabModel = tabs[activeTabIndex].selectedModel ? { ...tabs[activeTabIndex].selectedModel } : null;
-                sharedInputUI.thinkingLevel = tabs[activeTabIndex].thinkingLevel || null;
-                if (typeof sharedInputUI.refreshModelSelector === 'function') sharedInputUI.refreshModelSelector();
-                if (typeof sharedInputUI.refreshReasoningSelector === 'function') sharedInputUI.refreshReasoningSelector();
-                sharedInputUI._updateActionBtnState();
+                sharedInputUI.attachTab(tabs[activeTabIndex]);
             }
         }
     }
     initModelSelector('primary');
     updateInputPlaceholder();
-    updatePaneHighlight();
     if (typeof tabs !== 'undefined') {
         tabs.forEach((tab) => {
             if (tab && tab.sparkId && !tab.sessionId) {
@@ -2542,7 +2415,7 @@ async function init() {
         }
         const { query, displayQuery, queryId, mode, sourceTab, timestamp } = data;
         if (timestamp && (Date.now() - timestamp > 120000)) {
-            console.log('[Spotlight] Skipping stale pending query:', queryId);
+            console.log('[Nexus] Skipping stale pending query:', queryId);
             return;
         }
         if (queryId && handledQueryIds.has(queryId)) {
@@ -2610,8 +2483,7 @@ async function init() {
                 const isRecentLocalSave = window._localSavedSessions?.[sid] && (Date.now() - window._localSavedSessions[sid] < 3000);
                 if (!isRecentLocalSave) {
                     const isGeneratingLocally = (
-                        (sharedInputUI && sharedInputUI.isGenerating && streamingTab && streamingTab.sessionId === sid) ||
-                        (sharedInputUISecondary && sharedInputUISecondary.isGenerating && streamingTab && streamingTab.sessionId === sid)
+                        (sharedInputUI && sharedInputUI.isGenerating && streamingTab && streamingTab.sessionId === sid)
                     );
                     if (!isGeneratingLocally) {
                         Promise.all([
@@ -2767,7 +2639,7 @@ async function init() {
             if (myWindowId === null || myWindowId === targetWinId) {
                 const { query, displayQuery, queryId, mode, sourceTab } = request;
                 if (queryId && handledQueryIds.has(queryId)) {
-                    console.log('[Spotlight] Ignoring duplicate query via message:', queryId);
+                    console.log('[Nexus] Ignoring duplicate query via message:', queryId);
                     return;
                 }
                 if (queryId) handledQueryIds.add(queryId);
@@ -2888,7 +2760,6 @@ async function init() {
     }, 5000);
     const updateReadTitles = () => {
         if (typeof sharedInputUI?.refreshReadPageTitle === 'function') sharedInputUI.refreshReadPageTitle();
-        if (typeof sharedInputUISecondary?.refreshReadPageTitle === 'function') sharedInputUISecondary.refreshReadPageTitle();
     };
     if (typeof chrome !== 'undefined' && chrome.tabs) {
         chrome.tabs.onActivated.addListener(updateReadTitles);
@@ -3801,7 +3672,7 @@ function setupPort() {
             streamDebugState = null;
         });
     } catch (e) {
-        console.error('[Spotlight] Failed to setup port:', e);
+        console.error('[Nexus] Failed to setup port:', e);
         port = null;
     }
 }
@@ -3860,13 +3731,9 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
     const _activeInputUI = sharedInputUI;
     if (_activeInputUI) _activeInputUI.isGenerating = true;
     const translateMatch = text && text.match(/^translate:?\s*([\s\S]*)/i);
-    const proofreadMatch = !translateMatch && text && text.match(/^proofread:?\s*([\s\S]*)/i);
     if (translateMatch) {
         text = translateMatch[1].trim();
         extra = { ...extra, mode: 'translate' };
-    } else if (proofreadMatch) {
-        text = proofreadMatch[1].trim();
-        extra = { ...extra, mode: 'proofread' };
     }
     if (currentTab) {
         const rawText = displayQuery || text || (images.length > 0 ? 'Video/Image Analysis' : 'Chat');
@@ -3919,9 +3786,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
     const activeInputUI = sharedInputUI;
-    if (targetChatUI && activeInputUI) {
-        targetChatUI.tokenLimit = activeInputUI.tokenLimit;
-    }
     const conversationHistory = targetChatUI.gatherMessages(untilEntryId, false, currentTab?.thinkingLevel || activeInputUI?.thinkingLevel || 'none');
     let apiText = text;
     if (extra.isRegenerate && !text) {
@@ -3935,9 +3799,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         }
     }
     let streamAction = 'chat_stream';
-    if (extra.mode === 'proofread') {
-        streamAction = 'proofread';
-    }
     const syncTabs = tabs.filter(t => t.sessionId === currentTab.sessionId);
     syncTabs.forEach(t => {
         const skipMargin = t !== currentTab;
@@ -4189,7 +4050,7 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
             port = null;
             sendMessage();
         } catch (retryE) {
-            console.error('[Spotlight] Retry failed:', retryE);
+            console.error('[Nexus] Retry failed:', retryE);
             targetChatUI.removeLoading();
             targetChatUI.appendError('Connection failed.');
         }
@@ -4198,7 +4059,6 @@ async function handleSubmit(text, images, extra = {}, targetTab = null, displayQ
         !extra.isRegenerate &&
         !extra.isRecheck &&
         extra.mode !== 'translate' &&
-        extra.mode !== 'proofread' &&
         extra.mode !== 'websource' &&
         currentTab?.sessionId
     ) {
@@ -4463,7 +4323,7 @@ function setupGlobalListeners() {
                             activeEl.style.pointerEvents = originalPointerEvents;
                             activeEl.__nexusTranslating = false;
                         }, 600);
-                        console.error('[Nexus Spotlight] translateInput failed:', err);
+                        console.error('[Nexus] translateInput failed:', err);
                     }
                 }
                 return;
@@ -4520,10 +4380,7 @@ function setupGlobalListeners() {
                             .replace(/\$Paragraph/gi, selection)
                             .trim();
                         const fullQuestion = displayQuestion;
-                        const targetTabIdx = (nexusAskSourcePane === 'secondary' && isSplitMode)
-                            ? secondaryActiveTabIndex
-                            : activeTabIndex;
-                        const targetTab = tabs[targetTabIdx];
+                        const targetTab = tabs[activeTabIndex];
                         const sel = window.getSelection();
                         const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
                         const shouldHighlight = (mapping.highlight !== false) && (mapping.enableHighlight !== false);
@@ -4601,23 +4458,19 @@ function setupGlobalListeners() {
             event.preventDefault();
             event.stopPropagation();
             if (selection) {
-                stopSpotlightAudio();
+                stopTTSAudio();
                 _nexusAudioAborted = false;
-                playSpotlightAudio(selection);
+                playTTSAudio(selection);
             } else {
                 const sel = window.getSelection();
                 const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
                 if (range && window.NexusSelection) {
-                    const commonNode = range.commonAncestorContainer;
-                    const secondaryPane = document.getElementById('pane-secondary');
-                    nexusAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
-                        ? 'secondary' : 'primary';
                     NexusSelection.show(0, 0, selection, range);
                     NexusSelection.showInput();
                     window.getSelection().removeAllRanges();
                     return;
                 }
-                stopSpotlightAudio();
+                stopTTSAudio();
             }
             return;
         }
@@ -4629,10 +4482,6 @@ function setupGlobalListeners() {
                 const range = sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
                 if (range && window.NexusSelection) {
                     const text = selection;
-                    const commonNode = range.commonAncestorContainer;
-                    const secondaryPane = document.getElementById('pane-secondary');
-                    nexusAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
-                        ? 'secondary' : 'primary';
                     NexusSelection.show(0, 0, text, range);
                     NexusSelection.showInput();
                     window.getSelection().removeAllRanges();
@@ -4722,7 +4571,7 @@ function setupGlobalListeners() {
 async function resetChat() {
     if (typeof window.notesClosePage === 'function') window.notesClosePage();
     if (typeof window.sparksClosePage === 'function') window.sparksClosePage();
-    stopSpotlightAudio();
+    stopTTSAudio();
 
     const activeTab = (activeTabIndex >= 0 && tabs[activeTabIndex]) ? tabs[activeTabIndex] : null;
     const curSid = activeTab?.sessionId || new URLSearchParams(window.location?.search || '').get('sid') || null;
@@ -4846,17 +4695,6 @@ window.addEventListener('focus', () => {
                 activeTab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
             }
         }
-        if (typeof isSplitMode !== 'undefined' && isSplitMode && typeof secondaryActiveTabIndex !== 'undefined' && secondaryActiveTabIndex >= 0) {
-            const secTab = tabs[secondaryActiveTabIndex];
-            if (secTab && secTab.historyEl && secTab.chatUIInstance) {
-                const entries = secTab.historyEl.querySelectorAll('.nexus-entry');
-                const lastEntry = entries[entries.length - 1];
-                if (lastEntry) {
-                    secTab.chatUIInstance.updateEntryMinHeight(lastEntry);
-                    secTab.chatUIInstance.adjustEntryMargin(lastEntry, 'immediate');
-                }
-            }
-        }
     }
 });
 
@@ -4944,34 +4782,7 @@ function triggerRegenerate(targetUI = null) {
     if (!history) return;
     const lastEntry = history.lastElementChild;
     if (!lastEntry || !lastEntry.classList.contains('nexus-entry')) return;
-    const entryType = lastEntry.dataset.entryType;
-    let originalQuestion = null;
-    if (entryType === 'translation') {
-        const transSource = lastEntry.querySelector('.nexus-translation-source .nexus-translation-text');
-        if (transSource) {
-            const sourceText = transSource.textContent.trim();
-            originalQuestion = `Translate this text: "${sourceText}"`;
-            if (tUI) {
-                tUI._regenSourceText = sourceText;
-                tUI._regenEntryType = 'translation';
-            }
-        }
-    }
-    if (!originalQuestion) {
-        const questionEl = lastEntry.querySelector('.nexus-chat-question');
-        if (questionEl) {
-            originalQuestion = questionEl.textContent.trim();
-            const contextEl = lastEntry.querySelector('.nexus-chat-context');
-            if (contextEl) {
-                const ctxText = contextEl.dataset.fullText || contextEl.textContent.trim();
-                if (ctxText) {
-                    originalQuestion = `[Selected Text Context]: "${ctxText}"\n\n[Question]: ${originalQuestion}`;
-                }
-            }
-        }
-    }
-    if (!originalQuestion) return;
-    if (tUI) tUI._handleQuestionRecheck(originalQuestion, lastEntry, true);
+    if (tUI) tUI.regenerateEntry(lastEntry);
 }
 
 function showAnswerVersion(entryElement, direction) {
@@ -5075,11 +4886,11 @@ function dispatchConfiguredShortcutAction(action) {
     if (action === 'audio') {
         const selection = window.getSelection().toString().trim();
         if (selection) {
-            stopSpotlightAudio();
+            stopTTSAudio();
             _nexusAudioAborted = false;
-            playSpotlightAudio(selection);
+            playTTSAudio(selection);
         } else {
-            stopSpotlightAudio();
+            stopTTSAudio();
         }
     } else if (action === 'nexusChat') {
     } else if (action === 'askNexus') {
@@ -5087,10 +4898,6 @@ function dispatchConfiguredShortcutAction(action) {
         const text = sel ? sel.toString().trim() : '';
         const range = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
         if (!text || !range || !window.NexusSelection) return;
-        const commonNode = range.commonAncestorContainer;
-        const secondaryPane = document.getElementById('pane-secondary');
-        nexusAskSourcePane = (isSplitMode && secondaryPane && secondaryPane.contains(commonNode))
-            ? 'secondary' : 'primary';
         NexusSelection.show(0, 0, text, range);
         NexusSelection.showInput();
         sel.removeAllRanges();
@@ -5161,7 +4968,7 @@ function matchesShortcut(event, actionName, shortcuts) {
     return isShortcutMatch(event, shortcut);
 }
 
-async function playSpotlightAudio(text) {
+async function playTTSAudio(text) {
     if (!text) return;
     const normalizedText = text.trim();
     let speed = 1.1;
@@ -5183,12 +4990,12 @@ async function playSpotlightAudio(text) {
         for (const chunk of result.chunks) await playBase64Audio(chunk, speed);
         chrome.runtime.sendMessage({ action: 'setAudioCache', text: normalizedText, type: result.type, data: result.chunks }).catch(() => { });
     } catch (err) {
-        console.error('[Spotlight] Play audio failed:', err);
+        console.error('[Nexus] Play audio failed:', err);
     }
 }
 
 let _nexusAudioCtx = null;
-function getSpotlightAudioCtx() {
+function getTTSAudioCtx() {
     if (!_nexusAudioCtx || _nexusAudioCtx.state === 'closed') {
         _nexusAudioCtx = new AudioContext();
     }
@@ -5198,7 +5005,7 @@ function getSpotlightAudioCtx() {
 let _nexusCurrentAudio = null;
 let _nexusAudioAborted = false;
 
-function stopSpotlightAudio() {
+function stopTTSAudio() {
     _nexusAudioAborted = true;
     if (_nexusCurrentAudio) {
         _nexusCurrentAudio.pause();
@@ -5216,7 +5023,7 @@ function playBase64Audio(base64Data, speed = 1.0) {
             for (let i = 0; i < byteString.length; i++) byteArray[i] = byteString.charCodeAt(i);
             let silenceOffset = 0;
             try {
-                const ctx = getSpotlightAudioCtx();
+                const ctx = getTTSAudioCtx();
                 const audioBuffer = await ctx.decodeAudioData(byteArray.buffer.slice(0));
                 const channelData = audioBuffer.getChannelData(0);
                 const THRESHOLD = 0.005;
@@ -5679,10 +5486,6 @@ function initModelSelector() {
     window.updateModelSelector();
 }
 
-function initTopbarModelSelector() {
-    return initModelSelector();
-}
-
 function updateTopbarSparkTitle() {
     const topbar = document.getElementById('nexus-topbar');
     if (!topbar) return;
@@ -6006,30 +5809,40 @@ function checkSyncOnTabReturn() {
 document.addEventListener('visibilitychange', checkSyncOnTabReturn);
 window.addEventListener('focus', checkSyncOnTabReturn);
 
-window.showCustomPopup = function ({ title, body, isInput = false, defaultValue = '', placeholder = '', confirmLabel = 'Confirm', isDanger = false }) {
+window.showCustomPopup = function (options) {
+    if (window.NexusModal && typeof window.NexusModal.showCustomPopup === 'function') {
+        return window.NexusModal.showCustomPopup(options);
+    }
+    const { title, body, isInput = false, defaultValue = '', placeholder = '', confirmLabel = 'Confirm', isDanger = false } = options || {};
     return new Promise((resolve) => {
         const overlay = document.createElement('div');
-        overlay.className = 'nexus-custom-popup-overlay';
+        overlay.className = 'nexus-modal-overlay';
         let inputHtml = '';
         if (isInput) {
-            inputHtml = `<input type="text" class="nexus-custom-popup-input" placeholder="${placeholder}" value="${defaultValue.replace(/"/g, '&quot;')}">`;
+            inputHtml = `<input type="text" class="nexus-modal-input" placeholder="${placeholder}" value="${(defaultValue || '').replace(/"/g, '&quot;')}">`;
         }
-        const primaryBtnClass = isDanger ? 'nexus-custom-popup-btn-danger' : 'nexus-custom-popup-btn-primary';
-        const bodyHtml = body ? `<div class="nexus-custom-popup-body">${body}</div>` : '';
+        const primaryBtnClass = isDanger ? 'nexus-modal-btn-danger' : 'nexus-modal-btn-primary';
+        const bodyHtml = body ? `<div class="nexus-modal-body">${body}</div>` : '';
         overlay.innerHTML = `
-            <div class="nexus-custom-popup-box">
-                <h3 class="nexus-custom-popup-title">${title}</h3>
+            <div class="nexus-modal-box">
+                <div class="nexus-modal-header">
+                    <h3 class="nexus-modal-title">${title || ''}</h3>
+                    <button type="button" class="nexus-modal-close-btn" title="Close" aria-label="Close">
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
                 ${bodyHtml}
                 ${inputHtml}
-                <div class="nexus-custom-popup-actions">
-                    <button class="nexus-custom-popup-btn btn-cancel">Cancel</button>
-                    <button class="nexus-custom-popup-btn ${primaryBtnClass} btn-confirm">${confirmLabel}</button>
+                <div class="nexus-modal-actions">
+                    <button type="button" class="nexus-modal-btn btn-cancel">Cancel</button>
+                    <button type="button" class="nexus-modal-btn ${primaryBtnClass} btn-confirm">${confirmLabel}</button>
                 </div>
             </div>
         `;
         document.body.appendChild(overlay);
         requestAnimationFrame(() => overlay.classList.add('active'));
-        const inputEl = overlay.querySelector('.nexus-custom-popup-input');
+        const inputEl = overlay.querySelector('.nexus-modal-input');
+        const closeBtn = overlay.querySelector('.nexus-modal-close-btn');
         if (inputEl) {
             inputEl.focus();
             inputEl.select();
@@ -6041,7 +5854,7 @@ window.showCustomPopup = function ({ title, body, isInput = false, defaultValue 
                 }
             });
         } else {
-            overlay.querySelector('.btn-confirm').focus();
+            overlay.querySelector('.btn-confirm')?.focus();
         }
         const closePopup = () => {
             overlay.classList.remove('active');
@@ -6057,8 +5870,9 @@ window.showCustomPopup = function ({ title, body, isInput = false, defaultValue 
             closePopup();
             resolve(null);
         };
-        overlay.querySelector('.btn-confirm').addEventListener('click', confirm);
-        overlay.querySelector('.btn-cancel').addEventListener('click', cancel);
+        overlay.querySelector('.btn-confirm')?.addEventListener('click', confirm);
+        overlay.querySelector('.btn-cancel')?.addEventListener('click', cancel);
+        closeBtn?.addEventListener('click', cancel);
         overlay.addEventListener('mousedown', (e) => {
             if (e.target === overlay) cancel();
         });

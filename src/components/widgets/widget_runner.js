@@ -9,17 +9,11 @@ export const WidgetRunner = {
     DEFAULT_HEIGHT: '380px',
 
     /**
-     * Applies SEARCH / REPLACE patch blocks to existing code (Aider/Cursor/Codex standard).
-     * Format:
-     * <<<<<<< SEARCH
-     * exact code to match
-     * =======
-     * updated replacement code
-     * >>>>>>> REPLACE
+     * Applies SEARCH / REPLACE patch blocks to existing code.
      */
     applySearchReplace(originalCode, patchText) {
         if (!originalCode || !patchText) return { success: false, code: originalCode || '', count: 0 };
-        
+
         let workingCode = originalCode;
         let appliedCount = 0;
 
@@ -96,7 +90,7 @@ export const WidgetRunner = {
             const patchContent = clean.includes('<PatchApp') || clean.includes('<PatchWidget')
                 ? (clean.match(/<(?:PatchApp|PatchWidget)[^>]*>([\s\S]*?)(?:<\/(?:PatchApp|PatchWidget)>|$)/i)?.[1] || clean)
                 : clean;
-            
+
             const patchResult = this.applySearchReplace(currentCode, patchContent);
             if (patchResult.success) {
                 return patchResult.code;
@@ -144,12 +138,10 @@ export const WidgetRunner = {
         const cardBg = isDark ? '#26282d' : '#f7f9fc';
         const accent = '#1a73e8';
 
-        // Check if rawCode is already a full HTML document
         if (/<html[\s\S]*<\/html>/i.test(rawCode) || /<!DOCTYPE html>/i.test(rawCode)) {
             return rawCode;
         }
 
-        // Otherwise wrap code snippet in modern responsive container
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -163,11 +155,7 @@ export const WidgetRunner = {
       --card-bg: ${cardBg};
       --accent-color: ${accent};
     }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg-color);
@@ -177,14 +165,8 @@ export const WidgetRunner = {
       font-size: 14px;
       overflow-x: hidden;
     }
-    input, select, button, textarea {
-      font-family: inherit;
-      font-size: inherit;
-    }
-    input[type="range"] {
-      cursor: pointer;
-      accent-color: var(--accent-color);
-    }
+    input, select, button, textarea { font-family: inherit; font-size: inherit; }
+    input[type="range"] { cursor: pointer; accent-color: var(--accent-color); }
     button {
       cursor: pointer;
       border: 1px solid var(--border-color);
@@ -270,9 +252,11 @@ export const WidgetRunner = {
       <div class="nexus-widget-frame-container" style="height: ${safeHeight};">
         <iframe
           class="nexus-widget-iframe"
-          sandbox="allow-scripts allow-forms"
+          allow="autoplay"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"
           src="${sandboxUrl}"
           data-widget-raw="${encodedCode}"
+          data-widget-id="${widgetId}"
           title="${safeTitle}">
         </iframe>
       </div>
@@ -285,18 +269,15 @@ export const WidgetRunner = {
     hydrateWidgets(containerEl = document) {
         if (!containerEl) return;
 
-        // 1. Mount built-in widgets (<Widget name="..." />)
         if (typeof widgetRegistry !== 'undefined') {
             widgetRegistry.mountAllInContainer(containerEl);
         }
 
-        // 2. Hydrate sandbox iframe widgets (<GenerateWidget>)
         const wrappers = containerEl.querySelectorAll('.nexus-widget-wrapper:not([data-hydrated])');
 
         wrappers.forEach(wrapper => {
             wrapper.setAttribute('data-hydrated', 'true');
 
-            // Bind Reload button
             const reloadBtn = wrapper.querySelector('.nexus-widget-btn-reload');
             if (reloadBtn && !reloadBtn.__bound) {
                 reloadBtn.__bound = true;
@@ -308,7 +289,6 @@ export const WidgetRunner = {
                 });
             }
 
-            // Bind Expand button
             const expandBtn = wrapper.querySelector('.nexus-widget-btn-expand');
             if (expandBtn && !expandBtn.__bound) {
                 expandBtn.__bound = true;
@@ -331,46 +311,96 @@ export const WidgetRunner = {
             iframe.src = iframe.src;
         } catch (_) {
             const rawEncoded = iframe.getAttribute('data-widget-raw');
+            const widgetId = iframe.getAttribute('data-widget-id') || 'default_app';
             if (rawEncoded && iframe.contentWindow) {
                 const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                const fontSize = getComputedStyle(document.documentElement).getPropertyValue('--nexus-fontSize') || '14px';
                 iframe.contentWindow.postMessage({
                     type: 'NEXUS_WIDGET_RENDER',
                     code: decodeURIComponent(rawEncoded),
-                    isDark
+                    isDark,
+                    fontSize: fontSize.trim(),
+                    appId: widgetId
                 }, '*');
             }
         }
     }
 };
 
-// Global listener: Handle sandbox iframe lifecycle (ready announcement & auto-resize)
+// ==========================================
+// GLOBAL SANDBOX RUNTIME DISPATCHER
+// ==========================================
 if (typeof window !== 'undefined' && !window.__nexusWidgetSandboxListenerBound) {
     window.__nexusWidgetSandboxListenerBound = true;
-    window.addEventListener('message', (event) => {
+    const activeTTSUtterances = new Map();
+    const activeAIPorts = new Map();
+
+    function findOptimalVoice(lang = 'zh-CN', preferredName = null) {
+        if (typeof window === 'undefined' || !window.speechSynthesis) return null;
+        const voices = window.speechSynthesis.getVoices() || [];
+        if (!voices.length) return null;
+
+        if (preferredName) {
+            const byName = voices.find(v => v.name === preferredName);
+            if (byName) return byName;
+        }
+
+        const normalizedLang = String(lang).toLowerCase().replace('_', '-');
+        const langPrefix = normalizedLang.split('-')[0];
+
+        let match = voices.find(v => v.lang && v.lang.toLowerCase().replace('_', '-') === normalizedLang);
+        if (match) return match;
+
+        if (langPrefix === 'zh') {
+            match = voices.find(v => v.lang && (v.lang.toLowerCase().startsWith('zh') || v.lang.toLowerCase().startsWith('cmn')));
+            if (match) return match;
+        }
+
+        match = voices.find(v => v.lang && v.lang.toLowerCase().startsWith(langPrefix));
+        if (match) return match;
+
+        return voices[0] || null;
+    }
+
+    window.addEventListener('message', async (event) => {
         if (!event.data) return;
 
-        // 1. Sandbox ready -> deliver code
+        // 1. Sandbox ready -> Deliver code, theme, font size, and persistent storage
         if (event.data.type === 'NEXUS_WIDGET_READY') {
-            const iframes = document.querySelectorAll('.nexus-widget-iframe');
+            const iframes = document.querySelectorAll('.nexus-widget-iframe, .apps-studio-preview-iframe');
             const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
             const fontSize = getComputedStyle(document.documentElement).getPropertyValue('--nexus-fontSize') || '14px';
-            iframes.forEach(iframe => {
+
+            for (const iframe of iframes) {
                 if (iframe.contentWindow === event.source) {
                     const rawEncoded = iframe.getAttribute('data-widget-raw');
+                    const appId = iframe.getAttribute('data-widget-id') || 'default_app';
+
+                    let storedData = {};
+                    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+                        try {
+                            const storageKey = `nexus_sandbox_${appId}`;
+                            const res = await chrome.storage.local.get([storageKey]);
+                            if (res[storageKey]) storedData = res[storageKey];
+                        } catch (_) {}
+                    }
+
                     if (rawEncoded) {
                         const rawCode = decodeURIComponent(rawEncoded);
                         iframe.contentWindow.postMessage({
                             type: 'NEXUS_WIDGET_RENDER',
                             code: rawCode,
                             isDark,
-                            fontSize: fontSize.trim()
+                            fontSize: fontSize.trim(),
+                            appId: appId,
+                            storedData: storedData
                         }, '*');
                     }
                 }
-            });
+            }
         }
 
-        // 2. Sandbox content size changed -> auto-fit frame container seamlessly
+        // 2. Sandbox content size changed -> auto-fit frame container
         if (event.data.type === 'NEXUS_WIDGET_RESIZE' && typeof event.data.height === 'number') {
             const iframes = document.querySelectorAll('.nexus-widget-iframe');
             iframes.forEach(iframe => {
@@ -383,6 +413,341 @@ if (typeof window !== 'undefined' && !window.__nexusWidgetSandboxListenerBound) 
                     }
                 }
             });
+        }
+
+        // 3. Persistent Storage Synchronizer
+        if (event.data.type === 'NEXUS_STORAGE_SET') {
+            const { appId = 'default_app', key, value } = event.data;
+            if (typeof chrome !== 'undefined' && chrome.storage?.local && key) {
+                const storageKey = `nexus_sandbox_${appId}`;
+                chrome.storage.local.get([storageKey], (res) => {
+                    const store = res[storageKey] || {};
+                    store[key] = value;
+                    chrome.storage.local.set({ [storageKey]: store });
+                });
+            }
+        }
+        if (event.data.type === 'NEXUS_STORAGE_REMOVE') {
+            const { appId = 'default_app', key } = event.data;
+            if (typeof chrome !== 'undefined' && chrome.storage?.local && key) {
+                const storageKey = `nexus_sandbox_${appId}`;
+                chrome.storage.local.get([storageKey], (res) => {
+                    const store = res[storageKey] || {};
+                    delete store[key];
+                    chrome.storage.local.set({ [storageKey]: store });
+                });
+            }
+        }
+        if (event.data.type === 'NEXUS_STORAGE_CLEAR') {
+            const { appId = 'default_app' } = event.data;
+            if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+                const storageKey = `nexus_sandbox_${appId}`;
+                chrome.storage.local.remove([storageKey]);
+            }
+        }
+
+        // 4. Cross-Origin Fetch Bridge
+        if (event.data.type === 'NEXUS_FETCH_REQUEST') {
+            const { requestId, url, options = {} } = event.data;
+            try {
+                const res = await fetch(url, options);
+                const contentType = res.headers.get('content-type') || '';
+                let resData;
+                if (contentType.includes('application/json')) {
+                    resData = await res.json();
+                } else {
+                    resData = await res.text();
+                }
+
+                event.source?.postMessage({
+                    type: 'NEXUS_FETCH_RESPONSE',
+                    requestId: requestId,
+                    success: true,
+                    status: res.status,
+                    statusText: res.statusText,
+                    data: resData
+                }, '*');
+            } catch (err) {
+                event.source?.postMessage({
+                    type: 'NEXUS_FETCH_RESPONSE',
+                    requestId: requestId,
+                    success: false,
+                    error: err.message || 'Network error'
+                }, '*');
+            }
+        }
+
+        // 5. File Download Bridge
+        if (event.data.type === 'NEXUS_DOWNLOAD_REQUEST') {
+            const { filename = 'download.txt', data = '', mimeType = 'text/plain' } = event.data;
+            try {
+                const blob = data instanceof Blob ? data : new Blob([data], { type: mimeType });
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+            } catch (err) {
+                console.warn('[Sandbox Download Bridge Error]', err);
+            }
+        }
+
+        // 6. Speech Synthesis Bridge (Parent Execution)
+        if (event.data.type === 'NEXUS_TTS_SPEAK' && event.data.text) {
+            const { id, text, lang = 'zh-CN', rate = 0.85, pitch = 1.0, volume = 1.0, voiceName } = event.data;
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                if (window.speechSynthesis.paused) {
+                    window.speechSynthesis.resume();
+                }
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang;
+                utterance.rate = rate;
+                utterance.pitch = pitch;
+                utterance.volume = volume;
+
+                const chosenVoice = findOptimalVoice(lang, voiceName);
+                if (chosenVoice) {
+                    utterance.voice = chosenVoice;
+                }
+
+                utterance.onstart = () => {
+                    try {
+                        event.source?.postMessage({
+                            type: 'NEXUS_TTS_EVENT',
+                            id: id,
+                            eventType: 'start'
+                        }, '*');
+                    } catch (_) {}
+                };
+
+                utterance.onend = () => {
+                    activeTTSUtterances.delete(id);
+                    try {
+                        event.source?.postMessage({
+                            type: 'NEXUS_TTS_EVENT',
+                            id: id,
+                            eventType: 'end'
+                        }, '*');
+                    } catch (_) {}
+                };
+
+                utterance.onerror = (err) => {
+                    activeTTSUtterances.delete(id);
+                    try {
+                        event.source?.postMessage({
+                            type: 'NEXUS_TTS_EVENT',
+                            id: id,
+                            eventType: 'error',
+                            extra: { error: err?.error || 'speech_error' }
+                        }, '*');
+                    } catch (_) {}
+                };
+
+                activeTTSUtterances.set(id, utterance);
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // 7. Cancel / Pause / Resume Speech Synthesis
+        if (event.data.type === 'NEXUS_TTS_CANCEL') {
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                activeTTSUtterances.clear();
+                window.speechSynthesis.cancel();
+            }
+        }
+        if (event.data.type === 'NEXUS_TTS_PAUSE') {
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.pause();
+            }
+        }
+        if (event.data.type === 'NEXUS_TTS_RESUME') {
+            if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.resume();
+            }
+        }
+
+        // 8. AI Streaming Bridge (Nexus Engine)
+        if (event.data.type === 'NEXUS_AI_STREAM_REQUEST') {
+            const { requestId, prompt, model, systemPrompt, temperature, maxTokens, imageBase64 } = event.data;
+            if (typeof chrome !== 'undefined' && chrome.runtime?.connect) {
+                try {
+                    const port = chrome.runtime.connect({ name: 'nexus-chat-stream' });
+                    const sessionId = 'sandbox_' + requestId;
+                    activeAIPorts.set(requestId, { port, sessionId });
+
+                    port.onMessage.addListener((msg) => {
+                        if (msg.error) {
+                            event.source?.postMessage({ type: 'NEXUS_AI_STREAM_ERROR', requestId, error: msg.error }, '*');
+                            activeAIPorts.delete(requestId);
+                            try { port.disconnect(); } catch (_) {}
+                            return;
+                        }
+                        if (msg.action === 'chunk' && msg.chunk) {
+                            event.source?.postMessage({ type: 'NEXUS_AI_STREAM_CHUNK', requestId, chunk: msg.chunk }, '*');
+                        }
+                        if (msg.action === 'done') {
+                            event.source?.postMessage({ type: 'NEXUS_AI_STREAM_DONE', requestId }, '*');
+                            activeAIPorts.delete(requestId);
+                            try { port.disconnect(); } catch (_) {}
+                        }
+                    });
+
+                    port.postMessage({
+                        action: 'chat_stream',
+                        sessionId: sessionId,
+                        question: prompt,
+                        messages: [{ role: 'user', content: prompt }],
+                        systemOverride: systemPrompt || undefined,
+                        imageData: imageBase64 || null,
+                        requestOptions: {
+                            tabModel: model || undefined,
+                            temperature: temperature ?? 0.7,
+                            maxTokens: maxTokens ?? 4096
+                        }
+                    });
+                } catch (err) {
+                    event.source?.postMessage({ type: 'NEXUS_AI_STREAM_ERROR', requestId, error: err.message }, '*');
+                }
+            } else {
+                event.source?.postMessage({ type: 'NEXUS_AI_STREAM_ERROR', requestId, error: 'Extension runtime unavailable' }, '*');
+            }
+        }
+
+        // 9. AI Generation Bridge (Non-Streaming)
+        if (event.data.type === 'NEXUS_AI_GENERATE_REQUEST') {
+            const { requestId, prompt, model, systemPrompt, temperature, maxTokens, imageBase64 } = event.data;
+            if (typeof chrome !== 'undefined' && chrome.runtime?.connect) {
+                try {
+                    const port = chrome.runtime.connect({ name: 'nexus-chat-stream' });
+                    const sessionId = 'sandbox_' + requestId;
+                    activeAIPorts.set(requestId, { port, sessionId });
+                    let fullText = '';
+
+                    port.onMessage.addListener((msg) => {
+                        if (msg.error) {
+                            event.source?.postMessage({ type: 'NEXUS_AI_GENERATE_RESPONSE', requestId, success: false, error: msg.error }, '*');
+                            activeAIPorts.delete(requestId);
+                            try { port.disconnect(); } catch (_) {}
+                            return;
+                        }
+                        if (msg.action === 'chunk' && msg.chunk) {
+                            fullText += msg.chunk;
+                        }
+                        if (msg.action === 'done') {
+                            let cleanResult = fullText.replace(/<(?:think|thought)>[\s\S]*?(?:<\/(?:think|thought)>|$)/gi, '').trim();
+                            event.source?.postMessage({ type: 'NEXUS_AI_GENERATE_RESPONSE', requestId, success: true, result: cleanResult }, '*');
+                            activeAIPorts.delete(requestId);
+                            try { port.disconnect(); } catch (_) {}
+                        }
+                    });
+
+                    port.postMessage({
+                        action: 'chat_stream',
+                        sessionId: sessionId,
+                        question: prompt,
+                        messages: [{ role: 'user', content: prompt }],
+                        systemOverride: systemPrompt || undefined,
+                        imageData: imageBase64 || null,
+                        requestOptions: {
+                            tabModel: model || undefined,
+                            temperature: temperature ?? 0.7,
+                            maxTokens: maxTokens ?? 4096
+                        }
+                    });
+                } catch (err) {
+                    event.source?.postMessage({ type: 'NEXUS_AI_GENERATE_RESPONSE', requestId, success: false, error: err.message }, '*');
+                }
+            } else {
+                event.source?.postMessage({ type: 'NEXUS_AI_GENERATE_RESPONSE', requestId, success: false, error: 'Extension runtime unavailable' }, '*');
+            }
+        }
+
+        // 10. AI Abort Request
+        if (event.data.type === 'NEXUS_AI_ABORT_REQUEST') {
+            const { requestId } = event.data;
+            const active = activeAIPorts.get(requestId);
+            if (active) {
+                try {
+                    active.port.postMessage({ action: 'stop_chat', sessionId: active.sessionId });
+                    active.port.disconnect();
+                } catch (_) {}
+                activeAIPorts.delete(requestId);
+            }
+        }
+
+        // 11. Browser Context Queries
+        if (event.data.type === 'NEXUS_BROWSER_GET_SELECTED_TEXT') {
+            const { queryId } = event.data;
+            try {
+                if (typeof chrome !== 'undefined' && chrome.tabs && chrome.scripting) {
+                    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                    if (activeTab?.id) {
+                        const results = await chrome.scripting.executeScript({
+                            target: { tabId: activeTab.id },
+                            func: () => window.getSelection()?.toString() || ''
+                        });
+                        const text = results?.[0]?.result || '';
+                        event.source?.postMessage({ type: 'NEXUS_BROWSER_QUERY_RESPONSE', queryId, result: text }, '*');
+                        return;
+                    }
+                }
+            } catch (_) {}
+            event.source?.postMessage({ type: 'NEXUS_BROWSER_QUERY_RESPONSE', queryId, result: '' }, '*');
+        }
+
+        if (event.data.type === 'NEXUS_BROWSER_GET_PAGE_CONTENT') {
+            const { queryId } = event.data;
+            try {
+                if (typeof chrome !== 'undefined' && chrome.tabs && chrome.scripting) {
+                    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                    if (activeTab?.id) {
+                        const results = await chrome.scripting.executeScript({
+                            target: { tabId: activeTab.id },
+                            func: () => ({
+                                title: document.title || '',
+                                text: (document.body?.innerText || '').slice(0, 10000)
+                            })
+                        });
+                        const data = results?.[0]?.result || { title: '', text: '' };
+                        event.source?.postMessage({ type: 'NEXUS_BROWSER_QUERY_RESPONSE', queryId, result: data }, '*');
+                        return;
+                    }
+                }
+            } catch (_) {}
+            event.source?.postMessage({ type: 'NEXUS_BROWSER_QUERY_RESPONSE', queryId, result: { title: '', text: '' } }, '*');
+        }
+
+        if (event.data.type === 'NEXUS_BROWSER_OPEN_TAB' && event.data.url) {
+            if (typeof chrome !== 'undefined' && chrome.tabs) {
+                chrome.tabs.create({ url: event.data.url, active: event.data.active ?? true });
+            } else {
+                window.open(event.data.url, '_blank');
+            }
+        }
+
+        // 12. Clipboard & App Prompt Bridges
+        if (event.data.type === 'NEXUS_CLIPBOARD_WRITE' && event.data.text) {
+            if (navigator?.clipboard?.writeText) {
+                navigator.clipboard.writeText(event.data.text).catch(() => {});
+            }
+        }
+
+        if (event.data.type === 'NEXUS_APP_PROMPT' && event.data.prompt) {
+            const chatInput = document.getElementById('chat-input') || document.querySelector('.nexus-chat-input');
+            if (chatInput) {
+                chatInput.value = event.data.prompt;
+                chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+                chatInput.focus();
+            }
+        }
+
+        // 13. Error Telemetry
+        if (event.data.type === 'NEXUS_WIDGET_ERROR') {
+            console.warn('[Sandbox Widget Error]', event.data.message || event.data);
         }
     });
 }

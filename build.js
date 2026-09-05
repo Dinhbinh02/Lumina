@@ -4,6 +4,17 @@ const fs = require('fs');
 
 const isWatch = process.argv.includes('--watch');
 
+// Shared high-performance compiler options for esbuild
+const baseCompilerOptions = {
+    target: ['chrome110'],
+    minify: !isWatch,
+    treeShaking: true,
+    legalComments: 'none',
+    charset: 'utf8',
+    sourcemap: false,
+    drop: !isWatch ? ['debugger'] : []
+};
+
 function copyDirSync(src, dest, filter) {
     if (!fs.existsSync(src)) return;
     fs.mkdirSync(dest, { recursive: true });
@@ -51,16 +62,13 @@ function syncStaticAssets() {
     }
 
     // 3. Static HTML / assets inside src/pages/
-    // Copy non-entry files (html, css, static js) to dist/pages/
     copyDirSync(
         path.resolve(__dirname, 'src/pages'),
         path.resolve(distDir, 'pages'),
         (srcPath, entry) => {
-            // Exclude source folders that are compiled into bundles
             if (entry.isDirectory() && (entry.name === 'controllers' || entry.name === 'styles')) {
                 return false;
             }
-            // Exclude JS entries that esbuild compiles
             if (srcPath.endsWith('src/pages/nexus/index.js') ||
                 srcPath.endsWith('src/pages/nexus/workspace.js') ||
                 srcPath.endsWith('src/pages/popup/index.js')) {
@@ -78,48 +86,53 @@ async function buildNexusWorkspace() {
     const cssEntry = path.resolve(__dirname, 'src/pages/nexus/styles/index.css');
     const cssDistOut = path.resolve(__dirname, 'dist/pages/nexus/nexus.bundle.css');
 
-    if (fs.existsSync(jsEntry)) {
-        const jsContext = await esbuild.context({
-            entryPoints: [jsEntry],
-            bundle: true,
-            outfile: jsDistOut,
-            format: 'iife',
-            target: ['chrome110'],
-            minify: !isWatch,
-            sourcemap: false
-        });
+    const tasks = [];
 
-        if (isWatch) {
-            await jsContext.watch();
-        } else {
-            await jsContext.rebuild();
-            await jsContext.dispose();
-        }
+    if (fs.existsSync(jsEntry)) {
+        tasks.push((async () => {
+            const jsContext = await esbuild.context({
+                ...baseCompilerOptions,
+                entryPoints: [jsEntry],
+                bundle: true,
+                outfile: jsDistOut,
+                format: 'iife'
+            });
+
+            if (isWatch) {
+                await jsContext.watch();
+            } else {
+                await jsContext.rebuild();
+                await jsContext.dispose();
+            }
+        })());
     }
 
     if (fs.existsSync(cssEntry)) {
-        const cssContext = await esbuild.context({
-            entryPoints: [cssEntry],
-            bundle: true,
-            outfile: cssDistOut,
-            loader: {
-                '.svg': 'dataurl',
-                '.woff': 'dataurl',
-                '.woff2': 'dataurl',
-                '.ttf': 'dataurl',
-                '.png': 'dataurl'
-            },
-            minify: !isWatch,
-            sourcemap: false
-        });
+        tasks.push((async () => {
+            const cssContext = await esbuild.context({
+                ...baseCompilerOptions,
+                entryPoints: [cssEntry],
+                bundle: true,
+                outfile: cssDistOut,
+                loader: {
+                    '.svg': 'dataurl',
+                    '.woff': 'dataurl',
+                    '.woff2': 'dataurl',
+                    '.ttf': 'dataurl',
+                    '.png': 'dataurl'
+                }
+            });
 
-        if (isWatch) {
-            await cssContext.watch();
-        } else {
-            await cssContext.rebuild();
-            await cssContext.dispose();
-        }
+            if (isWatch) {
+                await cssContext.watch();
+            } else {
+                await cssContext.rebuild();
+                await cssContext.dispose();
+            }
+        })());
     }
+
+    await Promise.all(tasks);
 }
 
 async function buildBackground() {
@@ -128,13 +141,11 @@ async function buildBackground() {
     if (!fs.existsSync(entry)) return;
 
     const ctx = await esbuild.context({
+        ...baseCompilerOptions,
         entryPoints: [entry],
         bundle: true,
         outfile: distOutfile,
-        format: 'esm',
-        target: ['chrome110'],
-        minify: !isWatch,
-        sourcemap: false
+        format: 'esm'
     });
 
     if (isWatch) {
@@ -151,13 +162,11 @@ async function buildContent() {
     if (!fs.existsSync(entry)) return;
 
     const ctx = await esbuild.context({
+        ...baseCompilerOptions,
         entryPoints: [entry],
         bundle: true,
         outfile: distOutfile,
-        format: 'iife',
-        target: ['chrome110'],
-        minify: !isWatch,
-        sourcemap: false
+        format: 'iife'
     });
 
     if (isWatch) {
@@ -174,13 +183,11 @@ async function buildPopup() {
     if (!fs.existsSync(entry)) return;
 
     const ctx = await esbuild.context({
+        ...baseCompilerOptions,
         entryPoints: [entry],
         bundle: true,
         outfile: distOutfile,
-        format: 'iife',
-        target: ['chrome110'],
-        minify: !isWatch,
-        sourcemap: false
+        format: 'iife'
     });
 
     if (isWatch) {
@@ -193,6 +200,7 @@ async function buildPopup() {
 
 async function run() {
     const distDir = path.resolve(__dirname, 'dist');
+    const startTime = Date.now();
     
     console.log('[Nexus Build] Cleaning and preparing dist folder...');
     if (!isWatch && fs.existsSync(distDir)) {
@@ -203,13 +211,17 @@ async function run() {
     console.log('[Nexus Build] Syncing static files & assets to dist/ ...');
     syncStaticAssets();
 
-    console.log('[Nexus Build] Compiling packages with esbuild...');
-    await buildNexusWorkspace();
-    await buildBackground();
-    await buildContent();
-    await buildPopup();
+    console.log('[Nexus Build] Compiling all packages in parallel with esbuild...');
+    // Parallel compilation across all CPU cores
+    await Promise.all([
+        buildNexusWorkspace(),
+        buildBackground(),
+        buildContent(),
+        buildPopup()
+    ]);
 
-    console.log('[Nexus Build] Build completed successfully. All extension files ready in dist/ !');
+    const elapsed = Date.now() - startTime;
+    console.log(`[Nexus Build] Build completed in ${elapsed}ms. All extension files ready in dist/ !`);
 
     if (isWatch) {
         console.log('[Nexus Build] Watching for file changes in src/ ...');

@@ -101,8 +101,8 @@ export const NexusViewManager = {
                 document.getElementById('sidebar-new-chat-btn')?.classList.remove('active');
                 document.querySelectorAll('.recent-chat-item.active').forEach(el => el.classList.remove('active'));
 
-                if (params && params.sparkId && typeof window.sparksLoadSpark === 'function') {
-                    window.sparksLoadSpark(params.sparkId);
+                if (params && params.sparkId && typeof window.sparksOpenEditor === 'function') {
+                    window.sparksOpenEditor(params.sparkId === 'new' ? null : params.sparkId);
                 }
             }
         }

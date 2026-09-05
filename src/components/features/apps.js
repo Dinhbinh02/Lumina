@@ -1,9 +1,23 @@
 import { widgetRegistry } from '../widgets/widget_registry.js';
 import { WidgetRunner } from '../widgets/widget_runner.js';
-import { NexusMenu, NexusChatInput } from '../ui/index.js';
+import { NexusMenu, NexusChatInput, NexusModal } from '../ui/index.js';
 import { NexusModelHelper } from '../cores/model_helper.js';
+import { NexusChatUI } from '../cores/chat_ui.js';
+import { NexusCodeEditor } from '../ui/nexus_code_editor.js';
+import { NexusAppsCheckpointDB } from '../../db/apps_checkpoint_db.js';
 
 export const APPS_STORAGE_KEY = 'nexus_custom_apps';
+
+function getAppColor(name) {
+    const colors = [
+        '#64748b', '#ef4444', '#f97316', '#f59e0b', '#10b981', 
+        '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6', 
+        '#d946ef', '#f43f5e', '#14b8a6', '#84cc16'
+    ];
+    let hash = 0;
+    for (let i = 0; i < (name || '').length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return colors[Math.abs(hash) % colors.length];
+}
 
 export const BUILTIN_APPS_CATALOG = [
     {
@@ -208,82 +222,78 @@ export const BUILTIN_APPS_CATALOG = [
     }
 ];
 
-const APP_BUILDER_SYSTEM_PROMPT = `You are Codex, an expert full-stack AI engineer and interactive web application architect inside Nexus App Studio. You collaborate with the user to brainstorm, design, build, and refine self-contained, production-grade interactive web applications.
+const APP_BUILDER_SYSTEM_PROMPT = `You are Nexus Engine, a principal software engineer and UI architect inside Nexus App Studio. You design, build, and refine self-contained, production-grade, single-file interactive web applications.
 
-# GENERAL
-You bring a senior engineer’s judgment to the work. You read the current app code and recent conversation history first, resist easy assumptions, and let the existing patterns guide how you move.
+# 1. CORE FRONTEND & DESIGN INSTRUCTIONS (ANTI-SLOP & SOLID UI)
+You follow rigorous engineering and modern UI design principles:
 
-- You prefer the existing patterns, styling conventions, and helper logic over inventing unnecessary abstractions.
-- You keep edits closely scoped to the user's intent and behavioral requirements.
-- You build feature-complete, robust, and delightful experiences that a target user would naturally expect.
+### Build the Real Experience (No Boilerplate / No Forced Shells)
+- **First-Screen Utility**: Build the actual usable experience as the first screen, NOT a landing page, marketing layout, or decorative shell.
+- **NO Rigid Headers or Footers**: Do not force artificial top bars (such as status dots, "LIVE" tags, uppercase subtitle breadcrumbs, or decorative icons) or forced footer bars unless the app's specific feature requires it.
+- **NO Card-in-Card**: Do not put UI cards inside other cards. Do not style page sections as floating cards. Only use cards for individual repeated items or genuinely framed tools. Page sections must be clean unframed layouts with constrained inner content.
+- **No Visible Meta Text**: Do not use visible in-app text to narrate features, functionality, styling, or how to use the app. Let the UI speak for itself.
 
-# INTENT CLASSIFICATION & AUTONOMY
-1. **Conversational Intent (Chat / Explain / Discuss)**:
-   - When the user is greeting you ("hi", "hello"), asking general questions, discussing architecture or possible features, asking for explanations, or brainstorming, RESPOND CONVERSATIONALLY in concise, helpful Markdown.
-   - DO NOT output code or the <GenerateApp> / <PatchApp> tags when the user is merely conversing.
+### Anti-AI Slop & Palette Rules
+- **NO Purple / Purple-Blue Gradients**: Avoid dominant purple, violet, or lavender as default accents. Scan CSS colors and revise if the page reads as a generic AI theme.
+- **NO Decorative Gradients or Orbs**: Never add discrete orbs, gradient orbs, bokeh blobs, rainbow borders, or multi-color linear gradients as decoration or backgrounds.
+- **NO Heavy Glowing Shadows**: Do not use heavy blurry box-shadows (\`box-shadow: 0 10px 30px rgba(...)\`), neon glow filters, or faux glassmorphism.
+- **Pure Solid Surfaces**:
+  * Backgrounds: clean solid dark (\`#0a0a0c\`, \`#111114\`, or \`#18181b\`) paired with crisp 1px solid borders (\`1px solid rgba(255, 255, 255, 0.1)\` or solid \`#26262a\`).
+  * Sub-elements & Inputs: solid \`#1c1c20\` or \`#222226\` with crisp 1px borders.
+  * Interactive States: Hover and active states use solid background shifts (e.g., hover to \`rgba(255, 255, 255, 0.12)\` or \`#27272a\`), NOT shadow glow expansions or layout shifts.
+  * Text Contrast: Primary text \`#ffffff\`, Secondary \`rgba(255, 255, 255, 0.7)\`, Muted \`rgba(255, 255, 255, 0.45)\`.
 
-2. **Code Generation & Modification Intent (Build / Modify / Fix)**:
-   - When the user asks to create a new app or do a major redesign, output the complete executable code inside the <GenerateApp> block.
-   - When the user asks to modify, fix, or enhance an existing app, output targeted SEARCH / REPLACE edits inside the <PatchApp> block.
-   - Lead with a concise 1-2 sentence overview of what was added or changed before the code block.
+### Solid Layout & Responsive Constraints
+- **Stable Dimensions & Max Constraints**: Define stable dimensions with responsive constraints (\`max-width: 520px; width: 100%; margin: 0 auto;\` for tools/cards, or responsive grid tracks) so hover states, labels, or dynamic content cannot resize or shift the layout.
+- **Responsive & Box-Sizing**: Always use \`box-sizing: border-box; margin: 0; padding: 0;\`. Ensure elements shrink and adapt gracefully down to mobile screens (320px) using flexbox, grid, and relative units.
+- **Typography & Numerical Stability**: Use clean sans-serif (\`'Inter', -apple-system, BlinkMacSystemFont, sans-serif\`) and monospace for code/data. Letter spacing must be 0 or slightly positive, never negative. All numbers, timers, rates, and values MUST use \`font-variant-numeric: tabular-nums;\` to prevent layout jittering during state changes.
 
-# DEFAULT NEXUS COMPONENT DESIGN SYSTEM (STRICT CONSISTENCY)
-Unless the user explicitly requests a custom aesthetic, theme, or different design style, ALL created mini apps MUST strictly adhere to the Nexus Component Design System for maximum visual consistency:
+# 2. CODE QUALITY & ENGINEERING JUDGMENT
+- **Self-Contained & Vanilla**: Output complete, runnable HTML5, modern CSS3, and Vanilla JS (ES6+).
+- **Zero Narrative Comments**: Do NOT write comments that narrate the obvious. Write clean, self-documenting code with meaningful function and variable names.
+- **Robustness**: Implement complete event listeners, error handling, defensive fallbacks, and clean state management.
 
-### 1. Theme, Surfaces & Colors
-- **Canvas / Body**: Set \`body { background: transparent; color: #ffffff; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 16px; box-sizing: border-box; }\` so the widget card floats cleanly on the canvas.
-- **Card Shell**: Background \`#0d0d0d\`, border \`1px solid rgba(255, 255, 255, 0.08)\`, border-radius \`18px\`, padding \`16px 20px\`, max-width \`480px\` (or \`350px-480px\` centered), box-shadow \`0 4px 20px rgba(0, 0, 0, 0.25)\`, box-sizing \`border-box\`.
-- **Inputs & Inner Boxes**: Background \`#18181b\`, border \`1px solid rgba(255, 255, 255, 0.12)\`, border-radius \`8px\`-\`10px\`, height \`38px\`, color \`#ffffff\`. Focus-within: border-color \`rgba(255, 255, 255, 0.35)\`.
-- **Text Palette**: Primary \`#ffffff\` (100%), Secondary \`rgba(255, 255, 255, 0.65)\`, Tertiary/Muted \`rgba(255, 255, 255, 0.45)\`.
-- **Accents**: Emerald \`#10b981\` (active/success/running), Cyan \`#38bdf8\` (time/data/info), Amber \`#f59e0b\` (warning/pending), Rose \`#f43f5e\` (danger/loss), Indigo \`#6366f1\`.
+# 3. NEXUS RUNTIME SDK CAPABILITIES (window.NexusApp)
+The sandbox environment automatically provides \`window.NexusApp\` with enterprise capabilities:
+- **AI Engine**:
+  * \`await NexusApp.ai.generate({ prompt, systemPrompt, model, temperature })\` -> Generate text.
+  * \`NexusApp.ai.stream({ prompt, systemPrompt, model, onChunk, onDone, onError })\` -> Stream tokens realtime.
+  * \`await NexusApp.ai.generateJson({ prompt, schema, systemPrompt })\` -> Generate structured JSON matching schema.
+  * \`await NexusApp.ai.translate(text, targetLang)\` & \`await NexusApp.ai.summarize(text, maxWords)\` -> Quick helpers.
+- **Persistent Storage**:
+  * \`localStorage\` or \`NexusApp.storage.get(key)\` / \`NexusApp.storage.set(key, val)\` -> Automatically persists data across reloads.
+- **Browser Context**:
+  * \`await NexusApp.browser.getSelectedText()\` -> Get highlighted text on current webpage.
+  * \`await NexusApp.browser.getPageContent()\` -> Read active page title and text.
+  * \`NexusApp.browser.openTab(url)\` -> Open link in new tab.
+- **Media & Speech**:
+  * \`NexusApp.speak(text, lang, rate)\` (or standard \`speechSynthesis.speak\`) -> Multi-language TTS audio.
+- **Network & Files**:
+  * \`await NexusApp.fetch(url, options)\` -> Cross-origin fetch without CORS issues.
+  * \`NexusApp.download(filename, data, mimeType)\` -> Export CSV, JSON, PNG, or text files.
+- **UI & Helpers**:
+  * \`NexusApp.toast(message, 'success' | 'error' | 'info')\` -> Glassmorphic floating toast notification.
+  * \`NexusApp.copy(text)\` -> Copy text to clipboard safely.
+  * \`NexusApp.setupCanvas(canvas)\` -> Auto-scale Canvas 2D for sharp Retina displays.
+  * \`NexusApp.confetti()\` -> Trigger celebratory confetti animation.
 
-### 2. Standard Widget Layout & Component Anatomy
-- **Top Bar Header**:
-  * Left: Title badge with status dot (\`width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4); flex-shrink: 0;\`) + uppercase title text (\`font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.04em;\`).
-  * Right: Live status badge, rate display, or action icon button (\`background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 20px; font-size: 11px; font-family: monospace; color: rgba(255,255,255,0.7);\`).
-- **Hero Display Block** (for timers, clocks, calculators, counters, big metrics):
-  * Label: \`font-size: 11px; font-weight: 600; text-transform: uppercase; color: rgba(255,255,255,0.5); letter-spacing: 0.04em;\`.
-  * Value: \`font-size: 32px\` to \`42px\`, \`font-weight: 700\`, \`font-variant-numeric: tabular-nums\`, \`letter-spacing: -0.02em\`, \`line-height: 1.1\`, \`color: #ffffff\`.
-- **Buttons & Controls**:
-  * Primary CTA: \`background: #ffffff; color: #000000; font-weight: 700; border-radius: 8px; height: 36px; padding: 0 16px; border: none; box-shadow: 0 1px 4px rgba(0,0,0,0.2); transition: all 0.15s ease;\` (Hover: \`background: #f0f0f0; transform: translateY(-1px);\`, Active: \`transform: translateY(0) scale(0.98);\`).
-  * Secondary Button: \`background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); color: #ffffff; border-radius: 8px; height: 36px; padding: 0 14px;\` (Hover: \`background: rgba(255, 255, 255, 0.12);\`).
-  * Icon Button: \`width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center;\`.
-- **Segmented Tabs / Switchers**:
-  * Track: \`background: rgba(255, 255, 255, 0.04); padding: 3px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.06); display: flex; gap: 4px;\`.
-  * Active tab: \`background: rgba(255, 255, 255, 0.12); color: #ffffff; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.2);\`.
-- **Stat Summary Grid**:
-  * Container: \`display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 10px; margin-top: 12px;\`.
-  * Item Box: \`background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 10px 12px;\`.
+# 4. DUAL PROTOCOL FOR CODE GENERATION
 
-### 3. Typography & Numerical Precision
-- Primary Font: \`'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif\`.
-- All numbers, timers, rates, and values MUST use \`font-variant-numeric: tabular-nums;\` to prevent layout jittering during state changes.
+### PROTOCOL A: NEW APPS / COMPLETE REWRITE (<GenerateApp>)
+When building a new app or when a complete rewrite is requested, output the entire runnable document wrapped in <GenerateApp>:
 
-# USER OVERRIDES
-If the user explicitly asks for a custom visual theme (e.g. "make it light mode", "retro cyberpunk", "pastel minimal", "full-page dashboard", "game canvas"), fulfill their specific creative request while maintaining clean code architecture and responsive stability.
-
-# CODE QUALITY & CONSTRAINTS
-- Output clean, self-contained HTML5, modern CSS3, and Vanilla JavaScript (ES6+).
-- **Zero Narrative Comments**: Do not write comments that narrate the obvious (e.g., avoid "// Define function", "// Add event listener", "// Increment counter"). Code must be self-documenting.
-- **Robustness**: Implement complete event handlers, input validation, and defensive fallbacks (e.g. localStorage caching when appropriate). Avoid placeholder functions or incomplete TODOs.
-
-# DUAL PROTOCOL FOR CODE GENERATION & TARGETED EDITING
-
-### PROTOCOL A: CREATING A NEW APP OR COMPLETE REWRITE (&lt;GenerateApp&gt;)
-When creating an app from scratch or when the user explicitly requests a complete redesign/rewrite, output the entire runnable document wrapped in &lt;GenerateApp&gt;:
-
-<GenerateApp title="App Name" height="480px">
+<GenerateApp title="App Name">
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    /* Domain-tailored CSS adhering to Nexus Component Design System */
+    /* Clean, solid, anti-slop CSS adhering to modern UI principles */
   </style>
 </head>
 <body>
-  <!-- Semantic DOM elements -->
+  <!-- Clean semantic DOM -->
   <script>
     // Robust, interactive logic
   </script>
@@ -291,23 +301,19 @@ When creating an app from scratch or when the user explicitly requests a complet
 </html>
 </GenerateApp>
 
-### PROTOCOL B: TARGETED EDITING / REFACTORING / FIXING EXISTING APPS (&lt;PatchApp&gt;)
-When modifying an existing app (adding features, changing colors, tweaking layout, fixing bugs, updating functions), DO NOT regenerate the entire file. Use precise SEARCH / REPLACE blocks wrapped inside &lt;PatchApp&gt;:
+### PROTOCOL B: TARGETED EDITING / REFACTORING (<PatchApp>)
+When editing, enhancing, or debugging an existing app, NEVER rewrite the entire file. Output precise SEARCH / REPLACE blocks wrapped in <PatchApp>:
 
 <PatchApp>
 <<<<<<< SEARCH
-[Exact lines of existing code to match]
+[Exact existing lines to match]
 =======
-[New replacement lines of code]
+[New replacement lines]
 >>>>>>> REPLACE
 </PatchApp>
 
-- **SEARCH block rules**:
-  * Must match the existing code in the app character-for-character, including indentation and formatting.
-  * Include 1 to 3 lines of surrounding context if necessary to ensure unique matching.
-  * You can include multiple SEARCH / REPLACE blocks inside a single &lt;PatchApp&gt; tag to make non-contiguous edits in one turn.
-- **Speed & Token Optimization**:
-  * Keep patches minimal and tightly scoped to what the user requested. Never rewrite unchanged sections.`;
+- Match exact whitespace and context lines (1-3 lines of context if needed for uniqueness).
+- Keep patches minimal, fast, and targeted.`;
 
 export class AppsPanel {
     constructor() {
@@ -316,6 +322,7 @@ export class AppsPanel {
         this.searchTerm = '';
         this.currentApp = null;
         this.customApps = {};
+        this.checkpoints = {};
         this.activeStudioTab = 'preview'; // 'preview' | 'code'
         this.isGenerating = false;
         this.currentStreamPort = null;
@@ -325,6 +332,7 @@ export class AppsPanel {
         this.speechRecognition = null;
         this.isRecording = false;
         this.isPlayerMode = false;
+        this.floatingDiffBar = null;
     }
 
     async init(targetAppId, mode) {
@@ -335,7 +343,6 @@ export class AppsPanel {
         }
 
         await this.loadCustomApps();
-        await this.initStudioModelSelector();
 
         if (targetAppId) {
             this.showStudioView();
@@ -343,15 +350,15 @@ export class AppsPanel {
             const foundBuiltin = BUILTIN_APPS_CATALOG.find(b => b.id === targetAppId);
             if (foundCustom) {
                 if (mode === 'studio' || mode === 'edit') {
-                    this.openAppStudio(foundCustom);
+                    await this.openAppStudio(foundCustom);
                 } else {
-                    this.launchApp(foundCustom);
+                    await this.launchApp(foundCustom);
                 }
             } else if (foundBuiltin) {
                 if (mode === 'remix' || mode === 'studio' || mode === 'edit') {
-                    this.remixBuiltinApp(foundBuiltin);
+                    await this.remixBuiltinApp(foundBuiltin);
                 } else {
-                    this.launchBuiltinApp(foundBuiltin);
+                    await this.launchBuiltinApp(foundBuiltin);
                 }
             } else {
                 this.showHubView();
@@ -376,24 +383,53 @@ export class AppsPanel {
         this.appsStudioModeToggleBtn = document.getElementById('apps-studio-mode-toggle-btn');
         this.appsStudioModeLabel = document.getElementById('apps-studio-mode-label');
         this.studioReloadBtn = document.getElementById('apps-studio-reload-btn');
-        this.studioSaveBtn = document.getElementById('apps-studio-save-btn');
         this.studioExportBtn = document.getElementById('apps-studio-export-btn');
         this.studioDeleteBtn = document.getElementById('apps-studio-delete-btn');
         this.studioPreviewFrame = document.getElementById('apps-studio-preview-iframe');
-        this.studioCodeEditor = document.getElementById('apps-studio-code-editor');
-        this.studioPromptInput = document.getElementById('apps-studio-prompt-input');
-        this.studioSendBtn = document.getElementById('apps-studio-send-btn');
-        this.studioChatMessages = document.getElementById('apps-studio-chat-messages');
+        this.studioCodeEditorContainer = document.getElementById('apps-code-editor-container');
+        this.studioCodeCopyBtn = document.getElementById('apps-code-copy-btn');
         this.studioTabPreview = document.getElementById('apps-tab-preview');
         this.studioTabCode = document.getElementById('apps-tab-code');
         this.studioPreviewPane = document.getElementById('apps-preview-pane');
         this.nativeWidgetHost = document.getElementById('apps-native-widget-host');
         this.studioCodePane = document.getElementById('apps-code-pane');
 
-        this.appsUploadBtn = document.getElementById('apps-upload-btn');
-        this.appsModelBtn = document.getElementById('apps-model-btn');
-        this.appsModelLabel = document.getElementById('apps-model-label');
-        this.appsMicBtn = document.getElementById('apps-mic-btn');
+        this.studioCodeDiffContainer = document.getElementById('apps-code-diff-container');
+        this.studioCodeHeaderTabs = document.getElementById('apps-code-header-tabs');
+        this.codeViewMode = 'code';
+
+        if (this.studioCodeEditorContainer && !this.codeEditor) {
+            this.codeEditor = new NexusCodeEditor(this.studioCodeEditorContainer, {
+                initialCode: this.currentApp?.code || '',
+                language: 'html',
+                onChange: (newCode) => {
+                    if (this.currentApp) {
+                        this.currentApp.code = newCode;
+                        this.debouncedSaveAndRefresh();
+                    }
+                }
+            });
+        }
+
+        this.appsStudioLeftPane = document.getElementById('apps-studio-left-pane') || document.querySelector('.apps-studio-left-pane');
+        if (this.appsStudioLeftPane && !this.chatUI) {
+            this.chatUI = NexusChatUI.mount(this.appsStudioLeftPane, {
+                mode: 'apps_studio',
+                placeholder: 'Ask AI to modify, design, or add features...',
+                features: {
+                    fileUpload: true,
+                    modelSelector: true,
+                    voiceInput: true
+                },
+                onSubmit: (prompt, files, options) => {
+                    this.handlePromptSubmit(prompt, files, options);
+                }
+            });
+        }
+
+        this.studioPromptInput = this.chatUI?.inputEl || null;
+        this.studioSendBtn = this.chatUI?.container?.querySelector('.nexus-action-btn.send') || null;
+        this.studioChatMessages = this.chatUI?.historyEl || null;
     }
 
     bindEvents() {
@@ -442,12 +478,18 @@ export class AppsPanel {
             });
         }
 
-        if (this.studioSaveBtn) {
-            this.studioSaveBtn.addEventListener('click', () => {
-                if (this.activeStudioTab === 'code' && this.studioCodeEditor && this.currentApp) {
-                    this.currentApp.code = this.studioCodeEditor.value;
-                }
-                this.saveCurrentApp(true);
+        if (this.studioCodeCopyBtn) {
+            this.studioCodeCopyBtn.addEventListener('click', () => {
+                const code = this.codeEditor?.getValue() || this.currentApp?.code || '';
+                if (!code) return;
+                navigator.clipboard.writeText(code);
+                const originalHtml = this.studioCodeCopyBtn.innerHTML;
+                this.studioCodeCopyBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#50fa7b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                `;
+                setTimeout(() => {
+                    if (this.studioCodeCopyBtn) this.studioCodeCopyBtn.innerHTML = originalHtml;
+                }, 1800);
             });
         }
 
@@ -494,28 +536,21 @@ export class AppsPanel {
             });
         }
 
-        if (this.studioSendBtn) {
-            this.studioSendBtn.addEventListener('click', () => {
-                this.handlePromptSubmit();
-            });
-        }
+        // Global keyboard shortcut for accepting/rejecting diffs: ⌘+Enter / ⌘+Backspace
+        document.addEventListener('keydown', (e) => {
+            if (!this.currentApp || this.isPlayerMode) return;
+            const pendingCps = Object.values(this.checkpoints).filter(c => c && c.appId === this.currentApp.id && c.status === 'pending');
+            if (pendingCps.length === 0) return;
+            const latestPending = pendingCps[pendingCps.length - 1];
 
-        if (this.studioPromptInput) {
-            NexusChatInput.bindAutoGrow(this.studioPromptInput);
-            this.studioPromptInput.addEventListener('input', () => {
-                if (this.studioSendBtn) {
-                    this.studioSendBtn.disabled = !this.studioPromptInput.value.trim();
-                }
-            });
-            this.studioPromptInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    this.handlePromptSubmit();
-                }
-            });
-        }
-
-        this.bindStudioInputActions();
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                e.preventDefault();
+                this.acceptCheckpoint(latestPending.entryIndex);
+            } else if ((e.metaKey || e.ctrlKey) && e.key === 'Backspace') {
+                e.preventDefault();
+                this.rejectCheckpoint(latestPending.entryIndex);
+            }
+        });
 
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
             chrome.storage.onChanged.addListener((changes, area) => {
@@ -526,178 +561,48 @@ export class AppsPanel {
                         const updated = this.customApps[this.currentApp.id];
                         this.currentApp = updated;
                         if (this.studioTitleInput) this.studioTitleInput.value = updated.name || 'Untitled App';
-                        if (this.studioCodeEditor) this.studioCodeEditor.value = updated.code || '';
+                        this.updateCodeView(updated.code || '');
                         this.renderChatMessages();
                         this.refreshStudioPreview();
                     }
                 }
             });
         }
+
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'NEXUS_WIDGET_ERROR') {
+                this.lastSandboxError = event.data;
+                if (this.onSandboxErrorCallback) {
+                    this.onSandboxErrorCallback(event.data);
+                }
+            } else if (event.data && event.data.type === 'NEXUS_APP_PROMPT' && event.data.prompt) {
+                if (this.studioPromptInput && !this.isGenerating) {
+                    this.studioPromptInput.value = event.data.prompt;
+                    this.resetSendButton();
+                    this.handlePromptSubmit();
+                }
+            }
+        });
     }
 
-    async initStudioModelSelector() {
+    async loadCheckpoints(appId) {
+        if (!appId) {
+            this.checkpoints = {};
+            return;
+        }
         try {
-            const data = await chrome.storage.local.get(['providers', 'models', 'advancedParamsByModel', 'lastUsedModel']);
-            const chain = (typeof window !== 'undefined' && window.NexusModelHelper)
-                ? window.NexusModelHelper.buildModelChain(data)
-                : ((typeof NexusModelHelper !== 'undefined') ? NexusModelHelper.buildModelChain(data) : []);
-            let currentModel = this.selectedModel?.model || data.lastUsedModel?.model;
-            let currentProviderId = this.selectedModel?.providerId || data.lastUsedModel?.providerId;
-            if (!currentModel && chain.length > 0) {
-                currentModel = chain[0].model;
-                currentProviderId = chain[0].providerId;
-            }
-            if (currentModel) {
-                this.selectedModel = { model: currentModel, providerId: currentProviderId };
-                const found = chain.find(c => c.model === currentModel && c.providerId === currentProviderId) || chain.find(c => c.model === currentModel);
-                const displayName = found ? (found.displayName || found.name || found.model) : currentModel;
-                if (this.appsModelLabel) {
-                    this.appsModelLabel.textContent = displayName;
-                }
-            }
-        } catch (e) {
-            console.warn('[AppsPanel] Model init error:', e);
-        }
-    }
-
-    bindStudioInputActions() {
-        if (this.appsModelBtn) {
-            this.appsModelBtn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                try {
-                    const data = await chrome.storage.local.get(['providers', 'models', 'advancedParamsByModel', 'lastUsedModel']);
-                    const chain = (typeof window !== 'undefined' && window.NexusModelHelper)
-                        ? window.NexusModelHelper.buildModelChain(data)
-                        : ((typeof NexusModelHelper !== 'undefined') ? NexusModelHelper.buildModelChain(data) : []);
-                    if (chain.length === 0) return;
-
-                    let currentModel = this.selectedModel?.model || data.lastUsedModel?.model;
-                    let currentProviderId = this.selectedModel?.providerId || data.lastUsedModel?.providerId;
-                    if (!currentModel && chain.length > 0) {
-                        currentModel = chain[0].model;
-                        currentProviderId = chain[0].providerId;
-                    }
-
-                    const items = chain.map(item => {
-                        const isSelected = (currentModel === item.model && currentProviderId === item.providerId) || currentModel === item.model;
-                        const displayName = item.displayName || item.name || item.model;
-                        return {
-                            label: displayName,
-                            subtitle: item.providerName || item.providerId,
-                            active: !!isSelected,
-                            action: async () => {
-                                this.selectedModel = { model: item.model, providerId: item.providerId };
-                                if (this.appsModelLabel) {
-                                    this.appsModelLabel.textContent = displayName;
-                                }
-                                await chrome.storage.local.set({ lastUsedModel: this.selectedModel });
-                            }
-                        };
-                    });
-
-                    NexusMenu.show({
-                        anchor: this.appsModelBtn,
-                        placement: 'top-start',
-                        items
-                    });
-                } catch (err) {
-                    console.warn('[AppsPanel] Model menu error:', err);
-                }
-            });
-        }
-
-        if (this.appsUploadBtn) {
-            this.appsUploadBtn.addEventListener('click', () => {
-                if (!this.fileInputEl) {
-                    this.fileInputEl = document.createElement('input');
-                    this.fileInputEl.type = 'file';
-                    this.fileInputEl.id = 'apps-hidden-file-input';
-                    this.fileInputEl.style.display = 'none';
-                    this.fileInputEl.multiple = true;
-                    this.fileInputEl.accept = '.txt,.js,.html,.css,.json,.md,image/*';
-                    document.body.appendChild(this.fileInputEl);
-
-                    this.fileInputEl.addEventListener('change', async (e) => {
-                        const files = Array.from(e.target.files || []);
-                        if (files.length === 0) return;
-                        for (const file of files) {
-                            if (file.type.startsWith('text/') || file.name.match(/\.(txt|js|html|css|json|md|py|ts)$/i)) {
-                                const content = await file.text();
-                                const snippet = `\n\n--- Attached File: ${file.name} ---\n${content}\n--- End of File ---\n`;
-                                if (this.studioPromptInput) {
-                                    this.studioPromptInput.value = (this.studioPromptInput.value + snippet).trim();
-                                    NexusChatInput.bindAutoGrow(this.studioPromptInput);
-                                    if (this.studioSendBtn) this.studioSendBtn.disabled = !this.studioPromptInput.value.trim();
-                                }
-                            } else if (file.type.startsWith('image/')) {
-                                const reader = new FileReader();
-                                reader.onload = (re) => {
-                                    const snippet = `\n\n[Attached image: ${file.name}]\n`;
-                                    if (this.studioPromptInput) {
-                                        this.studioPromptInput.value = (this.studioPromptInput.value + snippet).trim();
-                                        NexusChatInput.bindAutoGrow(this.studioPromptInput);
-                                        if (this.studioSendBtn) this.studioSendBtn.disabled = !this.studioPromptInput.value.trim();
-                                    }
-                                };
-                                reader.readAsDataURL(file);
-                            }
-                        }
-                        this.fileInputEl.value = '';
-                    });
-                }
-                this.fileInputEl.click();
-            });
-        }
-
-        if (this.appsMicBtn) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (SpeechRecognition) {
-                this.speechRecognition = new SpeechRecognition();
-                this.speechRecognition.continuous = false;
-                this.speechRecognition.interimResults = false;
-                this.speechRecognition.lang = navigator.language || 'en-US';
-
-                this.speechRecognition.onstart = () => {
-                    this.isRecording = true;
-                    this.appsMicBtn.classList.add('recording');
-                    this.appsMicBtn.style.color = '#EA4335';
-                };
-
-                this.speechRecognition.onresult = (event) => {
-                    const transcript = event.results[0][0].transcript;
-                    if (transcript && this.studioPromptInput) {
-                        const currentVal = this.studioPromptInput.value;
-                        this.studioPromptInput.value = currentVal ? `${currentVal} ${transcript}` : transcript;
-                        NexusChatInput.bindAutoGrow(this.studioPromptInput);
-                        if (this.studioSendBtn) this.studioSendBtn.disabled = false;
-                    }
-                };
-
-                this.speechRecognition.onerror = (err) => {
-                    console.warn('[AppsMic Error]', err);
-                    this.isRecording = false;
-                    this.appsMicBtn.classList.remove('recording');
-                    this.appsMicBtn.style.removeProperty('color');
-                };
-
-                this.speechRecognition.onend = () => {
-                    this.isRecording = false;
-                    this.appsMicBtn.classList.remove('recording');
-                    this.appsMicBtn.style.removeProperty('color');
-                };
-
-                this.appsMicBtn.addEventListener('click', () => {
-                    if (!this.speechRecognition) return;
-                    if (this.isRecording) {
-                        this.speechRecognition.stop();
-                    } else {
-                        this.speechRecognition.start();
+            const list = await NexusAppsCheckpointDB.getCheckpointsByApp(appId);
+            this.checkpoints = {};
+            if (Array.isArray(list)) {
+                list.forEach(cp => {
+                    if (cp && cp.id) {
+                        this.checkpoints[cp.id] = cp;
                     }
                 });
-            } else {
-                this.appsMicBtn.title = 'Voice input not supported in this browser';
-                this.appsMicBtn.style.opacity = '0.5';
             }
+        } catch (e) {
+            console.error('[AppsPanel] Failed to load checkpoints:', e);
+            this.checkpoints = {};
         }
     }
 
@@ -705,6 +610,7 @@ export class AppsPanel {
         try {
             const res = await chrome.storage.local.get([APPS_STORAGE_KEY]);
             this.customApps = res[APPS_STORAGE_KEY] || {};
+            this.syncTitleCache();
         } catch (e) {
             this.customApps = {};
         }
@@ -713,12 +619,32 @@ export class AppsPanel {
     async saveCustomApps() {
         try {
             await chrome.storage.local.set({ [APPS_STORAGE_KEY]: this.customApps });
+            this.syncTitleCache();
             if (typeof NexusSync !== 'undefined' && typeof NexusSync.triggerDebouncedSync === 'function') {
                 NexusSync.triggerDebouncedSync();
             }
         } catch (e) {
             console.error('[AppsPanel] Failed to save custom apps:', e);
         }
+    }
+
+    syncTitleCache() {
+        try {
+            const cache = {};
+            if (this.customApps) {
+                Object.values(this.customApps).forEach(app => {
+                    if (app && app.id && app.name) {
+                        cache[app.id] = app.name;
+                    }
+                });
+            }
+            BUILTIN_APPS_CATALOG.forEach(app => {
+                if (app && app.id && app.name) {
+                    cache[app.id] = app.name;
+                }
+            });
+            localStorage.setItem('nexus_apps_titles_cache', JSON.stringify(cache));
+        } catch (e) {}
     }
 
     showHubView() {
@@ -880,13 +806,7 @@ export class AppsPanel {
     document.getElementById('demo-btn').textContent = 'Clicked ' + count + ' times! 🚀';
   };
 </script>`,
-            chatHistory: [
-                {
-                    role: 'assistant',
-                    text: "👋 Hello! How can I help you customize or enhance this app? Feel free to describe any features, design improvements, or logic you'd like to add.",
-                    timestamp: Date.now()
-                }
-            ],
+            chatHistory: [],
             createdAt: Date.now(),
             updatedAt: Date.now()
         };
@@ -910,13 +830,7 @@ export class AppsPanel {
             description: `Customized version of ${builtin.name}`,
             category: builtin.category || 'utilities',
             code: starterCode,
-            chatHistory: [
-                {
-                    role: 'assistant',
-                    text: `🛠️ Loaded template for **${builtin.name}**. What features or design enhancements would you like to add? Let me know below!`,
-                    timestamp: Date.now()
-                }
-            ],
+            chatHistory: [],
             createdAt: Date.now(),
             updatedAt: Date.now()
         };
@@ -938,7 +852,7 @@ export class AppsPanel {
         this.launchApp(tempApp);
     }
 
-    launchApp(app) {
+    async launchApp(app) {
         this.currentApp = app;
         this.showStudioView();
         this.setPlayerMode(true);
@@ -948,9 +862,10 @@ export class AppsPanel {
             this.studioTitleInput.readOnly = !!app.isBuiltin;
         }
 
-        if (this.studioCodeEditor) {
-            this.studioCodeEditor.value = app.code || '';
-        }
+        await this.loadCheckpoints(app.id);
+        this.updateCodeView(app.code || '');
+        this.renderCodeDiffView();
+        this.updateFloatingDiffBar();
 
         this.renderChatMessages();
         this.switchStudioTab('preview');
@@ -961,7 +876,7 @@ export class AppsPanel {
         }
     }
 
-    openAppStudio(app) {
+    async openAppStudio(app) {
         this.currentApp = app;
         this.showStudioView();
         this.setPlayerMode(false);
@@ -971,9 +886,10 @@ export class AppsPanel {
             this.studioTitleInput.readOnly = false;
         }
 
-        if (this.studioCodeEditor) {
-            this.studioCodeEditor.value = app.code || '';
-        }
+        await this.loadCheckpoints(app.id);
+        this.updateCodeView(app.code || '');
+        this.renderCodeDiffView();
+        this.updateFloatingDiffBar();
 
         this.renderChatMessages();
         this.switchStudioTab('preview');
@@ -999,8 +915,27 @@ export class AppsPanel {
                 this.appsStudioContainer.classList.remove('is-player');
             }
         }
+        if (this.appsStudioModeToggleBtn) {
+            this.appsStudioModeToggleBtn.title = isPlayer ? 'Open AI Editor' : 'Switch to Play Mode';
+            const iconSvg = this.appsStudioModeToggleBtn.querySelector('svg');
+            if (iconSvg) {
+                if (isPlayer) {
+                    iconSvg.innerHTML = `<path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>`;
+                } else {
+                    iconSvg.innerHTML = `<polygon points="5 3 19 12 5 21 5 3"></polygon>`;
+                }
+            }
+        }
         if (this.appsStudioModeLabel) {
-            this.appsStudioModeLabel.textContent = isPlayer ? 'Edit with AI' : 'Player';
+            this.appsStudioModeLabel.textContent = isPlayer ? 'Edit' : 'Play';
+        }
+        if (!isPlayer) {
+            requestAnimationFrame(() => {
+                this.renderChatMessages();
+                if (this.studioPromptInput) {
+                    this.studioPromptInput.focus();
+                }
+            });
         }
     }
 
@@ -1017,9 +952,27 @@ export class AppsPanel {
             this.studioTabPreview?.classList.remove('active');
             if (this.studioPreviewPane) this.studioPreviewPane.style.display = 'none';
             if (this.studioCodePane) this.studioCodePane.style.display = 'flex';
-            if (this.studioCodeEditor && this.currentApp) {
-                this.studioCodeEditor.value = this.currentApp.code || '';
+            this.updateCodeView(this.currentApp?.code || '');
+            this.renderCodeDiffView();
+            this.updateFloatingDiffBar();
+            if (this.codeViewMode === 'code') {
+                setTimeout(() => this.codeEditor?.focus(), 50);
             }
+        }
+    }
+
+    debouncedSaveAndRefresh() {
+        if (this._saveRefreshTimer) clearTimeout(this._saveRefreshTimer);
+        this._saveRefreshTimer = setTimeout(() => {
+            this.saveCurrentApp();
+            this.refreshStudioPreview();
+        }, 350);
+    }
+
+    updateCodeView(code) {
+        const cleanCode = (code !== undefined && code !== null) ? code : (this.currentApp?.code || '');
+        if (this.codeEditor) {
+            this.codeEditor.setValue(cleanCode);
         }
     }
 
@@ -1041,13 +994,32 @@ export class AppsPanel {
         const rawCode = this.currentApp.code || '';
         const cleanCode = WidgetRunner.extractWidgetCode(rawCode, rawCode) || rawCode;
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const fontSize = getComputedStyle(document.documentElement).getPropertyValue('--nexus-fontSize') || '14px';
+        const appId = this.currentApp.id || 'nexus_app_default';
 
-        const sendToSandbox = () => {
+        if (this.studioPreviewFrame) {
+            this.studioPreviewFrame.setAttribute('data-widget-id', appId);
+            this.studioPreviewFrame.setAttribute('data-widget-raw', encodeURIComponent(cleanCode));
+        }
+
+        const sendToSandbox = async () => {
             try {
+                let storedData = {};
+                if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+                    try {
+                        const storageKey = `nexus_sandbox_${appId}`;
+                        const res = await chrome.storage.local.get([storageKey]);
+                        if (res[storageKey]) storedData = res[storageKey];
+                    } catch (_) {}
+                }
+
                 this.studioPreviewFrame.contentWindow?.postMessage({
                     type: 'NEXUS_WIDGET_RENDER',
                     code: cleanCode,
-                    isDark
+                    isDark,
+                    fontSize: fontSize.trim(),
+                    appId: appId,
+                    storedData: storedData
                 }, '*');
             } catch (e) {
                 console.error('[AppsStudio] PostMessage to sandbox error:', e);
@@ -1073,29 +1045,422 @@ export class AppsPanel {
 
     formatMarkdown(text) {
         if (!text) return '';
-        let str = this.escapeHtml(text);
-        str = str.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        str = str.replace(/\*(.*?)\*/g, '<em>$1</em>');
-        str = str.replace(/`([^`]+)`/g, '<code>$1</code>');
-        str = str.replace(/\n/g, '<br>');
-        return str;
+        let raw = String(text);
+
+        // Completely strip <think>...</think> and <thought>...</thought>
+        raw = raw.replace(/<(?:think|thought)>[\s\S]*?(?:<\/(?:think|thought)>|$)/gi, '').trim();
+
+        // Clean out widget or block tags if any remain
+        if (raw.includes('<GenerateApp')) raw = raw.split('<GenerateApp')[0];
+        if (raw.includes('<GenerateWidget')) raw = raw.split('<GenerateWidget')[0];
+        if (raw.includes('<PatchApp')) raw = raw.split('<PatchApp')[0];
+        if (raw.includes('<PatchWidget')) raw = raw.split('<PatchWidget')[0];
+        if (raw.includes('```')) raw = raw.split('```')[0];
+        raw = raw.trim();
+
+        if (!raw) return '';
+
+        let parsedMain = '';
+        if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+            parsedMain = marked.parse(raw);
+        } else {
+            let str = this.escapeHtml(raw);
+            str = str.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            str = str.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            str = str.replace(/`([^`]+)`/g, '<code>$1</code>');
+            str = str.replace(/\n/g, '<br>');
+            parsedMain = str;
+        }
+
+        return parsedMain ? `<div class="apps-main-response">${parsedMain}</div>` : '';
+    }
+
+    stopGeneration() {
+        if (this.currentStreamPort) {
+            try { this.currentStreamPort.disconnect(); } catch (e) {}
+            this.currentStreamPort = null;
+        }
+        this.isGenerating = false;
+        if (this.chatUI) this.chatUI.hideStopButton();
+        this.renderChatMessages();
+    }
+
+    renderCodeDiffView() {
+        if (!this.studioCodeHeaderTabs || !this.currentApp) return;
+
+        const pendingList = Object.values(this.checkpoints).filter(c => c && c.appId === this.currentApp.id && c.status === 'pending');
+        const latestPending = pendingList.length > 0 ? pendingList[pendingList.length - 1] : null;
+
+        if (!latestPending || !latestPending.diff || !latestPending.diff.hasChanges) {
+            this.codeViewMode = 'code';
+            this.studioCodeHeaderTabs.innerHTML = `
+                <div class="apps-code-tab active" data-tab="code">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="16 18 22 12 16 6"></polyline>
+                        <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                    <span class="apps-code-file-name">index.html</span>
+                </div>
+            `;
+            if (this.studioCodeEditorContainer) this.studioCodeEditorContainer.style.display = 'flex';
+            if (this.studioCodeDiffContainer) this.studioCodeDiffContainer.style.display = 'none';
+        } else {
+            this.codeViewMode = 'diff';
+            this.studioCodeHeaderTabs.innerHTML = `
+                <div class="apps-code-tab active" data-tab="code">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="16 18 22 12 16 6"></polyline>
+                        <polyline points="8 6 2 12 8 18"></polyline>
+                    </svg>
+                    <span class="apps-code-file-name">index.html</span>
+                    <span class="apps-diff-stats" style="font-size: 11px; margin-left: 6px;">
+                        <span class="apps-diff-stat-add">+${latestPending.diff.additions || 0}</span>
+                        <span class="apps-diff-stat-del">-${latestPending.diff.deletions || 0}</span>
+                    </span>
+                </div>
+            `;
+
+            if (this.studioCodeDiffContainer) {
+                this.studioCodeDiffContainer.innerHTML = this.renderDiffViewerHTML(latestPending.diff.lines, latestPending.beforeCode, latestPending.afterCode);
+                this.studioCodeDiffContainer.style.display = 'block';
+            }
+            if (this.studioCodeEditorContainer) {
+                this.studioCodeEditorContainer.style.display = 'none';
+            }
+        }
+
+        const activeTabEl = this.studioCodeHeaderTabs.querySelector('.apps-code-tab');
+        if (activeTabEl) {
+            activeTabEl.title = 'Click to jump between modified code blocks';
+            activeTabEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.jumpToNextDiffHunk();
+            });
+        }
+    }
+
+    getDiffHunks() {
+        if (!this.studioCodeDiffContainer) return [];
+        const lines = Array.from(this.studioCodeDiffContainer.querySelectorAll('.apps-diff-line'));
+        const hunks = [];
+        let inHunk = false;
+
+        lines.forEach(line => {
+            const isChanged = line.classList.contains('added') || line.classList.contains('removed');
+            if (isChanged) {
+                if (!inHunk) {
+                    hunks.push(line);
+                    inHunk = true;
+                }
+            } else {
+                inHunk = false;
+            }
+        });
+        return hunks;
+    }
+
+    jumpToNextDiffHunk() {
+        const container = this.studioCodeDiffContainer;
+        if (!container) return;
+
+        const hunks = this.getDiffHunks();
+        if (hunks.length === 0) {
+            container.scrollTop = 0;
+            if (this.studioCodeEditorContainer) this.studioCodeEditorContainer.scrollTop = 0;
+            return;
+        }
+
+        const containerRect = container.getBoundingClientRect();
+        const currentCenterY = container.scrollTop + (container.clientHeight / 2);
+
+        // Find the first hunk that is positioned below the current viewport center
+        let nextHunk = hunks.find(hunk => {
+            const hunkTop = hunk.getBoundingClientRect().top - containerRect.top + container.scrollTop;
+            return hunkTop > (currentCenterY + 15);
+        });
+
+        // If no hunk is below current scroll position (we reached the bottom), wrap around to the first hunk
+        if (!nextHunk) {
+            nextHunk = hunks[0];
+        }
+
+        if (nextHunk) {
+            nextHunk.scrollIntoView({ behavior: 'auto', block: 'center' });
+            nextHunk.classList.remove('apps-diff-hunk-focused');
+            void nextHunk.offsetWidth;
+            nextHunk.classList.add('apps-diff-hunk-focused');
+            setTimeout(() => nextHunk.classList.remove('apps-diff-hunk-focused'), 700);
+        }
+    }
+
+    scrollToDiffRegion(isNewApp = false) {
+        requestAnimationFrame(() => {
+            if (isNewApp) {
+                if (this.studioCodeDiffContainer) this.studioCodeDiffContainer.scrollTop = 0;
+                if (this.studioCodeEditorContainer) this.studioCodeEditorContainer.scrollTop = 0;
+            } else {
+                const hunks = this.getDiffHunks();
+                if (hunks.length > 0) {
+                    hunks[0].scrollIntoView({ behavior: 'auto', block: 'center' });
+                }
+            }
+        });
+    }
+
+    renderDiffViewerHTML(lines, beforeCode = '', afterCode = '') {
+        if (!Array.isArray(lines) || lines.length === 0) return '<div style="padding: 12px 16px; color: rgba(255,255,255,0.4);">No code changes</div>';
+
+        const hljsObj = (typeof hljs !== 'undefined') ? hljs : (typeof window !== 'undefined' ? window.hljs : null);
+
+        let beforeHighlighted = [];
+        let afterHighlighted = [];
+        if (hljsObj && typeof hljsObj.highlight === 'function') {
+            try {
+                if (beforeCode) {
+                    beforeHighlighted = hljsObj.highlight(beforeCode, { language: 'xml', ignoreIllegals: true }).value.split('\n');
+                }
+                if (afterCode) {
+                    afterHighlighted = hljsObj.highlight(afterCode, { language: 'xml', ignoreIllegals: true }).value.split('\n');
+                }
+            } catch (e) {
+                console.warn('[AppsStudio] Batch syntax highlighting error:', e);
+            }
+        }
+
+        const rowsHtml = lines.map(l => {
+            const prefix = l.type === 'added' ? '+' : (l.type === 'removed' ? '-' : ' ');
+            const num = l.newLine || l.oldLine || '';
+
+            let codeHtml = '';
+            if (l.type === 'added' && l.newLine && afterHighlighted[l.newLine - 1] !== undefined) {
+                codeHtml = afterHighlighted[l.newLine - 1];
+            } else if (l.type === 'removed' && l.oldLine && beforeHighlighted[l.oldLine - 1] !== undefined) {
+                codeHtml = beforeHighlighted[l.oldLine - 1];
+            } else if (l.type === 'unchanged') {
+                if (l.newLine && afterHighlighted[l.newLine - 1] !== undefined) {
+                    codeHtml = afterHighlighted[l.newLine - 1];
+                } else if (l.oldLine && beforeHighlighted[l.oldLine - 1] !== undefined) {
+                    codeHtml = beforeHighlighted[l.oldLine - 1];
+                }
+            }
+
+            if (!codeHtml && l.content !== undefined) {
+                if (hljsObj && typeof hljsObj.highlight === 'function') {
+                    try {
+                        codeHtml = hljsObj.highlight(l.content, { language: 'xml', ignoreIllegals: true }).value;
+                    } catch (e2) {
+                        codeHtml = this.escapeHtml(l.content);
+                    }
+                } else {
+                    codeHtml = this.escapeHtml(l.content);
+                }
+            }
+
+            return `<div class="apps-diff-line ${l.type}"><span class="apps-diff-line-num">${num}</span><span class="apps-diff-line-prefix">${prefix}</span><span class="apps-diff-line-content hljs">${codeHtml || '&nbsp;'}</span></div>`;
+        }).join('');
+
+        return `<div class="apps-diff-inner">${rowsHtml}</div>`;
+    }
+
+    async acceptCheckpoint(entryIndex) {
+        if (!this.currentApp) return;
+        const id = `${this.currentApp.id}_${entryIndex}`;
+        const cp = this.checkpoints[id];
+        if (!cp) return;
+        cp.status = 'accepted';
+        await NexusAppsCheckpointDB.updateStatus(id, 'accepted');
+        this.codeViewMode = 'code';
+        this.renderCodeDiffView();
+        this.updateFloatingDiffBar();
+    }
+
+    async rejectCheckpoint(entryIndex) {
+        if (!this.currentApp) return;
+        const id = `${this.currentApp.id}_${entryIndex}`;
+        const cp = this.checkpoints[id];
+        if (!cp) return;
+        cp.status = 'rejected';
+        await NexusAppsCheckpointDB.updateStatus(id, 'rejected');
+        if (typeof cp.beforeCode === 'string') {
+            this.currentApp.code = cp.beforeCode;
+            this.updateCodeView(cp.beforeCode);
+            this.saveCurrentApp();
+            this.refreshStudioPreview();
+        }
+        this.codeViewMode = 'code';
+        this.renderCodeDiffView();
+        this.updateFloatingDiffBar();
+    }
+
+    updateFloatingDiffBar() {
+        if (!this.studioView || this.isPlayerMode || !this.currentApp) {
+            if (this.floatingDiffBar) {
+                this.floatingDiffBar.remove();
+                this.floatingDiffBar = null;
+            }
+            return;
+        }
+
+        const pendingList = Object.values(this.checkpoints).filter(c => c && c.appId === this.currentApp.id && c.status === 'pending');
+        if (pendingList.length === 0) {
+            if (this.floatingDiffBar) {
+                this.floatingDiffBar.remove();
+                this.floatingDiffBar = null;
+            }
+            return;
+        }
+
+        const latestPending = pendingList[pendingList.length - 1];
+        const mountPane = this.studioCodePane?.querySelector('.apps-code-card') || this.studioCodePane || this.appsStudioContainer || document.body;
+
+        if (!this.floatingDiffBar) {
+            this.floatingDiffBar = document.createElement('div');
+            this.floatingDiffBar.className = 'apps-floating-diff-bar';
+            mountPane.appendChild(this.floatingDiffBar);
+        } else if (this.floatingDiffBar.parentElement !== mountPane) {
+            mountPane.appendChild(this.floatingDiffBar);
+        }
+
+        this.floatingDiffBar.innerHTML = `
+            <span style="font-size: 11.5px; font-weight: 600; color: #f59e0b; display: inline-flex; align-items: center; gap: 5px; margin-right: 4px;">
+                <span class="apps-diff-stat-add">+${latestPending.diff?.additions || 0}</span>
+                <span class="apps-diff-stat-del">-${latestPending.diff?.deletions || 0}</span>
+            </span>
+            <button type="button" class="apps-btn-accept floating-btn-accept" style="height: 28px; padding: 0 12px;">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Accept Changes</span>
+            </button>
+            <button type="button" class="apps-btn-reject floating-btn-reject" style="height: 28px; padding: 0 12px;">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <span>Reject</span>
+            </button>
+        `;
+
+        const accBtn = this.floatingDiffBar.querySelector('.floating-btn-accept');
+        const rejBtn = this.floatingDiffBar.querySelector('.floating-btn-reject');
+        if (accBtn) accBtn.onclick = () => this.acceptCheckpoint(latestPending.entryIndex);
+        if (rejBtn) rejBtn.onclick = () => this.rejectCheckpoint(latestPending.entryIndex);
+    }
+
+    renderQuestionFilesHTML(files) {
+        if (!Array.isArray(files) || files.length === 0) return '';
+        const visibleFiles = files.filter(item => {
+            if (typeof item === 'string') return true;
+            if (!item || typeof item !== 'object') return false;
+            return !item.hiddenInPreview && !item.parentAttachmentId;
+        });
+        if (visibleFiles.length === 0) return '';
+
+        let html = '<div class="nexus-chat-question-files">';
+        visibleFiles.forEach((item, index) => {
+            const isString = typeof item === 'string';
+            const isImage = isString ? true : (item.isImage || (item.mimeType && item.mimeType.startsWith('image/')) || (typeof item.dataUrl === 'string' && item.dataUrl.startsWith('data:image')));
+            const rawSrc = isString ? item : (item.dataUrl || item.previewUrl || item.objectUrl || (item.mimeType && item.data ? `data:${item.mimeType};base64,${item.data}` : ''));
+            if (isImage && rawSrc) {
+                const alt = (!isString && item.name) ? item.name : `Image ${index + 1}`;
+                html += `<img src="${this.escapeHtml(rawSrc)}" alt="${this.escapeHtml(alt)}" class="nexus-clickable-image" />`;
+            } else if (!isString) {
+                const fileName = item.name || 'File';
+                const displayName = typeof NexusChatUI !== 'undefined' && NexusChatUI.getDisplayFileName ? NexusChatUI.getDisplayFileName(fileName) : fileName;
+                const category = typeof NexusChatUI !== 'undefined' && NexusChatUI.inferFileCategory ? NexusChatUI.inferFileCategory(item) : 'file';
+                const icon = typeof NexusChatUI !== 'undefined' && NexusChatUI.getFileIconByCategory ? NexusChatUI.getFileIconByCategory(category) : '';
+                const typeLabel = typeof NexusChatUI !== 'undefined' && NexusChatUI.getFileTypeLabel ? NexusChatUI.getFileTypeLabel(item) : 'FILE';
+                html += `<div class="nexus-preview-item is-file nexus-question-file-chip" title="${this.escapeHtml(fileName)}"><div class="nexus-file-preview-info"><span class="nexus-file-name">${this.escapeHtml(displayName)}</span><div class="nexus-file-meta-row"><span class="nexus-file-icon-inline file-${category}">${icon}</span><span class="nexus-file-size-tag">${this.escapeHtml(typeLabel)}</span></div></div></div>`;
+            }
+        });
+        html += '</div>';
+        return html;
     }
 
     renderChatMessages() {
         if (!this.studioChatMessages || !this.currentApp) return;
-        const msgs = this.currentApp.chatHistory || [];
+        const msgs = (this.currentApp.chatHistory || []).filter(m => 
+            !(m.role === 'assistant' && (
+                m.text.includes('👋 Hello! How can I help') || 
+                m.text.includes('Loaded template for')
+            ))
+        );
+
+        if (msgs.length === 0) {
+            const isNewBlankApp = !this.currentApp.code || 
+                this.currentApp.name === 'New Custom App' || 
+                this.currentApp.name === 'Untitled App' ||
+                this.currentApp.code.includes('My New App');
+
+            const appName = this.currentApp.name || (isNewBlankApp ? 'New Custom App' : 'Untitled App');
+            const appDesc = isNewBlankApp 
+                ? 'Describe the web app, interactive tool, or mini game you want to build from scratch.'
+                : (this.currentApp.description || 'Describe how you want to modify, customize, or redesign this app.');
+            const color = getAppColor(appName);
+            
+            let avatarHTML = '';
+            let bgStyle = '';
+            if (this.currentApp.icon && this.currentApp.icon.includes('<svg')) {
+                avatarHTML = this.currentApp.icon;
+                bgStyle = `background: ${color}; color: #ffffff;`;
+            } else if (this.currentApp.icon && typeof this.currentApp.icon === 'string' && (this.currentApp.icon.startsWith('http') || this.currentApp.icon.startsWith('data:'))) {
+                avatarHTML = `<img src="${this.currentApp.icon}" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />`;
+                bgStyle = 'background: transparent;';
+            } else {
+                avatarHTML = `<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>`;
+                bgStyle = `background: ${color}; color: #ffffff;`;
+            }
+
+            const suggestions = isNewBlankApp ? [
+                { icon: '🃏', title: 'Flashcards & interactive quiz app', prompt: 'Create an interactive flashcard study tool with flip cards, category filters, and quiz mode with score tracking.' },
+                { icon: '📋', title: 'Kanban board with drag & drop', prompt: 'Create an interactive Kanban task board with custom columns (To Do, In Progress, Done), drag & drop cards, and tags.' },
+                { icon: '🎯', title: 'Habit tracker & daily streak counter', prompt: 'Build a daily habit tracker with streak counters, weekly progress bars, completion checkboxes, and local storage.' },
+                { icon: '🎮', title: 'Wordle-style mini puzzle game', prompt: 'Build an interactive Wordle-style word guessing game with on-screen keyboard, animations, and game statistics.' }
+            ] : [
+                { icon: '✨', title: 'Modern glassmorphism & animations', prompt: 'Redesign this app with a modern glassmorphism UI, smooth micro-interactions, and refined typography.' },
+                { icon: '⚡', title: 'Keyboard shortcuts & audio feedback', prompt: 'Add keyboard shortcuts for all key actions and pleasant sound effects on user interaction.' },
+                { icon: '🌓', title: 'Responsive layout & dark mode toggle', prompt: 'Make the layout fully responsive across all screen sizes and add a dark mode toggle.' }
+            ];
+
+            const suggestionsHTML = suggestions.map(s => `
+                <button type="button" class="apps-suggestion-chip" data-prompt="${this.escapeHtml(s.prompt)}">
+                    <span>${s.icon}</span> <span>${this.escapeHtml(s.title)}</span>
+                </button>
+            `).join('');
+
+            this.studioChatMessages.innerHTML = `
+                <div class="spark-welcome apps-studio-welcome">
+                    <div class="spark-welcome__avatar" style="${bgStyle}">${avatarHTML}</div>
+                    <h1 class="spark-welcome__title">${this.escapeHtml(appName)}</h1>
+                    <p class="spark-welcome__description" style="color: var(--nexus-sidebar-text-muted); font-size: 0.96em; text-align: center; margin: -10px auto 25px auto; max-width: 480px; line-height: 1.45;">${this.escapeHtml(appDesc)}</p>
+                    <div class="apps-prompt-suggestions">
+                        ${suggestionsHTML}
+                    </div>
+                </div>
+            `;
+            this.studioChatMessages.querySelectorAll('.apps-suggestion-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const prompt = chip.dataset.prompt;
+                    if (prompt && this.studioPromptInput) {
+                        this.studioPromptInput.value = prompt;
+                        this.resetSendButton();
+                        this.studioPromptInput.focus();
+                    }
+                });
+            });
+            this.updateFloatingDiffBar();
+            return;
+        }
         
         let html = '';
         for (let i = 0; i < msgs.length; i++) {
             const m = msgs[i];
+
             if (m.role === 'user') {
                 const nextMsg = (i + 1 < msgs.length && msgs[i + 1].role === 'assistant') ? msgs[i + 1] : null;
-                const assistantHtml = nextMsg ? this.formatMarkdown(nextMsg.text) : '';
-                const assistantRaw = nextMsg ? nextMsg.text : '';
+                const assistantRaw = nextMsg ? nextMsg.text.replace(/<(?:think|thought)>[\s\S]*?(?:<\/(?:think|thought)>|$)/gi, '').trim() : 'App code updated according to requirements.';
+                const assistantContent = nextMsg ? this.formatMarkdown(nextMsg.text) : '<span>App updated and verified.</span>';
+                const filesHTML = this.renderQuestionFilesHTML(m.files);
                 
                 html += `
                     <div class="nexus-entry" data-entry-type="qa" data-entry-index="${i}">
                         <div class="nexus-question-row">
+                            ${filesHTML}
                             <div class="nexus-chat-question" data-raw-text="${this.escapeHtml(m.text)}">
                                 <div class="nexus-question-content">${this.escapeHtml(m.text).replace(/\n/g, '<br>')}</div>
                             </div>
@@ -1111,32 +1476,35 @@ export class AppsPanel {
                                 </button>
                             </div>
                         </div>
-                        ${nextMsg ? `
-                            <div class="nexus-chat-answer" data-raw-text="${this.escapeHtml(assistantRaw)}">
-                                <div class="nexus-chat-answer-content markdown-body">${assistantHtml}</div>
-                                <div class="nexus-actions">
-                                    <div class="nexus-actions-left" style="display: flex; align-items: center; gap: 6px;">
-                                        <button type="button" class="nexus-answer-action-btn btn-regenerate" data-entry-index="${i}" data-prompt="${this.escapeHtml(m.text)}" title="Regenerate">
-                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
-                                        </button>
-                                        <button type="button" class="nexus-answer-action-btn btn-copy" data-text="${this.escapeHtml(assistantRaw)}" title="Copy">
-                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                        </button>
-                                    </div>
+                        <div class="nexus-chat-answer" data-raw-text="${this.escapeHtml(assistantRaw)}">
+                            <div class="nexus-chat-answer-content markdown-body">
+                                <div>${assistantContent}</div>
+                            </div>
+                            <div class="nexus-actions">
+                                <div class="nexus-actions-left" style="display: flex; align-items: center; gap: 6px;">
+                                    <button type="button" class="nexus-answer-action-btn btn-regenerate" data-entry-index="${i}" data-prompt="${this.escapeHtml(m.text)}" title="Regenerate">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path></svg>
+                                    </button>
+                                    <button type="button" class="nexus-answer-action-btn btn-copy" data-text="${this.escapeHtml(assistantRaw)}" title="Copy">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    </button>
                                 </div>
                             </div>
-                        ` : ''}
+                        </div>
                     </div>
                 `;
                 if (nextMsg) i++;
             } else {
+                const assistantRaw = m.text.replace(/<(?:think|thought)>[\s\S]*?(?:<\/(?:think|thought)>|$)/gi, '').trim();
                 html += `
                     <div class="nexus-entry" data-entry-type="assistant" data-entry-index="${i}">
-                        <div class="nexus-chat-answer" data-raw-text="${this.escapeHtml(m.text)}">
-                            <div class="nexus-chat-answer-content markdown-body">${this.formatMarkdown(m.text)}</div>
+                        <div class="nexus-chat-answer" data-raw-text="${this.escapeHtml(assistantRaw)}">
+                            <div class="nexus-chat-answer-content markdown-body">
+                                <div>${this.formatMarkdown(m.text)}</div>
+                            </div>
                             <div class="nexus-actions">
                                 <div class="nexus-actions-left" style="display: flex; align-items: center; gap: 6px;">
-                                    <button type="button" class="nexus-answer-action-btn btn-copy" data-text="${this.escapeHtml(m.text)}" title="Copy">
+                                    <button type="button" class="nexus-answer-action-btn btn-copy" data-text="${this.escapeHtml(assistantRaw)}" title="Copy">
                                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                                     </button>
                                 </div>
@@ -1148,9 +1516,27 @@ export class AppsPanel {
         }
 
         this.studioChatMessages.innerHTML = html;
-        this.studioChatMessages.scrollTop = this.studioChatMessages.scrollHeight;
+        if (typeof NexusChatUI !== 'undefined' && typeof NexusChatUI.processContainer === 'function') {
+            NexusChatUI.processContainer(this.studioChatMessages);
+        }
+
+        const entries = this.studioChatMessages.querySelectorAll('.nexus-entry');
+        if (entries.length > 0) {
+            const latestEntry = entries[entries.length - 1];
+            if (this.chatUI) {
+                this.chatUI.updateEntryMinHeight(latestEntry);
+                this.chatUI.adjustEntryMargin(latestEntry, 'immediate');
+                const targetScrollTop = NexusChatUI.calculateInitialScrollTarget(latestEntry, this.studioChatMessages);
+                this.studioChatMessages.scrollTop = targetScrollTop;
+            } else {
+                this.studioChatMessages.scrollTop = this.studioChatMessages.scrollHeight;
+            }
+        } else {
+            this.studioChatMessages.scrollTop = this.studioChatMessages.scrollHeight;
+        }
 
         this.bindChatMessageActions();
+        this.updateFloatingDiffBar();
     }
 
     enterQuestionEditMode(questionDiv, entryIndex) {
@@ -1243,6 +1629,18 @@ export class AppsPanel {
         } catch (e) {}
     }
 
+    showConfirmUndoModal({ files = [] } = {}) {
+        return NexusModal.confirm({
+            title: 'Confirm Undo',
+            description: 'Confirming this undo action will make the following changes:',
+            files: files,
+            confirmLabel: 'Confirm',
+            cancelLabel: 'Cancel',
+            isDanger: false,
+            confirmIcon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"></polyline><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>'
+        });
+    }
+
     bindChatMessageActions() {
         if (!this.studioChatMessages) return;
 
@@ -1263,12 +1661,53 @@ export class AppsPanel {
             });
         });
 
+        // Undo action with code rollback support and confirm modal
         this.studioChatMessages.querySelectorAll('.btn-undo').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const entryIndex = parseInt(btn.dataset.entryIndex, 10);
                 if (!isNaN(entryIndex) && this.currentApp && Array.isArray(this.currentApp.chatHistory)) {
                     const undoneMsg = this.currentApp.chatHistory[entryIndex];
+
+                    // Check if there is a checkpoint to roll back
+                    const cpId = `${this.currentApp.id}_${entryIndex}`;
+                    const cp = this.checkpoints[cpId];
+                    let targetCode = this.currentApp.code || '';
+                    if (cp && cp.status !== 'rejected' && typeof cp.beforeCode === 'string') {
+                        targetCode = cp.beforeCode;
+                    }
+
+                    // Compute diff of the rollback (currentApp.code -> targetCode)
+                    const rollbackDiff = NexusAppsCheckpointDB.computeLineDiff(this.currentApp.code || '', targetCode);
+
+                    // Show Confirm Undo modal
+                    const confirmed = await this.showConfirmUndoModal({
+                        files: [
+                            {
+                                name: 'index.html',
+                                additions: rollbackDiff.additions || 0,
+                                deletions: rollbackDiff.deletions || 0
+                            }
+                        ]
+                    });
+
+                    if (!confirmed) return;
+
+                    if (cp && cp.status !== 'rejected' && typeof cp.beforeCode === 'string') {
+                        this.currentApp.code = cp.beforeCode;
+                        this.updateCodeView(cp.beforeCode);
+                        this.refreshStudioPreview();
+                    }
+
+                    // Delete checkpoints from this entry index onwards
+                    await NexusAppsCheckpointDB.deleteCheckpointsFrom(this.currentApp.id, entryIndex);
+                    Object.keys(this.checkpoints).forEach(k => {
+                        const item = this.checkpoints[k];
+                        if (item && item.appId === this.currentApp.id && item.entryIndex >= entryIndex) {
+                            delete this.checkpoints[k];
+                        }
+                    });
+
                     this.currentApp.chatHistory = this.currentApp.chatHistory.slice(0, entryIndex);
                     if (undoneMsg && undoneMsg.text && this.studioPromptInput) {
                         this.studioPromptInput.value = undoneMsg.text;
@@ -1277,6 +1716,8 @@ export class AppsPanel {
                     }
                     this.saveCurrentApp();
                     this.renderChatMessages();
+                    this.renderCodeDiffView();
+                    this.updateFloatingDiffBar();
                 }
             });
         });
@@ -1289,6 +1730,15 @@ export class AppsPanel {
                 const questionDiv = entry?.querySelector('.nexus-chat-question');
                 if (questionDiv) {
                     this.enterQuestionEditMode(questionDiv, entryIndex);
+                }
+            });
+        });
+
+        this.studioChatMessages.querySelectorAll('.nexus-clickable-image').forEach(img => {
+            img.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.chatUI && typeof this.chatUI.showImagePreview === 'function') {
+                    this.chatUI.showImagePreview(img.src, img.alt);
                 }
             });
         });
@@ -1325,14 +1775,24 @@ export class AppsPanel {
         this.saveCurrentApp();
     }
 
-    async handlePromptSubmit() {
-        if (this.isGenerating || !this.studioPromptInput || !this.currentApp) return;
-        const prompt = this.studioPromptInput.value.trim();
+    async handlePromptSubmit(promptText = null, files = null, options = null) {
+        if (this.isGenerating || !this.currentApp) return;
+        const prompt = (promptText !== null && promptText !== undefined) 
+            ? String(promptText).trim() 
+            : (this.studioPromptInput ? this.studioPromptInput.value.trim() : '');
         if (!prompt) return;
 
-        this.studioPromptInput.value = '';
-        this.studioPromptInput.style.removeProperty('height');
-        if (this.studioSendBtn) this.studioSendBtn.disabled = true;
+        const attachedFiles = Array.isArray(files) 
+            ? files 
+            : (this.chatUI?.attachedFiles ? [...this.chatUI.attachedFiles] : []);
+
+        if (this.studioPromptInput) {
+            this.studioPromptInput.value = '';
+            this.studioPromptInput.style.removeProperty('height');
+        }
+        if (this.chatUI && typeof this.chatUI.clearImages === 'function') {
+            this.chatUI.clearImages();
+        }
 
         if (!Array.isArray(this.currentApp.chatHistory)) {
             this.currentApp.chatHistory = [];
@@ -1341,10 +1801,18 @@ export class AppsPanel {
         this.currentApp.chatHistory.push({
             role: 'user',
             text: prompt,
+            files: attachedFiles.length > 0 ? attachedFiles : undefined,
             timestamp: Date.now()
         });
 
         this.isGenerating = true;
+        if (this.chatUI) {
+            this.chatUI.showStopButton(() => this.stopGeneration());
+        }
+
+        const beforeCode = this.currentApp.code || '';
+        const isNewApp = !beforeCode || beforeCode.length < 60 || beforeCode.includes('My New App') || (this.currentApp.chatHistory.length <= 1);
+        const filesHTML = this.renderQuestionFilesHTML(attachedFiles);
 
         const entryDiv = document.createElement('div');
         entryDiv.className = 'nexus-entry';
@@ -1352,6 +1820,7 @@ export class AppsPanel {
         entryDiv.dataset.entryIndex = String(userEntryIndex);
         entryDiv.innerHTML = `
             <div class="nexus-question-row">
+                ${filesHTML}
                 <div class="nexus-chat-question" data-raw-text="${this.escapeHtml(prompt)}">
                     <div class="nexus-question-content">${this.escapeHtml(prompt).replace(/\n/g, '<br>')}</div>
                 </div>
@@ -1368,119 +1837,292 @@ export class AppsPanel {
                 </div>
             </div>
             <div class="nexus-chat-answer">
-                <div class="nexus-chat-answer-content markdown-body">
-                    <span class="apps-typing-indicator" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--nexus-text-secondary);">
-                        <svg class="nexus-spin" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line></svg>
-                        Thinking...
-                    </span>
+                <div class="nexus-answer-content markdown-body" style="text-align: left;">
+                    <div class="apps-thinking-mount" style="width: 100%;">
+                        <div class="nexus-thinking">
+                            <div class="nexus-dots-loader"><span></span><span></span><span></span></div>
+                            <span class="nexus-status-text">Thinking...</span>
+                        </div>
+                    </div>
+                    <div class="apps-answer-body"></div>
                 </div>
             </div>
         `;
         this.studioChatMessages.appendChild(entryDiv);
-        this.studioChatMessages.scrollTop = this.studioChatMessages.scrollHeight;
+        if (this.chatUI) {
+            this.chatUI.setInitialEntryHeight(entryDiv);
+        } else {
+            this.studioChatMessages.scrollTop = this.studioChatMessages.scrollHeight;
+        }
         this.bindChatMessageActions();
 
-        const currentCode = this.currentApp.code || '';
-        const recentHistory = this.currentApp.chatHistory
-            .slice(-8)
-            .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text}`)
-            .join('\n\n');
+        const thinkingMount = entryDiv.querySelector('.apps-thinking-mount');
+        const answerBodyDiv = entryDiv.querySelector('.apps-answer-body');
 
-        const userPrompt = `Current App Code:\n\`\`\`html\n${currentCode}\n\`\`\`\n\nRecent Conversation History:\n${recentHistory}\n\nUser Message:\n${prompt}`;
+        const executeStreamTurn = (systemPrompt, turnUserPrompt, stepLabel = 'Thinking...') => {
+            return new Promise((resolve, reject) => {
+                let streamedText = '';
+                const sessionId = 'app_stream_' + Date.now();
+                const startTime = Date.now();
+                let thinkInterval = null;
+                let currentThoughtText = '';
 
-        let fullStreamedText = '';
-        const sessionId = 'app_stream_' + Date.now();
-        const answerContentDiv = entryDiv.querySelector('.nexus-chat-answer-content');
+                const updateThinkingTime = (thoughtText = '') => {
+                    if (!thinkingMount) return;
+                    currentThoughtText = thoughtText;
+                    const elapsedSec = Math.max(1, Math.round((Date.now() - startTime) / 1000));
+                    const timeLabel = elapsedSec < 60 ? `${elapsedSec}s` : `${Math.floor(elapsedSec / 60)}m ${elapsedSec % 60}s`;
+                    const renderedThought = thoughtText ? this.formatMarkdown(thoughtText) : '';
+
+                    if (renderedThought) {
+                        thinkingMount.innerHTML = `
+                            <div class="nexus-thinking-container">
+                                <div class="nexus-thinking-header">
+                                    <span class="nexus-thinking-icon">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                                    </span>
+                                    <span class="nexus-thinking-title">${this.escapeHtml(stepLabel)} (${timeLabel})</span>
+                                    <span class="nexus-thinking-chevron">
+                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </span>
+                                </div>
+                                <div class="nexus-thinking-content markdown-body">${renderedThought}</div>
+                            </div>
+                        `;
+                    } else {
+                        thinkingMount.innerHTML = `
+                            <div class="nexus-thinking">
+                                <div class="nexus-dots-loader"><span></span><span></span><span></span></div>
+                                <span class="nexus-status-text">${this.escapeHtml(stepLabel)} (${timeLabel})</span>
+                            </div>
+                        `;
+                    }
+                };
+
+                thinkInterval = setInterval(() => {
+                    updateThinkingTime(currentThoughtText);
+                }, 1000);
+
+                try {
+                    const port = chrome.runtime.connect({ name: 'nexus-chat-stream' });
+                    this.currentStreamPort = port;
+
+                    port.onMessage.addListener((msg) => {
+                        if (msg.error) {
+                            if (thinkInterval) clearInterval(thinkInterval);
+                            reject(new Error(msg.error));
+                            return;
+                        }
+                        if (msg.action === 'chunk' && msg.chunk) {
+                            streamedText += msg.chunk;
+
+                            const lastThinkStart = streamedText.lastIndexOf('<think>');
+                            const lastThinkEnd = streamedText.lastIndexOf('</think>');
+                            const hasThink = lastThinkStart !== -1;
+                            const isThinkingComplete = hasThink && (lastThinkEnd > lastThinkStart);
+
+                            if (hasThink && !isThinkingComplete) {
+                                const thoughtSoFar = streamedText.substring(lastThinkStart + 7).trim();
+                                updateThinkingTime(thoughtSoFar);
+                            } else {
+                                if (thinkInterval) {
+                                    clearInterval(thinkInterval);
+                                    thinkInterval = null;
+                                }
+                                if (hasThink && isThinkingComplete) {
+                                    const fullThought = streamedText.substring(lastThinkStart + 7, lastThinkEnd).trim();
+                                    if (fullThought) {
+                                        const elapsedSec = Math.max(1, Math.round((Date.now() - startTime) / 1000));
+                                        const timeLabel = elapsedSec < 60 ? `${elapsedSec}s` : `${Math.floor(elapsedSec / 60)}m ${elapsedSec % 60}s`;
+                                        thinkingMount.innerHTML = `
+                                            <div class="nexus-thinking-container collapsed">
+                                                <div class="nexus-thinking-header">
+                                                    <span class="nexus-thinking-icon">
+                                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                                                    </span>
+                                                    <span class="nexus-thinking-title">${this.escapeHtml(stepLabel)} (${timeLabel})</span>
+                                                    <span class="nexus-thinking-chevron">
+                                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                    </span>
+                                                </div>
+                                                <div class="nexus-thinking-content markdown-body">${this.formatMarkdown(fullThought)}</div>
+                                            </div>
+                                        `;
+                                    } else {
+                                        thinkingMount.innerHTML = '';
+                                    }
+                                } else {
+                                    if (thinkingMount) {
+                                        thinkingMount.innerHTML = '';
+                                    }
+                                }
+                                let preview = streamedText.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
+                                if (answerBodyDiv) {
+                                    answerBodyDiv.innerHTML = preview ? this.formatMarkdown(preview) : '';
+                                }
+                            }
+                            if (this.chatUI) {
+                                if (!this.chatUI.disableAutoScroll && this.chatUI._isNearBottom(28)) {
+                                    this.studioChatMessages.scrollTop = this.studioChatMessages.scrollHeight;
+                                }
+                            } else {
+                                const isNearBottom = (this.studioChatMessages.scrollHeight - this.studioChatMessages.scrollTop - this.studioChatMessages.clientHeight) < 30;
+                                if (isNearBottom) {
+                                    this.studioChatMessages.scrollTop = this.studioChatMessages.scrollHeight;
+                                }
+                            }
+                        }
+                        if (msg.action === 'done') {
+                            if (thinkInterval) clearInterval(thinkInterval);
+                            resolve(streamedText);
+                        }
+                    });
+
+                    port.postMessage({
+                        action: 'chat_stream',
+                        sessionId: sessionId,
+                        question: turnUserPrompt,
+                        images: attachedFiles.filter(f => f && (f.isImage || typeof f === 'string' || (f.mimeType && f.mimeType.startsWith('image/')))),
+                        systemOverride: systemPrompt,
+                        model: this.selectedModel?.model,
+                        providerId: this.selectedModel?.providerId
+                    });
+                } catch (e) {
+                    if (thinkInterval) clearInterval(thinkInterval);
+                    reject(e);
+                }
+            });
+        };
 
         try {
-            const port = chrome.runtime.connect({ name: 'nexus-chat-stream' });
-            this.currentStreamPort = port;
+            const currentCode = this.currentApp.code || '';
+            const recentHistory = this.currentApp.chatHistory
+                .slice(-8)
+                .map(m => {
+                    let cleanText = (m.text || '').replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
+                    return `${m.role === 'user' ? 'User' : 'Assistant'}: ${cleanText}`;
+                })
+                .filter(m => m.trim().length > 0)
+                .join('\n\n');
 
-            port.onMessage.addListener((msg) => {
-                if (msg.error) {
-                    console.error('[AppsStudio Stream Error]', msg.error);
-                    if (answerContentDiv) answerContentDiv.innerHTML = `⚠️ Error: ${msg.error}`;
-                    this.isGenerating = false;
-                    this.resetSendButton();
-                    return;
-                }
+            const userPrompt = `Current App Code:\n\`\`\`html\n${currentCode}\n\`\`\`\n\nRecent Conversation History:\n${recentHistory}\n\nUser Message:\n${prompt}`;
 
-                if (msg.action === 'chunk' && msg.chunk) {
-                    fullStreamedText += msg.chunk;
-                    if (answerContentDiv) {
-                        let previewExplanation = fullStreamedText;
-                        if (previewExplanation.includes('<GenerateApp')) previewExplanation = previewExplanation.split('<GenerateApp')[0];
-                        if (previewExplanation.includes('<GenerateWidget')) previewExplanation = previewExplanation.split('<GenerateWidget')[0];
-                        if (previewExplanation.includes('<PatchApp')) previewExplanation = previewExplanation.split('<PatchApp')[0];
-                        if (previewExplanation.includes('<PatchWidget')) previewExplanation = previewExplanation.split('<PatchWidget')[0];
-                        if (previewExplanation.includes('```')) previewExplanation = previewExplanation.split('```')[0];
-                        previewExplanation = previewExplanation.trim();
+            const fullStreamedText = await executeStreamTurn(APP_BUILDER_SYSTEM_PROMPT, userPrompt, 'Thinking & Generating App...');
+            
+            this.lastSandboxError = null;
 
-                        answerContentDiv.innerHTML = previewExplanation ? this.formatMarkdown(previewExplanation) : '<span style="color: var(--nexus-text-secondary); font-size: 13px;">⚡ Applying smart patch...</span>';
-                        this.studioChatMessages.scrollTop = this.studioChatMessages.scrollHeight;
-                    }
-                }
+            const cleanCode = WidgetRunner.extractWidgetCode(fullStreamedText, currentCode);
+            if (cleanCode && cleanCode.length > 20 && cleanCode !== currentCode) {
+                this.currentApp.code = cleanCode;
+                this.updateCodeView(cleanCode);
+                this.saveCurrentApp();
+                this.refreshStudioPreview();
+            }
 
-                if (msg.action === 'done') {
-                    this.isGenerating = false;
-                    this.resetSendButton();
+            let rawExplanation = fullStreamedText.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
+            if (rawExplanation.includes('<GenerateApp')) rawExplanation = rawExplanation.split('<GenerateApp')[0];
+            if (rawExplanation.includes('<GenerateWidget')) rawExplanation = rawExplanation.split('<GenerateWidget')[0];
+            if (rawExplanation.includes('<PatchApp')) rawExplanation = rawExplanation.split('<PatchApp')[0];
+            if (rawExplanation.includes('<PatchWidget')) rawExplanation = rawExplanation.split('<PatchWidget')[0];
+            if (rawExplanation.includes('```')) rawExplanation = rawExplanation.split('```')[0];
+            rawExplanation = rawExplanation.trim();
 
-                    const currentCode = this.currentApp.code || '';
-                    const cleanCode = WidgetRunner.extractWidgetCode(fullStreamedText, currentCode);
+            const isCodeGenerated = !!(cleanCode && cleanCode !== currentCode) || fullStreamedText.includes('<GenerateApp') || fullStreamedText.includes('<GenerateWidget') || fullStreamedText.includes('<PatchApp') || fullStreamedText.includes('<PatchWidget') || fullStreamedText.includes('<<<<<<< SEARCH');
+            let finalExplanation = rawExplanation || (isCodeGenerated ? (isNewApp ? 'Application created and verified.' : 'Application updated and verified.') : fullStreamedText.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim());
 
-                    if (cleanCode && cleanCode.length > 20 && cleanCode !== currentCode) {
-                        this.currentApp.code = cleanCode;
-                        if (this.studioCodeEditor) {
-                            this.studioCodeEditor.value = cleanCode;
-                        }
+            // Await 500ms to test runtime execution in sandbox
+            await new Promise(r => setTimeout(r, 500));
+
+            if (this.lastSandboxError) {
+                const runtimeErr = this.lastSandboxError;
+                console.warn('[AppsStudio] Sandbox error detected, initiating autonomous repair loop:', runtimeErr);
+                
+                const repairPrompt = `Current App Code:\n\`\`\`html\n${this.currentApp.code}\n\`\`\`\n\nA runtime error occurred in the sandbox execution:\nError: ${runtimeErr.message || 'Unknown error'}\n${runtimeErr.stack ? 'Stack: ' + runtimeErr.stack : ''}\n\nPlease fix this error and provide the updated complete or patched working HTML/JS/CSS code.`;
+
+                try {
+                    const healStreamed = await executeStreamTurn(
+                        APP_BUILDER_SYSTEM_PROMPT, 
+                        repairPrompt, 
+                        `Auto-fixing runtime error: ${runtimeErr.message || 'Unknown error'}`
+                    );
+                    const healedCode = WidgetRunner.extractWidgetCode(healStreamed, this.currentApp.code);
+                    if (healedCode && healedCode.length > 20) {
+                        this.currentApp.code = healedCode;
+                        this.updateCodeView(healedCode);
                         this.saveCurrentApp();
                         this.refreshStudioPreview();
                     }
+                } catch (healErr) {
+                    console.error('[AppsStudio Auto-heal error]', healErr);
+                }
+            }
 
-                    let rawExplanation = fullStreamedText;
-                    if (rawExplanation.includes('<GenerateApp')) rawExplanation = rawExplanation.split('<GenerateApp')[0];
-                    if (rawExplanation.includes('<GenerateWidget')) rawExplanation = rawExplanation.split('<GenerateWidget')[0];
-                    if (rawExplanation.includes('<PatchApp')) rawExplanation = rawExplanation.split('<PatchApp')[0];
-                    if (rawExplanation.includes('<PatchWidget')) rawExplanation = rawExplanation.split('<PatchWidget')[0];
-                    if (rawExplanation.includes('```')) rawExplanation = rawExplanation.split('```')[0];
-                    rawExplanation = rawExplanation.trim();
+            // Finished all execution: clear thinking mount completely
+            if (thinkingMount) {
+                thinkingMount.innerHTML = '';
+            }
 
-                    const isCodeGenerated = !!(cleanCode && cleanCode !== currentCode) || fullStreamedText.includes('<GenerateApp') || fullStreamedText.includes('<GenerateWidget') || fullStreamedText.includes('<PatchApp') || fullStreamedText.includes('<PatchWidget') || fullStreamedText.includes('<<<<<<< SEARCH');
-                    const finalExplanation = rawExplanation || (isCodeGenerated ? (fullStreamedText.includes('<PatchApp') || fullStreamedText.includes('<<<<<<< SEARCH') ? '⚡ Applied targeted patch successfully!' : '✅ App updated successfully!') : fullStreamedText);
-                    this.currentApp.chatHistory.push({
-                        role: 'assistant',
-                        text: finalExplanation,
-                        timestamp: Date.now()
-                    });
-                    this.renderChatMessages();
+            const afterCode = this.currentApp.code || '';
+            const lineDiff = NexusAppsCheckpointDB.computeLineDiff(beforeCode, afterCode);
+            if (lineDiff.hasChanges) {
+                const checkpoint = {
+                    id: `${this.currentApp.id}_${userEntryIndex}`,
+                    appId: this.currentApp.id,
+                    entryIndex: userEntryIndex,
+                    beforeCode: beforeCode,
+                    afterCode: afterCode,
+                    status: 'pending',
+                    diff: lineDiff,
+                    timestamp: Date.now()
+                };
+                this.checkpoints[checkpoint.id] = checkpoint;
+                await NexusAppsCheckpointDB.putCheckpoint(checkpoint);
+                this.switchStudioTab('code');
+                this.renderCodeDiffView();
+                this.updateFloatingDiffBar();
+                this.scrollToDiffRegion(isNewApp);
+            }
 
-                    requestAnimationFrame(() => {
-                        if (this.studioPromptInput && !this.isPlayerMode) {
-                            this.studioPromptInput.focus();
-                        }
-                    });
+            this.currentApp.chatHistory.push({
+                role: 'assistant',
+                text: finalExplanation,
+                timestamp: Date.now()
+            });
+
+            this.renderChatMessages();
+
+        } catch (err) {
+            console.error('[AppsStudio Error]', err);
+            if (thinkingMount) {
+                thinkingMount.innerHTML = '';
+            }
+            if (answerBodyDiv) {
+                answerBodyDiv.innerHTML = `<span style="color: var(--nexus-danger, #ea4335);">Error: ${err.message || 'Failed to complete task'}</span>`;
+            }
+            this.currentApp.chatHistory.push({
+                role: 'assistant',
+                text: `Error: ${err.message || 'Failed to process request'}`,
+                timestamp: Date.now()
+            });
+            this.renderChatMessages();
+        } finally {
+            this.isGenerating = false;
+            if (this.chatUI) {
+                this.chatUI.hideStopButton();
+            }
+            this.resetSendButton();
+            requestAnimationFrame(() => {
+                if (this.studioPromptInput && !this.isPlayerMode) {
+                    this.studioPromptInput.focus();
                 }
             });
-
-            port.postMessage({
-                action: 'chat_stream',
-                sessionId: sessionId,
-                question: userPrompt,
-                systemOverride: APP_BUILDER_SYSTEM_PROMPT,
-                model: this.selectedModel?.model,
-                providerId: this.selectedModel?.providerId
-            });
-
-        } catch (e) {
-            console.error('[AppsStudio Error]', e);
-            if (answerContentDiv) answerContentDiv.innerHTML = `⚠️ Failed to connect to AI streaming service.`;
-            this.isGenerating = false;
-            this.resetSendButton();
         }
     }
 
     resetSendButton() {
-        if (this.studioSendBtn && this.studioPromptInput) {
+        if (this.chatUI) {
+            this.chatUI.hideStopButton();
+        } else if (this.studioSendBtn && this.studioPromptInput) {
             this.studioSendBtn.disabled = !this.studioPromptInput.value.trim();
         }
     }
@@ -1490,13 +2132,6 @@ export class AppsPanel {
         this.currentApp.updatedAt = Date.now();
         this.customApps[this.currentApp.id] = this.currentApp;
         this.saveCustomApps();
-        if (notify && this.studioSaveBtn) {
-            const originalText = this.studioSaveBtn.innerHTML;
-            this.studioSaveBtn.innerHTML = 'Saved ✓';
-            setTimeout(() => {
-                this.studioSaveBtn.innerHTML = originalText;
-            }, 1200);
-        }
     }
 
     exportAppHtml() {

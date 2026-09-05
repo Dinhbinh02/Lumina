@@ -48,7 +48,7 @@ persistence_layer: "Persistence Layer (IndexedDB / Local Storage)" {
 }
 
 content_layer: "Content Script & In-Page (src/content/)" {
-  action_bar: "Selection Floating Action Bar\n(Translate / Explain / Proofread)"
+  action_bar: "Selection Floating Action Bar\n(Translate / Explain / Summarize)"
   extractors: "Web Extractors & Annotations\n(DOM Text, PDF Parser)"
 }
 
@@ -106,7 +106,7 @@ service_layer <-> runtime_layer: Port streaming
 [Background Port: 'lumina-chat-stream']
            │
            ▼
-  handleChatStream() in chat_stream_service.js
+  handleChatStream() in chat_service.js
            │
            ├── Key Rotation & Model Chain Resolution
            ├── Build Context & System Instructions
@@ -138,7 +138,7 @@ service_layer <-> runtime_layer: Port streaming
 - Real-time sandbox testing environment with live parameter inspection.
 
 ### In-Page Context & Intelligence
-- Floating action bar for on-page text selection: translate, explain, summarize, or proofread.
+- Floating action bar for on-page text selection: translate, explain, summarize, or analyze.
 - Persistent web annotations with color categorization and comment anchoring.
 - Direct web context ingestion into active conversation threads without manual copying.
 

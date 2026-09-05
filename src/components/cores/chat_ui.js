@@ -1,7 +1,6 @@
 import { morphDOM, scheduleMorphDOM } from './dom_morph.js';
 import { streamSafeParse, completeIncompleteMarkdown, initMarkdownMath, renderKaTeXFormula } from './markdown_parser.js';
-import { renderChartJSWrapper, processNexusChartElements } from './chart_renderer.js';
-import { processNexusDynamicImageElements } from './media_loader.js';
+import { hydrateDynamicContent } from './dynamic_renderer.js';
 import { WidgetRunner } from '../widgets/widget_runner.js';
 import { NexusMenu } from '../ui/nexus_floating.js';
 
@@ -23,19 +22,19 @@ export class NexusChatUI {
         const actionsRow = document.createElement('div');
         actionsRow.className = 'nexus-actions nexus-question-actions-row';
         actionsRow.innerHTML = `
-            <button class="nexus-answer-action-btn btn-undo" title="Undo">
+            <button class="nexus-question-action-btn btn-undo" data-action="undo" title="Undo">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
             </button>
-            <button class="nexus-answer-action-btn btn-copy" title="Copy">
+            <button class="nexus-question-action-btn btn-copy" data-action="copy" title="Copy">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
-            <button class="nexus-answer-action-btn btn-edit" title="Edit">
+            <button class="nexus-question-action-btn btn-edit" data-action="edit" title="Edit">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
             </button>
         `;
         const getChatUI = () => {
             const histEl = questionDiv.closest('.nexus-chat-history, .nexus-chat-scroll-content');
-            return histEl?.__uiInstance || window.ui || (window.currentPopup?.__uiInstance);
+            return histEl?.__uiInstance || window.ui || (window.currentPopup?.__uiInstance) || (window.tabs && window.tabs.find(t => t.historyEl === histEl)?.chatUIInstance) || (window.sharedInputUI);
         };
         actionsRow.querySelector('.btn-undo').onclick = (e) => {
             e.preventDefault();
@@ -87,30 +86,100 @@ export class NexusChatUI {
             if (btn) btn.remove();
         }
     }
+    static createStandardLayout(options = {}) {
+        const layout = document.createElement('div');
+        layout.className = 'layout ' + (options.layoutClass || '');
+        const placeholder = options.placeholder || (options.mode === 'apps_studio' ? 'Ask AI to modify, design, or add features...' : (options.mode === 'spark_preview' ? 'Test your Spark…' : 'Ask Nexus a question...'));
+        const showUpload = options.features?.fileUpload !== false;
+        const showModel = options.features?.modelSelector !== false;
+        const showVoice = options.features?.voiceInput !== false;
+        const showWebChips = options.features?.webChips === true;
+
+        layout.innerHTML = `
+            <div class="nexus-chat-container">
+                <div class="nexus-chat-scroll-content" style="display: block; opacity: 1;"></div>
+            </div>
+            <div class="nexus-chat-input-container">
+                <div class="nexus-chat-input-wrapper">
+                    <div class="nexus-input-meta-container" style="display: ${showWebChips ? 'flex' : 'none'};">
+                        <div class="nexus-web-chips"></div>
+                        <div class="nexus-redirect-group"></div>
+                    </div>
+                    <div class="nexus-input-container">
+                        <div class="nexus-file-preview-container nexus-image-preview-container"></div>
+                        <div class="nexus-input-bar">
+                            <div class="nexus-left-actions">
+                                ${showUpload ? `
+                                <button type="button" class="nexus-upload-btn" title="Upload File">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                </button>
+                                <input type="file" class="nexus-file-input" style="display: none;" multiple />` : ''}
+                                ${showModel ? `
+                                <div class="nexus-model-selector">
+                                    <button type="button" class="nexus-model-btn">
+                                        <span class="nexus-current-model">Auto</span>
+                                        <svg class="nexus-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" style="opacity: 0.85;"><path d="M18 15l-6-6-6 6" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                                    </button>
+                                    <div class="nexus-model-dropdown"></div>
+                                </div>` : ''}
+                            </div>
+                            <textarea class="nexus-chat-input" placeholder="${placeholder}" rows="1"></textarea>
+                            <div class="nexus-trailing-group">
+                                ${showVoice ? `
+                                <button type="button" class="nexus-mic-btn" title="Voice Input">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="4" width="6" height="10" rx="3"></rect><path d="M5 12a7 7 0 0 0 14 0"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+                                </button>` : ''}
+                                <button type="button" class="nexus-action-btn send" title="Send" disabled="true">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="12" y1="19" x2="12" y2="5"></line>
+                                        <polyline points="5 12 12 5 19 12"></polyline>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        return layout;
+    }
+
+    static mount(target, options = {}) {
+        const containerEl = typeof target === 'string' ? document.querySelector(target) : target;
+        if (!containerEl) {
+            console.error('[NexusChatUI] Mount target not found:', target);
+            return null;
+        }
+        return new NexusChatUI(containerEl, { autoRender: true, ...options });
+    }
+
     constructor(container, options = {}) {
         this.container = container;
         this.options = {
-            isSpotlight: options.isSpotlight || false,
+            isNexus: (options.isNexus !== undefined) ? options.isNexus : (options.isSpotlight || false),
             alwaysExpanded: options.alwaysExpanded || false,
             onSubmit: options.onSubmit || null,
+            mode: options.mode || 'standard',
+            features: options.features || {},
             ...options
         };
-        this.systemTokens = 150;
-        this.historyEl = container.querySelector('.nexus-chat-history') ||
-            container.querySelector('.nexus-chat-scroll-content');
+
+        if (container) {
+            const hasHistory = container.querySelector('.nexus-chat-history, .nexus-chat-scroll-content');
+            const hasInput = container.querySelector('.nexus-chat-input, #chat-input');
+            if (!hasHistory && !hasInput && options.autoRender !== false) {
+                const layout = NexusChatUI.createStandardLayout(this.options);
+                container.appendChild(layout);
+            }
+        }
+
+        this.historyEl = container ? container.querySelector('.nexus-chat-history, .nexus-chat-scroll-content') : null;
         if (this.historyEl) {
             this.historyEl.__uiInstance = this;
         }
-        this.inputEl = container.querySelector('.nexus-chat-input') ||
-            (this.options.isSpotlight && !this.options.isPrimaryInput ? null : (document.querySelector('.nexus-chat-input') || document.querySelector('#chat-input')));
-        this.filePreviewEl = container.querySelector('.nexus-file-preview-container') ||
-            container.querySelector('.nexus-image-preview-container') ||
-            container.querySelector('#image-preview') ||
-            document.querySelector('.nexus-file-preview-container') ||
-            document.querySelector('.nexus-image-preview-container');
-        this.fileInputEl = container.querySelector('input[type="file"]') ||
-            container.querySelector('#file-input') ||
-            document.querySelector('#file-input');
+        this.inputEl = container ? container.querySelector('.nexus-chat-input, #chat-input') : null;
+        this.filePreviewEl = container ? container.querySelector('.nexus-file-preview-container, .nexus-image-preview-container') : null;
+        this.fileInputEl = container ? container.querySelector('input[type="file"], .nexus-file-input') : null;
         this.currentEntryDiv = null;
         this.loadingDiv = null;
         this.searchingDiv = null;
@@ -132,7 +201,6 @@ export class NexusChatUI {
         this._historyDelegationClickHandler = null;
         if (this.inputEl && !this.options.skipInputSetup) {
             this.setupInputBar();
-            this._throttledUpdateTokenCount();
         }
         this.memoryTimers = new Map();
         this._setupMemoryManager();
@@ -158,11 +226,9 @@ export class NexusChatUI {
             }, { passive: true });
         }
         this._setupAutoScrollGuard();
-        this._initContextMenu();
 
         this._setupHistoryDelegation();
         if (this.historyEl) this.initListeners(this.historyEl);
-        this.tokenLimit = null;
         this.isGenerating = false;
         this.onStop = null;
         if (this.inputEl && !this.options.skipInputSetup) {
@@ -171,13 +237,16 @@ export class NexusChatUI {
     }
     syncStateFromDOM() {
         if (!this.historyEl) return;
+        this.historyEl.__uiInstance = this;
         const entries = this.historyEl.querySelectorAll('.nexus-entry');
         if (entries.length > 0) {
             const lastEntry = entries[entries.length - 1];
             this.currentEntryDiv = lastEntry;
             this.loadingDiv = lastEntry.querySelector('.nexus-loading-wrapper');
             this.searchingDiv = lastEntry.querySelector('.nexus-loading-wrapper') || lastEntry.querySelector('.nexus-searching-indicator');
-            const answerDiv = lastEntry.querySelector('.nexus-chat-answer') || lastEntry.querySelector('.nexus-answer-versions');
+            const answerDiv = lastEntry.querySelector('.nexus-answer-version.active .nexus-chat-answer') ||
+                lastEntry.querySelector('.nexus-chat-answer') ||
+                lastEntry.querySelector('.nexus-answer-versions');
             this.currentAnswerDiv = answerDiv;
         } else {
             this.currentEntryDiv = null;
@@ -189,6 +258,7 @@ export class NexusChatUI {
     initListeners(container) {
         if (!container) return;
         this.historyEl = container;
+        container.__uiInstance = this;
         this._setupHistoryDelegation(container);
         if (container._nexusListenersAttached) return;
         container._nexusListenersAttached = true;
@@ -303,9 +373,33 @@ export class NexusChatUI {
         if (!historyEl) return;
         if (!this._historyDelegationClickHandler) {
             this._historyDelegationClickHandler = (e) => {
+                const questionActionBtn = e.target.closest('.nexus-question-action-btn');
+                if (questionActionBtn) {
+                    const row = questionActionBtn.closest('.nexus-question-row');
+                    const questionDiv = row?.querySelector('.nexus-chat-question') || questionActionBtn.closest('.nexus-entry')?.querySelector('.nexus-chat-question');
+                    const entry = questionActionBtn.closest('.nexus-entry');
+                    const action = questionActionBtn.dataset.action;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (action === 'undo') {
+                        if (entry && questionDiv) this._undoEditAndTruncate(entry, 'question', questionDiv, null);
+                    } else if (action === 'copy') {
+                        if (questionDiv) {
+                            const text = questionDiv.getAttribute('data-raw-text') || questionDiv.textContent;
+                            navigator.clipboard.writeText(text);
+                            const originalHTML = questionActionBtn.innerHTML;
+                            questionActionBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                            setTimeout(() => { questionActionBtn.innerHTML = originalHTML; }, 2000);
+                        }
+                    } else if (action === 'edit') {
+                        if (questionDiv) this.enterQuestionEditMode(questionDiv);
+                    }
+                    return;
+                }
+
                 const actionBtn = e.target.closest('.nexus-answer-action-btn, .nexus-answer-nav-btn');
                 if (actionBtn) {
-                    const answerDiv = actionBtn.closest('.nexus-chat-answer') || actionBtn.closest('.nexus-entry')?.querySelector('.nexus-chat-answer');
+                    const answerDiv = actionBtn.closest('.nexus-chat-answer') || actionBtn.closest('.nexus-actions')?.closest('.nexus-chat-answer') || actionBtn.closest('.nexus-entry')?.querySelector('.nexus-chat-answer');
                     if (answerDiv) {
                         e.preventDefault();
                         e.stopPropagation();
@@ -377,6 +471,89 @@ export class NexusChatUI {
                         }
                         this.showImagePreview(dataUrl, caption);
                     }
+                }
+                const copyBtn = e.target.closest('.nexus-code-copy-btn');
+                if (copyBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const wrap = copyBtn.closest('.nexus-code-block-wrap') || copyBtn.closest('pre');
+                    const codeEl = wrap ? wrap.querySelector('code') : null;
+                    const preEl = wrap ? (wrap.querySelector('pre') || wrap) : null;
+                    const text = ((codeEl ? codeEl.innerText : (preEl ? preEl.innerText : '')) || '').trim();
+                    if (!text) return;
+                    const showSuccess = () => {
+                        copyBtn.classList.add('copied');
+                        const CHECK_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                        const COPY_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+                        copyBtn.innerHTML = CHECK_SVG;
+                        setTimeout(() => {
+                            copyBtn.classList.remove('copied');
+                            copyBtn.innerHTML = COPY_SVG;
+                        }, 2000);
+                    };
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).then(showSuccess).catch(() => fallbackCopy(text, showSuccess));
+                    } else {
+                        fallbackCopy(text, showSuccess);
+                    }
+                    function fallbackCopy(t, cb) {
+                        try {
+                            const ta = document.createElement('textarea');
+                            ta.value = t;
+                            ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
+                            document.body.appendChild(ta);
+                            ta.focus();
+                            ta.select();
+                            const ok = document.execCommand('copy');
+                            ta.remove();
+                            if (ok && cb) cb();
+                        } catch (_) { }
+                    }
+                    return;
+                }
+                const downloadBtn = e.target.closest('.nexus-code-download-btn');
+                if (downloadBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const wrap = downloadBtn.closest('.nexus-code-block-wrap');
+                    const codeEl = wrap ? wrap.querySelector('code') : null;
+                    const preEl = wrap ? wrap.querySelector('pre') : null;
+                    const text = ((codeEl ? codeEl.innerText : (preEl ? preEl.innerText : '')) || '').trim();
+                    if (!text) return;
+                    const langEl = wrap ? wrap.querySelector('.nexus-code-lang') : null;
+                    const rawLang = (langEl ? langEl.textContent : '').trim().toLowerCase();
+                    let ext = 'txt';
+                    if (rawLang === 'javascript' || rawLang === 'js') ext = 'js';
+                    else if (rawLang === 'typescript' || rawLang === 'ts') ext = 'ts';
+                    else if (rawLang === 'python' || rawLang === 'py') ext = 'py';
+                    else if (rawLang === 'html') ext = 'html';
+                    else if (rawLang === 'css') ext = 'css';
+                    else if (rawLang === 'json') ext = 'json';
+                    else if (rawLang === 'go' || rawLang === 'golang') ext = 'go';
+                    else if (rawLang === 'rust' || rawLang === 'rs') ext = 'rs';
+                    else if (rawLang === 'bash' || rawLang === 'shell' || rawLang === 'sh') ext = 'sh';
+                    else if (rawLang === 'c++' || rawLang === 'cpp') ext = 'cpp';
+                    else if (rawLang === 'c#' || rawLang === 'cs' || rawLang === 'csharp') ext = 'cs';
+                    else if (rawLang && rawLang !== 'code') ext = rawLang;
+                    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `code_${Date.now()}.${ext}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    return;
+                }
+                const thinkingHeader = e.target.closest('.nexus-thinking-header');
+                if (thinkingHeader) {
+                    e.stopPropagation();
+                    const thinkingContainer = thinkingHeader.closest('.nexus-thinking-container');
+                    if (thinkingContainer) {
+                        thinkingContainer.classList.toggle('collapsed');
+                    }
+                    return;
                 }
             };
         }
@@ -518,11 +695,11 @@ export class NexusChatUI {
         if (category === 'text') return '<svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm1 7V3.5L20.5 9H15zM8 12h8v1.5H8V12zm0 3h8v1.5H8V15zm0 3h6v1.5H8V18z"/></svg>';
         return '<svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>';
     }
-    _isNearBottom(threshold = 120) {
+    _isNearBottom(threshold = 28) {
         const scrollContainer = this.getScrollContainer();
         if (!scrollContainer) return false;
         const distanceToBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight;
-        return distanceToBottom < threshold;
+        return distanceToBottom <= threshold;
     }
     _snapToBottomIfNeeded(shouldSnap) {
         return;
@@ -535,10 +712,38 @@ export class NexusChatUI {
             if (this._autoScrollGuardContainer && this._autoScrollGuardHandler) {
                 this._autoScrollGuardContainer.removeEventListener('scroll', this._autoScrollGuardHandler);
             }
+            if (this._autoScrollGuardContainer && this._autoScrollWheelHandler) {
+                this._autoScrollGuardContainer.removeEventListener('wheel', this._autoScrollWheelHandler);
+                this._autoScrollGuardContainer.removeEventListener('touchmove', this._autoScrollTouchHandler);
+            }
             this._autoScrollGuardContainer = scrollContainer;
+
+            this._autoScrollWheelHandler = (e) => {
+                if (e.deltaY < 0) {
+                    // User scrolled UP
+                    this.disableAutoScroll = true;
+                } else if (e.deltaY > 0 && this._isNearBottom(28)) {
+                    // User scrolled back to the very bottom
+                    this.disableAutoScroll = false;
+                }
+            };
+
+            this._autoScrollTouchHandler = () => {
+                if (!this._isNearBottom(28)) {
+                    this.disableAutoScroll = true;
+                } else {
+                    this.disableAutoScroll = false;
+                }
+            };
+
             this._autoScrollGuardHandler = () => {
                 if (this._suspendAutoScrollGuard) return;
-                this.disableAutoScroll = !this._isNearBottom(72);
+                const atBottom = this._isNearBottom(28);
+                if (!atBottom) {
+                    this.disableAutoScroll = true;
+                } else {
+                    this.disableAutoScroll = false;
+                }
                 if (this._regenScrollLocked && this._regenScrollContainer) {
                     const currentTop = this._regenScrollContainer.scrollTop;
                     const expectedTop = this._regenScrollPosition || 0;
@@ -549,6 +754,9 @@ export class NexusChatUI {
                     }
                 }
             };
+
+            scrollContainer.addEventListener('wheel', this._autoScrollWheelHandler, { passive: true });
+            scrollContainer.addEventListener('touchmove', this._autoScrollTouchHandler, { passive: true });
             scrollContainer.addEventListener('scroll', this._autoScrollGuardHandler, { passive: true });
             this._autoScrollGuardHandler();
         };
@@ -563,40 +771,6 @@ export class NexusChatUI {
         this._pendingRenderSkipScroll = false;
         this._renderPending = false;
         this._doRender(answerDiv, skipScroll);
-    }
-    _getWebChipsGroup() {
-        return this.container?.querySelector('#web-chips-group') || document.getElementById('web-chips-group');
-    }
-    _getRedirectChipsGroup() {
-        return this.container?.querySelector('#redirect-chips-group') || document.getElementById('redirect-chips-group');
-    }
-    _ensureQuestionRow(questionDiv) {
-        if (!questionDiv) return null;
-        const existingRow = questionDiv.closest('.nexus-question-row');
-        if (existingRow) return existingRow;
-        const parent = questionDiv.parentElement;
-        if (!parent) return null;
-        const row = document.createElement('div');
-        row.className = 'nexus-question-row';
-        parent.insertBefore(row, questionDiv);
-        row.appendChild(questionDiv);
-        return row;
-    }
-    _updateInputMetaVisibility() {
-        const metaContainer = this.container?.querySelector('#input-meta-container') || document.getElementById('input-meta-container');
-        if (!metaContainer) return;
-        const isSidePanel = new URLSearchParams(window.location.search).get('sidepanel') === '1';
-        if (!isSidePanel) {
-            metaContainer.style.display = 'none';
-            return;
-        }
-        const webGroup = this._getWebChipsGroup();
-        const hasWebChips = webGroup && webGroup.children.length > 0;
-        if (!hasWebChips) {
-            metaContainer.style.display = 'none';
-        } else {
-            metaContainer.style.display = 'flex';
-        }
     }
     appendQuestion(text, images = [], options = {}) {
         const layout = this.historyEl.closest('.nexus-chat-layout, #chat-layout');
@@ -693,6 +867,12 @@ export class NexusChatUI {
             });
         }
         this.currentAnswerDiv = null;
+        if (this.historyEl) {
+            const welcomeEl = this.historyEl.querySelector('.spark-welcome, .nexus-chat-welcome, #sparks-preview-empty, .apps-studio-welcome');
+            if (welcomeEl) {
+                welcomeEl.remove();
+            }
+        }
         this.currentEntryDiv = document.createElement('div');
         this.currentEntryDiv.className = 'nexus-entry';
         this.currentEntryDiv.dataset.entryType = entryType;
@@ -701,12 +881,12 @@ export class NexusChatUI {
             const filesDiv = document.createElement('div');
             filesDiv.className = 'nexus-chat-question-files';
             visibleImages.forEach(item => {
-                const isImage = item.isImage || (item.mimeType && item.mimeType.startsWith('image/'));
-                const rawSrc = item.objectUrl || item.dataUrl || item.previewUrl || (item.mimeType && item.data ? `data:${item.mimeType};base64,${item.data}` : '');
+                const isImage = item.isImage || (item.mimeType && item.mimeType.startsWith('image/')) || (typeof item.dataUrl === 'string' && item.dataUrl.startsWith('data:image'));
+                const rawSrc = item.dataUrl || item.previewUrl || item.objectUrl || (item.mimeType && item.data ? `data:${item.mimeType};base64,${item.data}` : '');
                 const src = isImage ? (rawSrc.startsWith('data:') || rawSrc.startsWith('blob:') ? rawSrc : this._resolveImagePreviewSrc(item, rawSrc)) : rawSrc;
                 if (isImage) {
                     const img = document.createElement('img');
-                    img.src = src;
+                    img.src = src || item.dataUrl || item.previewUrl || '';
                     if (item.attachmentId) {
                         img.dataset.attachmentId = item.attachmentId;
                     }
@@ -796,7 +976,6 @@ export class NexusChatUI {
         row.appendChild(questionDiv);
         this.currentEntryDiv.appendChild(row);
         this.historyEl.appendChild(this.currentEntryDiv);
-        this._throttledUpdateTokenCount();
         if (!skipMargin) {
             this.disableAutoScroll = false;
             requestAnimationFrame(() => {
@@ -814,15 +993,6 @@ export class NexusChatUI {
         if (this.currentEntryDiv && !this.historyEl.contains(this.currentEntryDiv)) {
             this.syncStateFromDOM();
         }
-        const applyProofreadStyles = (div) => {
-            if (this.currentEntryDiv && this.currentEntryDiv.dataset.entryType === 'proofread') {
-                div.spellcheck = false;
-                div.style.outline = 'none';
-                div.style.borderRadius = '8px';
-                div.style.backgroundColor = 'var(--nexus-bg-secondary)';
-                div.classList.add('nexus-proofread-editable');
-            }
-        };
         if (this.currentEntryDiv) {
             const activeVersion = this.currentEntryDiv.querySelector('.nexus-answer-version.active');
             if (activeVersion) {
@@ -832,13 +1002,11 @@ export class NexusChatUI {
                     innerDiv.className = 'nexus-chat-answer';
                     activeVersion.appendChild(innerDiv);
                 }
-                applyProofreadStyles(innerDiv);
                 return innerDiv;
             }
         }
         const div = document.createElement('div');
         div.className = 'nexus-chat-answer';
-        applyProofreadStyles(div);
         if (this.currentEntryDiv) {
             const existingAnswer = this.currentEntryDiv.querySelector('.nexus-chat-answer');
             if (existingAnswer) {
@@ -891,7 +1059,6 @@ export class NexusChatUI {
         const currentText = this.currentAnswerDiv.getAttribute('data-raw-text') || '';
         const newText = currentText + chunk;
         this.currentAnswerDiv.setAttribute('data-raw-text', newText);
-        this._throttledUpdateTokenCount();
         let answerContentDiv = this.currentAnswerDiv.querySelector('.nexus-answer-content');
         if (!answerContentDiv) {
             answerContentDiv = document.createElement('div');
@@ -958,12 +1125,6 @@ export class NexusChatUI {
         answerDiv.__lastRenderedText = newText;
         const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         let displayText = newText;
-        const isProofreadAnswer = answerDiv.classList.contains('nexus-proofread-editable');
-        if (isProofreadAnswer) {
-            displayText = displayText.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '').trim();
-            const existing = answerDiv.querySelector('.nexus-thinking-steps');
-            if (existing) existing.remove();
-        }
         if (this.webSearchSources && this.webSearchSources.length > 0) {
             displayText = displayText.replace(/\n\s*(?:Sources|Citations|References)\s*(?::)?\s*\n[\s\S]*$/i, '');
         }
@@ -1074,9 +1235,9 @@ export class NexusChatUI {
             });
         }
         // Auto-follow bottom only if user hasn't scrolled up (i.e. is near bottom) and not scroll-locked
-        if (!skipScroll && !this.disableAutoScroll && this._isNearBottom(80) && !this._scrollThrottled && !this._regenScrollLocked) {
+        if (!skipScroll && !this.disableAutoScroll && this._isNearBottom(28) && !this._scrollThrottled && !this._regenScrollLocked) {
             this._scrollThrottled = true;
-            setTimeout(() => { this._scrollThrottled = false; }, 80);
+            setTimeout(() => { this._scrollThrottled = false; }, 60);
             this.scrollToBottom();
         } else if (this._regenScrollLocked && preserveScrollTop !== null && scrollContainer) {
             scrollContainer.scrollTop = preserveScrollTop;
@@ -1096,7 +1257,6 @@ export class NexusChatUI {
 
         const sourcesSnapshot = Array.isArray(this.webSearchSources) ? [...this.webSearchSources] : [];
         const rawText = answerDivSnapshot ? (answerDivSnapshot.getAttribute('data-raw-text') || '') : '';
-        const isProofreadEntry = this.currentEntryDiv?.dataset?.entryType === 'proofread';
         const shouldStickBottom = !this.disableStreamAutoFollow && !skipScroll && this._isNearBottom();
         if (answerDivSnapshot) {
             this._scheduleLowPriority(async () => {
@@ -1157,7 +1317,6 @@ export class NexusChatUI {
         this.currentAnswerDiv = null;
         this.webSearchSources = [];
         this.hideStopButton();
-        this._throttledUpdateTokenCount();
     }
     static calculateInitialScrollTarget(entry, scrollContainer) {
         if (!entry || !scrollContainer) return 0;
@@ -1165,13 +1324,37 @@ export class NexusChatUI {
         return Math.max(0, targetScrollTop);
     }
     static getViewportStats(container, inputWrapper) {
-        const containerHeight = container.clientHeight || container.offsetHeight;
-        const inputHeight = inputWrapper ? (inputWrapper.offsetHeight || 0) : 0;
-        const isSpotlight = document.body.classList.contains('nexus-page');
+        if (!container) {
+            return { containerHeight: 0, inputHeight: 0, viewportHeight: 0 };
+        }
+        const layoutEl = container.closest?.('.layout') || container.querySelector?.('.layout') || (container.classList?.contains('layout') ? container : null);
+        
+        let layoutHeight = 0;
+        let inputHeight = 0;
+        
+        if (layoutEl) {
+            layoutHeight = layoutEl.clientHeight || layoutEl.offsetHeight || 0;
+            const inputContainer = layoutEl.querySelector('.nexus-chat-input-container') || layoutEl.querySelector('.nexus-chat-input-wrapper') || inputWrapper;
+            inputHeight = inputContainer ? (inputContainer.offsetHeight || inputContainer.clientHeight || 0) : 0;
+        } else {
+            const chatContainer = container.querySelector?.('.nexus-chat-container') || container;
+            layoutHeight = chatContainer.clientHeight || chatContainer.offsetHeight || 0;
+            const inputContainer = container.querySelector?.('.nexus-chat-input-container') || inputWrapper;
+            inputHeight = inputContainer ? (inputContainer.offsetHeight || inputContainer.clientHeight || 0) : 0;
+            if (chatContainer !== container && chatContainer.clientHeight > 0) {
+                return {
+                    containerHeight: layoutHeight,
+                    inputHeight,
+                    viewportHeight: chatContainer.clientHeight
+                };
+            }
+        }
+        
+        const viewportHeight = Math.max(0, layoutHeight - inputHeight);
         return {
-            containerHeight,
+            containerHeight: layoutHeight,
             inputHeight,
-            viewportHeight: isSpotlight ? containerHeight : Math.max(0, containerHeight - inputHeight)
+            viewportHeight
         };
     }
     static applyViewportMinHeight(entry, container, inputWrapper) {
@@ -1180,7 +1363,8 @@ export class NexusChatUI {
         if (container.offsetParent === null && (window.getComputedStyle(container).display === 'none' || !document.body.contains(container))) {
             return false;
         }
-        const { viewportHeight } = this.getViewportStats(container, inputWrapper);
+        const targetContainer = container.closest?.('.layout') || container.querySelector?.('.layout') || entry.closest('.layout') || container;
+        const { viewportHeight } = this.getViewportStats(targetContainer, inputWrapper);
         if (viewportHeight > 0) {
             let marginBottom = 0;
             const entryStyle = window.getComputedStyle(entry);
@@ -1195,13 +1379,12 @@ export class NexusChatUI {
     adjustEntryMargin(entry, behavior = 'none') {
         if (!entry) return;
         const run = () => {
-            const container = this.container.querySelector('.nexus-chat-container') || this.container;
             const inputWrapper = this.container.querySelector('.nexus-chat-input-wrapper') || document.body.querySelector('.nexus-chat-input-wrapper');
-            NexusChatUI.applyViewportMinHeight(entry, container, inputWrapper);
+            NexusChatUI.applyViewportMinHeight(entry, this.container, inputWrapper);
             this._marginTimer = null;
         };
-        const isSpotlight = this.options.isSpotlight;
-        if (behavior === 'immediate' || (isSpotlight && behavior === 'none')) {
+        const isNexus = this.options.isNexus;
+        if (behavior === 'immediate' || (isNexus && behavior === 'none')) {
             if (this._marginTimer) {
                 clearTimeout(this._marginTimer);
                 this._marginTimer = null;
@@ -1305,11 +1488,11 @@ export class NexusChatUI {
             return;
         }
         const inputWrapper = this.container.querySelector('.nexus-chat-input-wrapper') || document.body.querySelector('.nexus-chat-input-wrapper');
-        if (NexusChatUI.applyViewportMinHeight(entry, container, inputWrapper)) {
+        if (NexusChatUI.applyViewportMinHeight(entry, this.container, inputWrapper)) {
             this.updateEntryMinHeight(entry);
             if (!skipScroll && (!this.disableAutoScroll || forceScroll)) {
                 const targetScrollTop = NexusChatUI.calculateInitialScrollTarget(entry, scrollContainer, this.historyEl);
-                const { viewportHeight } = NexusChatUI.getViewportStats(container, inputWrapper);
+                const { viewportHeight } = NexusChatUI.getViewportStats(this.container, inputWrapper);
                 const maxScroll = scrollContainer.scrollHeight - viewportHeight;
                 const finalScrollTop = Math.min(targetScrollTop, maxScroll);
                 scrollContainer.scrollTop = finalScrollTop;
@@ -1742,22 +1925,6 @@ export class NexusChatUI {
         this._addPreparedFile(fileObj);
         this.renderFilePreviews();
     }
-    getAttachmentDbKey(fileObj) {
-        if (!fileObj) return '';
-        if (fileObj.fileUri && fileObj.fileUri.startsWith('local-db://')) {
-            const urlParts = fileObj.fileUri.replace('local-db://', '').split('/');
-            if (urlParts.length >= 3) {
-                const sessionId = urlParts[0];
-                const attachmentId = urlParts[1];
-                const name = urlParts.slice(2).join('/');
-                return `${sessionId}_${attachmentId}_${name}`;
-            }
-        }
-        const sessionId = this.currentSessionId || 'temp_session';
-        const attachmentId = fileObj.attachmentId;
-        const fileName = fileObj.name;
-        return `${sessionId}_${attachmentId}_${fileName}`;
-    }
     removeFile(index) {
         const file = this.attachedFiles[index];
         if (!file) return;
@@ -1786,16 +1953,12 @@ export class NexusChatUI {
         this._updateContainerState();
     }
     clearImages() {
-        this.attachedFiles.forEach(file => {
-            this._revokeObjectUrl(file?.previewUrl);
-        });
         this.attachedFiles = [];
         this.selectedImages = [];
         this.renderFilePreviews();
         this._updateContainerState();
     }
     renderFilePreviews() {
-        this._throttledUpdateTokenCount();
         if (!this.filePreviewEl) return;
         const visibleEntries = this.attachedFiles
             .map((file, index) => ({ file, index }))
@@ -1840,19 +2003,6 @@ export class NexusChatUI {
         this.filePreviewEl.innerHTML = '';
         this.filePreviewEl.appendChild(listDiv);
     }
-    _smoothScrollTo(targetScrollTop, _durationUnused = 1250) {
-        const scrollContainer = this.getScrollContainer();
-        if (!scrollContainer) return;
-        if (this._scrollAnimationId) {
-            cancelAnimationFrame(this._scrollAnimationId);
-            this._scrollAnimationId = null;
-        }
-        scrollContainer.scrollTop = targetScrollTop;
-        if (this._pendingMarginEntry) {
-            this.adjustEntryMargin(this._pendingMarginEntry, 'none');
-            this._pendingMarginEntry = null;
-        }
-    }
     scrollToBottom(force = false) {
         if (!force && (this.disableAutoScroll || this.disableStreamAutoFollow)) return;
         const scrollContainer = this.getScrollContainer();
@@ -1863,9 +2013,6 @@ export class NexusChatUI {
     static scrollToBottom(scrollContainer, targetElement = null) {
         if (!scrollContainer) return;
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
-    }
-    static scrollToElement(targetElement, scrollContainer) {
-        return;
     }
     clearHistory() {
         if (this.historyEl) {
@@ -1989,13 +2136,9 @@ export class NexusChatUI {
         `;
         delete element.dataset.partial;
         this.adjustEntryMargin(element);
-        this._throttledUpdateTokenCount();
         requestAnimationFrame(() => NexusChatUI._setupTranslationHighlight(element));
         NexusChatUI.balanceTranslationCard(element);
-        const regenBtn = this.container.querySelector('#nexus-regenerate-btn') ||
-            this.container.querySelector('.nexus-regenerate-btn') ||
-            document.getElementById('nexus-regenerate-btn') ||
-            document.querySelector('.nexus-regenerate-btn');
+        const regenBtn = this.container ? this.container.querySelector('.nexus-regenerate-btn, #nexus-regenerate-btn') : null;
         if (regenBtn) {
             regenBtn.style.display = 'flex';
         }
@@ -2102,72 +2245,7 @@ export class NexusChatUI {
             }
             if (isTargetEntry) break;
         }
-        if (!ignoreLimit && this.tokenLimit && this.tokenLimit > 0) {
-            const inputEl = this.container ? this.container.querySelector('.nexus-chat-input') : null;
-            const inputText = inputEl ? inputEl.value : '';
-            const inputTokens = (typeof NexusToken !== 'undefined') ? NexusToken.count(inputText) : Math.ceil(inputText.length / 2);
-            let attachmentTokens = 0;
-            if (this.attachedFiles && this.attachedFiles.length > 0) {
-                this.attachedFiles.forEach(file => {
-                    if (file.dataUrl && (file.mimeType?.startsWith('text/') || file.dataUrl.startsWith('data:text/'))) {
-                        const matches = file.dataUrl.match(/^data:([^;]+);base64,(.+)$/i);
-                        if (matches) {
-                            try {
-                                const decoded = this._decodeBase64Utf8(matches[2]);
-                                attachmentTokens += (typeof NexusToken !== 'undefined') ? NexusToken.count(decoded) : Math.ceil(decoded.length / 2);
-                            } catch (e) { }
-                        }
-                    } else if (file.isImage || file.mimeType?.startsWith('image/')) {
-                        attachmentTokens += 765;
-                    }
-                });
-            }
-            let contextTokens = 0;
-            const webChipsGroup = this.container ? this.container.querySelector('#web-chips-group') : null;
-            if (webChipsGroup) {
-                const activeChips = webChipsGroup.querySelectorAll('.nexus-web-chip.is-active');
-                activeChips.forEach(chip => {
-                    const tokens = parseInt(chip.dataset.tokens || '0');
-                    if (tokens > 0) contextTokens += tokens;
-                    else if (chip.classList.contains('is-active')) contextTokens += 4000;
-                });
-            }
-            const systemTokens = this.systemTokens || 150;
-            const budget = this.tokenLimit - inputTokens - attachmentTokens - contextTokens - systemTokens;
-            if (budget > 0) {
-                let currentHistoryTokens = 0;
-                let messagesKept = 0;
-                const slicedMessages = [];
-                for (let i = messages.length - 1; i >= 0; i--) {
-                    const m = messages[i];
-                    const mTokens = (typeof NexusToken !== 'undefined') ? NexusToken.count(m.text || '') : Math.ceil((m.text || '').length / 2);
-                    if (currentHistoryTokens + mTokens <= budget) {
-                        slicedMessages.unshift(m);
-                        currentHistoryTokens += mTokens;
-                        messagesKept++;
-                    } else {
-                        break;
-                    }
-                }
-                messages = slicedMessages;
-            } else {
-                messages = [];
-            }
-        }
         return messages;
-    }
-    _throttledUpdateTokenCount() {
-    }
-    _updateTokenCount() {
-    }
-    _updateTokenLimitFromModel() {
-    }
-    async refreshSystemTokens() {
-    }
-    _formatTokenCount(count) {
-        if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M';
-        if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
-        return count.toString();
     }
     _decodeBase64Utf8(base64) {
         if (!base64) return '';
@@ -2220,44 +2298,12 @@ export class NexusChatUI {
         const popup = this.container;
         const input = this.inputEl;
 
-        input.addEventListener('paste', async (e) => {
-            const text = e.clipboardData?.getData('text');
-            if (!text) return;
-
-            const isTable = text.includes('\t') && (text.includes('\n') || text.includes('\r'));
-            const isLongText = text.length > 10000 || (text.split(/\r?\n/).length > 50 && text.length > 2000);
-
-            if ((isTable || isLongText) && typeof NexusFileProcessor !== 'undefined') {
-                e.preventDefault();
-                const filename = isTable ? 'Pasted table.tsv' : 'Pasted text.txt';
-                const mimeType = isTable ? 'text/tab-separated-values' : 'text/plain';
-                const file = new File([text], filename, { type: mimeType });
-                await this.addFile(file);
-            }
-        });
-        const queryInPopup = (selector) => popup.querySelector(selector) || document.querySelector(selector);
-        const inputBar = queryInPopup('.nexus-input-bar') || queryInPopup('#input-bar');
-        this.isProofreadMode = this.isProofreadMode || false;
+        const queryInPopup = (selector) => this.container ? this.container.querySelector(selector) : null;
+        const inputBar = queryInPopup('.nexus-input-bar, #input-bar');
         this.isTranslateMode = this.isTranslateMode || false;
-        const getModes = () => ({ pr: this.isProofreadMode, tr: this.isTranslateMode });
-        const setProofread = (v) => { this.isProofreadMode = v; };
+        const getModes = () => ({ tr: this.isTranslateMode });
         const setTranslate = (v) => { this.isTranslateMode = v; };
-        const history = queryInPopup('.nexus-chat-history') || queryInPopup('.nexus-chat-scroll-content');
-        this.refreshSystemTokens();
-        chrome.storage.onChanged.addListener((changes) => {
-            if (changes.reasoningMode || changes.responseLanguage) {
-                this.refreshSystemTokens();
-            }
-        });
-        if (history) {
-            const historyObserver = new MutationObserver(() => this._throttledUpdateTokenCount());
-            historyObserver.observe(history, { childList: true, subtree: true });
-        }
-        const webChips = queryInPopup('#web-chips-group');
-        if (webChips) {
-            const chipsObserver = new MutationObserver(() => this._throttledUpdateTokenCount());
-            chipsObserver.observe(webChips, { childList: true });
-        }
+        const history = queryInPopup('.nexus-chat-history, .nexus-chat-scroll-content');
         const inputWrapper = queryInPopup('.nexus-chat-input-wrapper');
         if (inputWrapper) {
             inputWrapper.addEventListener('mousedown', (e) => {
@@ -2275,15 +2321,13 @@ export class NexusChatUI {
         this.readWebpageEnabled = false;
         this.currentPageTitle = "Current Page";
         if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-            chrome.storage.local.get(['readWebpage', 'advancedParamsByModel', 'modelTokenLimits'], (data) => {
+            chrome.storage.local.get(['readWebpage', 'advancedParamsByModel'], (data) => {
                 if (data.readWebpage !== undefined) {
                     this.readWebpageEnabled = !!data.readWebpage;
                 }
                 if (data.advancedParamsByModel) {
                     this.advancedParamsByModel = data.advancedParamsByModel;
                 }
-                this.modelTokenLimits = data.modelTokenLimits || {};
-                this._updateTokenLimitFromModel();
             });
             chrome.storage.onChanged.addListener((changes, area) => {
                 if (area === 'local') {
@@ -2292,10 +2336,6 @@ export class NexusChatUI {
                     }
                     if (changes.advancedParamsByModel) {
                         this.advancedParamsByModel = changes.advancedParamsByModel.newValue;
-                    }
-                    if (changes.modelTokenLimits) {
-                        this.modelTokenLimits = changes.modelTokenLimits.newValue || {};
-                        this._updateTokenLimitFromModel();
                     }
                 }
             });
@@ -2335,11 +2375,10 @@ export class NexusChatUI {
         input.addEventListener('input', () => {
             const val = input.value;
             const translateKw = val.match(/^translate:?\s+/i);
-            const proofreadKw = !translateKw && val.match(/^proofread:?\s+/i);
             if (translateKw) {
                 if (getModes().tr) {
                     removeActiveModes();
-                    input.placeholder = 'Ask anything...';
+                    input.placeholder = this.options.placeholder || 'Ask anything...';
                     input.value = val.slice(translateKw[0].length);
                 } else {
                     removeActiveModes();
@@ -2352,33 +2391,10 @@ export class NexusChatUI {
                         toolsToggle.classList.add('active');
                         toolsToggle.classList.add('active-translate');
                     }
-                    const toggle = queryInPopup('#translate-toggle') || queryInPopup('.nexus-translate-toggle');
+                    const toggle = queryInPopup('#translate-toggle, .nexus-translate-toggle');
                     if (toggle) { toggle.style.display = 'flex'; toggle.classList.add('active'); }
                     input.placeholder = 'Enter text to translate...';
                     input.value = val.slice(translateKw[0].length);
-                    if (toolsWrapper) toolsWrapper.classList.remove('active');
-                    if (toolsDropdown) toolsDropdown.classList.remove('active');
-                }
-            } else if (proofreadKw) {
-                if (getModes().pr) {
-                    removeActiveModes();
-                    input.placeholder = 'Ask anything...';
-                    input.value = val.slice(proofreadKw[0].length);
-                } else {
-                    removeActiveModes();
-                    setProofread(true);
-                    const toolItem = queryInPopup('[data-action="proofread"]');
-                    if (toolItem) toolItem.classList.add('active');
-                    if (toolsToggle) {
-                        const label = toolsToggle.querySelector('.tool-label');
-                        if (label) label.textContent = 'Proofread';
-                        toolsToggle.classList.add('active');
-                        toolsToggle.classList.add('active-proofread');
-                    }
-                    const toggle = queryInPopup('#proofread-toggle') || queryInPopup('.nexus-proofread-toggle');
-                    if (toggle) { toggle.style.display = 'flex'; toggle.classList.add('active'); }
-                    input.placeholder = 'Enter text to proofread...';
-                    input.value = val.slice(proofreadKw[0].length);
                     if (toolsWrapper) toolsWrapper.classList.remove('active');
                     if (toolsDropdown) toolsDropdown.classList.remove('active');
                 }
@@ -2407,7 +2423,6 @@ export class NexusChatUI {
             debouncedCheckExpand();
             this._updateContainerState();
             this._updateActionBtnState();
-            this._throttledUpdateTokenCount();
         });
         input.addEventListener('keydown', async (e) => {
             const isMentionActive = this.container.querySelector('.nexus-mention-popup.active');
@@ -2425,15 +2440,12 @@ export class NexusChatUI {
                 if (this.historyEl && !this.historyEl._nexusListenersAttached) {
                     this.initListeners(this.historyEl);
                 }
-                const { pr, tr } = getModes();
-                if (pr) {
-                    if (this.options.onSubmit) this.options.onSubmit(text, [], { mode: 'proofread' });
-                    else this.handleProofreadSubmit(text);
-                } else if (tr) {
+                const { tr } = getModes();
+                if (tr) {
                     if (this.options.onSubmit) this.options.onSubmit(text, [], { mode: 'translate' });
                     else this.handleTranslation(text);
                 } else if (this._pendingWebSource) {
-                    if (this.options.onSubmit && this.options.isSpotlight) {
+                    if (this.options.onSubmit && this.options.isNexus) {
                         this.options.onSubmit(text, [], { mode: 'websource', source: this._pendingWebSource });
                     } else {
                         this.openWebSource(this._pendingWebSource, text);
@@ -2452,7 +2464,7 @@ export class NexusChatUI {
             for (const item of items) {
                 if (item.type.startsWith('image/')) {
                     e.preventDefault();
-                    const rawDataUrl = await this._fileToDataURL(item.getAsFile());
+                    const rawDataUrl = await NexusFileProcessor.fileToDataURL(item.getAsFile());
                     this.addImage(rawDataUrl);
                 }
             }
@@ -2500,16 +2512,15 @@ export class NexusChatUI {
             });
         }
         const removeActiveModes = () => {
-            setProofread(false); setTranslate(false);
+            setTranslate(false);
             this._pendingWebSource = null;
             if (toolsToggle) {
                 const label = toolsToggle.querySelector('.tool-label');
                 if (label) label.textContent = 'Tools';
                 toolsToggle.classList.remove('active');
-                toolsToggle.classList.remove('active-proofread');
                 toolsToggle.classList.remove('active-translate');
             }
-            ['#proofread-toggle', '#translate-toggle', '.nexus-proofread-toggle', '.nexus-translate-toggle'].forEach(sel => {
+            ['#translate-toggle', '.nexus-translate-toggle'].forEach(sel => {
                 const el = queryInPopup(sel); if (el) { el.style.display = 'none'; el.classList.remove('active'); }
             });
             popup.querySelectorAll('.nexus-tool-item').forEach(el => el.classList.remove('active'));
@@ -2521,15 +2532,13 @@ export class NexusChatUI {
             if (item) item.addEventListener('click', (e) => {
                 e.stopPropagation(); removeActiveModes(); modeSetter();
                 item.classList.add('active');
-                const activeToolsToggle = queryInPopup('#tools-toggle') || queryInPopup('.nexus-plus-toggle');
+                const activeToolsToggle = queryInPopup('#tools-toggle, .nexus-plus-toggle');
                 if (activeToolsToggle) {
                     const label = activeToolsToggle.querySelector('.tool-label');
                     if (label) label.textContent = modename;
                     activeToolsToggle.classList.add('active');
                     const lowerMode = modename.toLowerCase();
-                    if (lowerMode.includes('proofread')) {
-                        activeToolsToggle.classList.add('active-proofread');
-                    } else if (lowerMode.includes('translate')) {
+                    if (lowerMode.includes('translate')) {
                         activeToolsToggle.classList.add('active-translate');
                     }
                 }
@@ -2539,35 +2548,50 @@ export class NexusChatUI {
                 checkExpand();
             });
         };
-        setupTool('[data-action="proofread"]', '#proofread-toggle', 'Proofread', () => { setProofread(true); }, 'Enter text to proofread...');
         setupTool('[data-action="translate"]', '#translate-toggle', 'Translate', () => { setTranslate(true); }, 'Enter text to translate...');
-        ['#proofread-toggle', '#translate-toggle', '.nexus-proofread-toggle', '.nexus-translate-toggle'].forEach(sel => {
+        ['#translate-toggle', '.nexus-translate-toggle'].forEach(sel => {
             const toggle = queryInPopup(sel);
             if (toggle) toggle.addEventListener('click', (e) => {
                 e.preventDefault(); e.stopPropagation(); removeActiveModes();
-                input.placeholder = 'Ask anything...'; input.focus(); checkExpand();
+                input.placeholder = this.options.placeholder || 'Ask anything...'; input.focus(); checkExpand();
             });
         });
         this._setupModelSelector(popup);
-        const uploadBtn = queryInPopup('#upload-btn');
-        if (uploadBtn && this.fileInputEl) {
+        const uploadBtn = queryInPopup('.nexus-upload-btn, #upload-btn');
+        if (uploadBtn) {
+            if (!this.fileInputEl && this.container) {
+                this.fileInputEl = this.container.querySelector('input[type="file"], .nexus-file-input');
+            }
+            if (!this.fileInputEl && this.container) {
+                this.fileInputEl = document.createElement('input');
+                this.fileInputEl.type = 'file';
+                this.fileInputEl.className = 'nexus-file-input';
+                this.fileInputEl.style.display = 'none';
+                this.fileInputEl.multiple = true;
+                this.container.appendChild(this.fileInputEl);
+            }
             uploadBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.fileInputEl.click();
+                e.stopPropagation();
+                if (this.fileInputEl) {
+                    this.fileInputEl.click();
+                }
             });
         }
         if (this.fileInputEl && !this.fileInputEl._nexusSetup) {
             this.fileInputEl._nexusSetup = true;
             this.fileInputEl.addEventListener('change', async (e) => {
-                for (const file of e.target.files) this.addFile(file);
+                if (e.target.files) {
+                    for (const file of e.target.files) await this.addFile(file);
+                }
                 this.fileInputEl.value = '';
             });
         }
-        const dropTarget = this.options.isSpotlight ? document.body : popup;
+        const dropTarget = this.options.isNexus ? document.body : popup;
         this._setupFileDragDrop(dropTarget, input);
-        const micBtn = queryInPopup('#mic-btn') || queryInPopup('.nexus-mic-btn');
+        const micBtn = queryInPopup('.nexus-mic-btn, #mic-btn');
         if (micBtn) this._setupMicButton(micBtn, input);
-        const actionBtn = queryInPopup('#action-btn') || queryInPopup('.nexus-action-btn');
+        const actionBtn = queryInPopup('.nexus-action-btn, #action-btn');
         if (actionBtn) this._setupActionButton(actionBtn, input);
         this._updateActionBtnState();
     }
@@ -2635,14 +2659,14 @@ export class NexusChatUI {
                 }
             });
         }
-        if (this.options.isSpotlight && !window.__nexusSpotlightDropGuardInstalled) {
+        if (this.options.isNexus && !window.__nexusDropGuardInstalled) {
             const globalDropGuard = (e) => {
                 if (!hasFiles(e.dataTransfer)) return;
                 e.preventDefault();
             };
             window.addEventListener('dragover', globalDropGuard);
             window.addEventListener('drop', globalDropGuard);
-            window.__nexusSpotlightDropGuardInstalled = true;
+            window.__nexusDropGuardInstalled = true;
         }
     }
     async _handleDroppedFiles(files, input) {
@@ -2659,19 +2683,18 @@ export class NexusChatUI {
     getInputState() {
         return {
             text: this.inputEl ? this.inputEl.value : '',
-            isProofreadMode: this.isProofreadMode || false,
             isTranslateMode: this.isTranslateMode || false,
             placeholder: this.inputEl ? this.inputEl.placeholder : 'Ask anything...'
         };
     }
     restoreInputState(state) {
         if (!this.inputEl) return;
-        const queryInPopup = (selector) => this.container.querySelector(selector) || document.querySelector(selector);
+        const queryInPopup = (selector) => this.container ? this.container.querySelector(selector) : null;
         if (this._removeActiveModes) this._removeActiveModes();
         if (!state) {
             this.inputEl.value = '';
             this.inputEl.style.height = 'auto';
-            this.inputEl.placeholder = 'Ask anything...';
+            this.inputEl.placeholder = this.options.placeholder || 'Ask anything...';
             if (this._checkExpand) this._checkExpand();
             this._updateContainerState();
             this._updateActionBtnState();
@@ -2682,16 +2705,10 @@ export class NexusChatUI {
             this.inputEl.style.height = 'auto';
             this.inputEl.style.height = this.inputEl.scrollHeight + 'px';
         }
-        this.inputEl.placeholder = state.placeholder || 'Ask anything...';
-        if (state.isProofreadMode) {
-            this.isProofreadMode = true;
-            const toggle = queryInPopup('#proofread-toggle') || queryInPopup('.nexus-proofread-toggle');
-            if (toggle) { toggle.style.display = 'flex'; toggle.classList.add('active'); }
-            const toolItem = queryInPopup('[data-action="proofread"]');
-            if (toolItem) toolItem.classList.add('active');
-        } else if (state.isTranslateMode) {
+        this.inputEl.placeholder = state.placeholder || this.options.placeholder || 'Ask anything...';
+        if (state.isTranslateMode) {
             this.isTranslateMode = true;
-            const toggle = queryInPopup('#translate-toggle') || queryInPopup('.nexus-translate-toggle');
+            const toggle = queryInPopup('#translate-toggle, .nexus-translate-toggle');
             if (toggle) { toggle.style.display = 'flex'; toggle.classList.add('active'); }
             const toolItem = queryInPopup('[data-action="translate"]');
             if (toolItem) toolItem.classList.add('active');
@@ -2700,12 +2717,32 @@ export class NexusChatUI {
         this._updateContainerState();
         this._updateActionBtnState();
     }
-    _setupMentions() { }
+    attachTab(tab) {
+        if (!tab) return;
+        this.historyEl = tab.historyEl || null;
+        if (tab.inputState !== undefined) {
+            this.restoreInputState(tab.inputState);
+        }
+        this.activeTabModel = tab.selectedModel ? { ...tab.selectedModel } : null;
+        this.thinkingLevel = tab.thinkingLevel || null;
+        this.sparkId = tab.sparkId || null;
+        if (typeof this.refreshModelSelector === 'function') this.refreshModelSelector();
+        if (typeof this.refreshReasoningSelector === 'function') this.refreshReasoningSelector();
+        this._updateActionBtnState();
+    }
+    saveTabState(tab) {
+        if (!tab) return;
+        if (typeof this.getInputState === 'function') {
+            tab.inputState = this.getInputState();
+        }
+        tab.selectedModel = this.activeTabModel ? { ...this.activeTabModel } : (tab.selectedModel || null);
+        tab.thinkingLevel = this.thinkingLevel || tab.thinkingLevel || null;
+    }
     _updateContainerState() {
-        const queryInPopup = (selector) => this.container.querySelector(selector) || document.querySelector(selector);
-        const container = queryInPopup('.nexus-input-container');
+        if (!this.container) return;
+        const container = this.container.querySelector('.nexus-input-container');
         if (container) {
-            if (this.inputEl && (this.inputEl.value.trim().length > 0 || this.selectedImages.length > 0)) container.classList.add('has-content');
+            if (this.inputEl && (this.inputEl.value.trim().length > 0 || (this.attachedFiles && this.attachedFiles.length > 0) || (this.selectedImages && this.selectedImages.length > 0))) container.classList.add('has-content');
             else container.classList.remove('has-content');
             if (document.activeElement === this.inputEl) container.classList.add('focused');
             else container.classList.remove('focused');
@@ -2795,7 +2832,6 @@ export class NexusChatUI {
                             if (typeof self.refreshReasoningSelector === 'function') {
                                 self.refreshReasoningSelector();
                             }
-                            self._updateTokenLimitFromModel();
                             selector.dispatchEvent(new CustomEvent('nexus:model-change', {
                                 bubbles: true,
                                 detail: { model: item.model, providerId: item.providerId, thinkingLevel: self.thinkingLevel }
@@ -2824,9 +2860,6 @@ export class NexusChatUI {
                         self.thinkingLevel = opt.value;
                         const curSid = getEffectiveSid();
                         await window.NexusModelHelper.saveThinkingSelection(opt.value, curSid, self.activeTabModel);
-                        if (typeof self.refreshSystemTokens === 'function') {
-                            self.refreshSystemTokens();
-                        }
                         if (typeof self.refreshReasoningSelector === 'function') {
                             self.refreshReasoningSelector();
                         }
@@ -2885,18 +2918,17 @@ export class NexusChatUI {
             });
             return;
         }
-        btn.addEventListener('click', async (e) => {
+        btn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             if (isRecording) {
                 if (recognition) recognition.stop();
                 return;
             }
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                stream.getTracks().forEach(t => t.stop());
                 recognition = new SpeechRecognition();
                 recognition.continuous = true;
                 recognition.interimResults = true;
+                recognition.lang = navigator.language || 'en-US';
                 originalInputText = '';
                 input.value = '';
                 recognition.onstart = () => {
@@ -2929,6 +2961,7 @@ export class NexusChatUI {
                     input.style.height = 'auto';
                     input.style.height = input.scrollHeight + 'px';
                     this._updateContainerState();
+                    this._updateActionBtnState();
                 };
                 recognition.onerror = (event) => {
                     console.error('Speech recognition error', event.error);
@@ -2941,8 +2974,10 @@ export class NexusChatUI {
                 recognition.onend = () => {
                     isRecording = false;
                     btn.classList.remove('recording');
-                    input.placeholder = 'Ask anything...';
+                    input.placeholder = this.options.placeholder || 'Ask anything...';
                     input.focus();
+                    this._updateContainerState();
+                    this._updateActionBtnState();
                 };
                 recognition.start();
             } catch (err) {
@@ -2975,7 +3010,7 @@ export class NexusChatUI {
     _getMaxTokens() {
         let maxTokens = null;
         const modelLabel = this.container ? this.container.querySelector('.nexus-current-model') : null;
-        const currentModel = modelLabel ? modelLabel.textContent : (this.options.isSpotlight ? 'gpt-4o' : '');
+        const currentModel = modelLabel ? modelLabel.textContent : (this.options.isNexus ? 'gpt-4o' : '');
         if (this.advancedParamsByModel && currentModel) {
             for (const key in this.advancedParamsByModel) {
                 if (key.endsWith(`:${currentModel}`)) {
@@ -3018,17 +3053,30 @@ export class NexusChatUI {
             this.clearImages();
         }
     }
+    finishResponse() {
+        this.isGenerating = false;
+        this.hideStopButton();
+        if (this.currentAnswerDiv) {
+            NexusChatUI.injectAnswerActions(this.currentAnswerDiv);
+            if (typeof this.renderMarkdown === 'function') {
+                this.renderMarkdown(this.currentAnswerDiv);
+            }
+        }
+        this.removeLoading();
+        this._updateActionBtnState();
+    }
     _updateActionBtnState() {
         if (!this.container) return;
-        const actionBtn = this.container.querySelector('#action-btn') || document.querySelector('#action-btn');
+        const actionBtn = this.container.querySelector('.nexus-action-btn, #action-btn');
         if (!actionBtn) return;
         const val = this.inputEl ? this.inputEl.value.trim() : '';
+        const hasFiles = this.attachedFiles && this.attachedFiles.length > 0;
         if (this.isGenerating) {
             actionBtn.className = 'nexus-action-btn active pause';
             actionBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>`;
             actionBtn.title = "Pause";
             actionBtn.removeAttribute('disabled');
-        } else if (val) {
+        } else if (val || hasFiles) {
             actionBtn.className = 'nexus-action-btn active send';
             actionBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
             actionBtn.title = "Send";
@@ -3040,44 +3088,11 @@ export class NexusChatUI {
             actionBtn.setAttribute('disabled', 'true');
         }
     }
-    _isDocxFile(file) {
-        return typeof NexusFileProcessor !== 'undefined' && NexusFileProcessor.isDocxFile ? NexusFileProcessor.isDocxFile(file) : (file?.name || '').toLowerCase().endsWith('.docx');
-    }
-    _isXlsxFile(file) {
-        return typeof NexusFileProcessor !== 'undefined' && NexusFileProcessor.isXlsxFile ? NexusFileProcessor.isXlsxFile(file) : (file?.name || '').toLowerCase().endsWith('.xlsx');
-    }
-    _fileToDataURL(file) {
-        return NexusFileProcessor.fileToDataURL(file);
-    }
     static _resolveImagePreviewSrc(item, src) {
-        return NexusFileProcessor.resolveImagePreviewSrc(item, src);
-    }
-    static _createObjectUrlFromDataUrl(dataUrl) {
-        return NexusFileProcessor.createObjectUrlFromDataUrl(dataUrl);
+        return typeof NexusFileProcessor !== 'undefined' && NexusFileProcessor.resolveImagePreviewSrc ? NexusFileProcessor.resolveImagePreviewSrc(item, src) : src;
     }
     _resolveImagePreviewSrc(item, src) {
-        return NexusFileProcessor.resolveImagePreviewSrc(item, src);
-    }
-    _createObjectUrlFromDataUrl(dataUrl) {
-        if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return null;
-        const commaIdx = dataUrl.indexOf(',');
-        if (commaIdx === -1) return null;
-        const header = dataUrl.slice(0, commaIdx);
-        const base64 = dataUrl.slice(commaIdx + 1);
-        const mimeMatch = header.match(/^data:([^;]+);base64$/i);
-        if (!mimeMatch) return null;
-        try {
-            const binary = atob(base64);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-                bytes[i] = binary.charCodeAt(i);
-            }
-            const blob = new Blob([bytes], { type: mimeMatch[1] || 'application/octet-stream' });
-            return this._createObjectUrl(blob);
-        } catch (error) {
-            console.warn('Failed to build preview blob URL:', error);
-            return null;
-        }
+        return NexusChatUI._resolveImagePreviewSrc(item, src);
     }
     _createObjectUrl(blobOrFile) {
         if (!blobOrFile || !URL?.createObjectURL) return null;
@@ -3098,13 +3113,7 @@ export class NexusChatUI {
         this.isGenerating = true;
         this.onStop = onStop;
         this._updateActionBtnState();
-        let stopBtn = null;
-        if (this.container) {
-            stopBtn = this.container.querySelector('#nexus-stop-btn') || this.container.querySelector('.nexus-stop-btn');
-        }
-        if (!stopBtn && typeof document !== 'undefined') {
-            stopBtn = document.getElementById('nexus-stop-btn') || document.querySelector('.nexus-stop-btn');
-        }
+        const stopBtn = this.container ? this.container.querySelector('.nexus-stop-btn, #nexus-stop-btn') : null;
         if (stopBtn) {
             stopBtn.style.display = 'flex';
             if (!stopBtn.dataset.listenerAdded) {
@@ -3120,90 +3129,9 @@ export class NexusChatUI {
         this.isGenerating = false;
         this.onStop = null;
         this._updateActionBtnState();
-        let stopBtn = null;
-        if (this.container) {
-            stopBtn = this.container.querySelector('#nexus-stop-btn') || this.container.querySelector('.nexus-stop-btn');
-        }
+        const stopBtn = this.container ? this.container.querySelector('.nexus-stop-btn, #nexus-stop-btn') : null;
         if (stopBtn) {
             stopBtn.style.display = 'none';
-        }
-    }
-    _initContextMenu() {
-        if (!this.container) return;
-        const existing = document.querySelector('.nexus-context-menu');
-        if (existing) existing.remove();
-        this.contextMenu = document.createElement('div');
-        this.contextMenu.className = 'nexus-context-menu';
-        this.contextMenu.innerHTML = `
-            <button class="nexus-context-menu-item" data-action="copy">
-                <span class="nexus-svg-icon nexus-icon-copy" aria-hidden="true"></span>
-                Copy
-            </button>
-            <button class="nexus-context-menu-item" data-action="regenerate">
-                <span class="nexus-svg-icon nexus-icon-refresh" aria-hidden="true"></span>
-                Regenerate
-            </button>
-        `;
-        document.body.appendChild(this.contextMenu);
-        document.addEventListener('click', (e) => {
-            if (!this.contextMenu.contains(e.target)) {
-                this._hideContextMenu();
-            }
-        });
-        this.contextMenu.addEventListener('click', (e) => {
-            const item = e.target.closest('.nexus-context-menu-item');
-            if (!item) return;
-            const action = item.dataset.action;
-            const targetAnswer = this.contextMenu.__targetAnswer;
-            if (!targetAnswer) return;
-            this._handleContextMenuAction(action, targetAnswer);
-            this._hideContextMenu();
-        });
-    }
-    _showContextMenu(x, y, targetAnswer) {
-        if (!this.contextMenu) return;
-        this.contextMenu.__targetAnswer = targetAnswer;
-        if (!this.contextMenuBackdrop) {
-            this.contextMenuBackdrop = document.createElement('div');
-            this.contextMenuBackdrop.className = 'nexus-overlay-backdrop';
-            this.contextMenuBackdrop.style.zIndex = '99999';
-            this.contextMenuBackdrop.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
-            this.contextMenuBackdrop.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
-            this.contextMenuBackdrop.addEventListener('click', () => this._hideContextMenu());
-            document.body.appendChild(this.contextMenuBackdrop);
-        }
-        this.contextMenuBackdrop.style.display = 'block';
-        this._contextMenuOriginalOverflowBody = document.body.style.overflow;
-        this._contextMenuOriginalOverflowHtml = document.documentElement.style.overflow;
-        document.body.style.overflow = 'hidden';
-        document.documentElement.style.overflow = 'hidden';
-        this.contextMenu.style.display = 'flex';
-        const menuWidth = this.contextMenu.offsetWidth || 180;
-        const menuHeight = this.contextMenu.offsetHeight || 150;
-        const padding = 10;
-        let left = x;
-        let top = y;
-        if (x + menuWidth > window.innerWidth - padding) {
-            left = x - menuWidth;
-        }
-        if (y + menuHeight > window.innerHeight - padding) {
-            top = y - menuHeight;
-        }
-        this.contextMenu.style.left = `${left}px`;
-        this.contextMenu.style.top = `${top}px`;
-    }
-    _hideContextMenu() {
-        if (this.contextMenu) {
-            this.contextMenu.style.display = 'none';
-        }
-        if (this.contextMenuBackdrop) {
-            this.contextMenuBackdrop.style.display = 'none';
-        }
-        if (this._contextMenuOriginalOverflowBody !== undefined) {
-            document.body.style.overflow = this._contextMenuOriginalOverflowBody || '';
-            document.documentElement.style.overflow = this._contextMenuOriginalOverflowHtml || '';
-            this._contextMenuOriginalOverflowBody = undefined;
-            this._contextMenuOriginalOverflowHtml = undefined;
         }
     }
     async _handleContextMenuAction(action, answer) {
@@ -3633,7 +3561,7 @@ export class NexusChatUI {
         const expandBtn = questionDiv.querySelector('.nexus-question-expand-btn');
         if (expandBtn) expandBtn.remove();
         if (row) row.classList.add('nexus-question-row-editing');
-        contentDiv.className = 'nexus-answer-content';
+        contentDiv.textContent = questionDiv.__originalRaw;
         contentDiv.contentEditable = 'plaintext-only';
         contentDiv.spellcheck = false;
         const toolbar = document.createElement('div');
@@ -3813,7 +3741,7 @@ export class NexusChatUI {
             const newText = (contentDiv?.innerText || contentDiv?.textContent || '').trim();
             questionDiv.setAttribute('data-raw-text', newText);
             if (contentDiv) {
-                contentDiv.innerText = newText;
+                contentDiv.textContent = newText;
                 if (typeof questionDiv.__questionEditOriginalClassName === 'string') {
                     contentDiv.className = questionDiv.__questionEditOriginalClassName;
                 }
@@ -3888,7 +3816,7 @@ export class NexusChatUI {
         const originalRaw = answerDiv.getAttribute('data-raw-text') || contentDiv.innerText;
         answerDiv.__originalHTML = contentDiv.innerHTML;
         answerDiv.__originalRaw = originalRaw;
-        contentDiv.innerHTML = answerDiv.__originalHTML;
+        contentDiv.textContent = originalRaw;
         answerDiv.classList.add('is-editing');
         contentDiv.contentEditable = 'plaintext-only';
         contentDiv.spellcheck = false;
@@ -3991,11 +3919,10 @@ export class NexusChatUI {
             contentDiv.removeEventListener('keyup', answerDiv.__answerEditInputHandler);
         }
         if (save) {
-            const newText = contentDiv.innerText.trim();
+            const newText = (contentDiv?.innerText || contentDiv?.textContent || '').trim();
             answerDiv.setAttribute('data-raw-text', newText);
             answerDiv.__lastRenderedText = '';
-            this._doRender(answerDiv, true);
-            console.log('[Nexus] Answer saved:', newText);
+            this._doRender(answerDiv, true, true);
             const entry = answerDiv.closest('.nexus-entry');
             if (entry) {
                 entry.dataset.timestamp = Date.now().toString();
@@ -4013,6 +3940,7 @@ export class NexusChatUI {
         answerDiv.classList.remove('is-editing');
         contentDiv.contentEditable = 'false';
         if (toolbar) toolbar.remove();
+        NexusChatUI.injectAnswerActions(answerDiv);
         delete answerDiv.__originalHTML;
         delete answerDiv.__originalRaw;
         delete answerDiv.__answerEditToolbar;
@@ -4026,78 +3954,6 @@ export class NexusChatUI {
         editingAnswers.forEach((answerDiv) => {
             this.exitAnswerEditMode(answerDiv, false);
         });
-    }
-    serializeHistoryHTML() {
-        if (!this.historyEl) return '';
-        const clonedHistory = this.historyEl.cloneNode(true);
-        const liveAnswers = Array.from(this.historyEl.querySelectorAll('.nexus-chat-answer'));
-        const clonedAnswers = Array.from(clonedHistory.querySelectorAll('.nexus-chat-answer'));
-        const liveQuestions = Array.from(this.historyEl.querySelectorAll('.nexus-chat-question'));
-        const clonedQuestions = Array.from(clonedHistory.querySelectorAll('.nexus-chat-question'));
-        const editingAnswers = Array.from(this.historyEl.querySelectorAll('.nexus-chat-answer.is-editing'));
-        editingAnswers.forEach((liveAnswer) => {
-            const answerIndex = liveAnswers.indexOf(liveAnswer);
-            const clonedAnswer = answerIndex >= 0 ? clonedAnswers[answerIndex] : null;
-            if (!clonedAnswer) return;
-            const clonedEntry = clonedAnswer.closest('.nexus-entry');
-            const clonedContent = clonedAnswer.querySelector('.nexus-answer-content') || clonedAnswer;
-            if (typeof liveAnswer.__originalHTML === 'string') {
-                clonedContent.innerHTML = liveAnswer.__originalHTML;
-            }
-            clonedAnswer.classList.remove('is-editing');
-            clonedAnswer.contentEditable = 'false';
-            clonedContent.contentEditable = 'false';
-            const clonedToolbar = clonedEntry ? clonedEntry.querySelector('.nexus-edit-toolbar') : clonedAnswer.querySelector('.nexus-edit-toolbar');
-            if (clonedToolbar) clonedToolbar.remove();
-        });
-        const editingQuestions = Array.from(this.historyEl.querySelectorAll('.nexus-chat-question.is-editing'));
-        editingQuestions.forEach((liveQuestion) => {
-            const questionIndex = liveQuestions.indexOf(liveQuestion);
-            const clonedQuestion = questionIndex >= 0 ? clonedQuestions[questionIndex] : null;
-            if (!clonedQuestion) return;
-            const clonedRow = clonedQuestion.closest('.nexus-question-row');
-            const clonedContent = clonedQuestion.querySelector('.nexus-question-content')
-                || clonedQuestion.querySelector('div[contenteditable="true"]')
-                || clonedQuestion;
-            if (typeof liveQuestion.__originalHTML === 'string') {
-                clonedContent.innerHTML = liveQuestion.__originalHTML;
-            } else if (typeof liveQuestion.getAttribute('data-raw-text') === 'string') {
-                clonedContent.textContent = liveQuestion.getAttribute('data-raw-text');
-            }
-            clonedQuestion.classList.remove('is-editing');
-            if (clonedRow) clonedRow.classList.remove('nexus-question-row-editing');
-            clonedContent.contentEditable = 'false';
-            const clonedToolbar = clonedQuestion.querySelector('.nexus-question-edit-toolbar');
-            if (clonedToolbar) clonedToolbar.remove();
-        });
-        clonedHistory.querySelectorAll('.nexus-entry').forEach(entry => {
-            entry.style.removeProperty('min-height');
-        });
-        clonedHistory.querySelectorAll('.nexus-actions').forEach(el => el.remove());
-        clonedHistory.querySelectorAll('.nexus-code-copy-btn').forEach(el => el.remove());
-        clonedHistory.querySelectorAll('img').forEach(img => {
-            if (img.dataset.attachmentId) {
-                img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-            }
-        });
-        clonedHistory.querySelectorAll('[data-images]').forEach(el => {
-            try {
-                const parsed = JSON.parse(el.dataset.images);
-                if (parsed && Array.isArray(parsed.files)) {
-                    parsed.files.forEach(file => {
-                        if (file.attachmentId || file.fileUri) {
-                            file.dataUrl = null;
-                            if (file.previewUrl && file.previewUrl.startsWith('data:')) file.previewUrl = null;
-                            if (file.data) file.data = null;
-                        }
-                    });
-                    el.dataset.images = JSON.stringify(parsed);
-                }
-            } catch (e) {
-                console.error('Failed to strip data-images in serialization', e);
-            }
-        });
-        return clonedHistory.innerHTML;
     }
     static async processContainer(container) {
         if (!container || container.__nexusProcessed) return;
@@ -4176,20 +4032,6 @@ export class NexusChatUI {
             } catch (e) { }
         }
         await yieldToMain();
-        container.querySelectorAll('a').forEach(link => {
-            link.target = '_blank';
-            link.rel = 'noopener noreferrer';
-        });
-        await NexusChatUI.injectCopyButtons(container);
-        await yieldToMain();
-        container.querySelectorAll('.nexus-thinking-container').forEach(c => {
-            const header = c.querySelector('.nexus-thinking-header');
-            if (header && !header.__thinkingToggleBound) {
-                header.__thinkingToggleBound = true;
-                header.addEventListener('click', () => c.classList.toggle('collapsed'));
-            }
-        });
-        await yieldToMain();
         container.querySelectorAll('.nexus-translation-card').forEach(card => {
             const entry = card.closest('.nexus-entry');
             if (entry && !entry.__translationHighlightDone) {
@@ -4207,134 +4049,7 @@ export class NexusChatUI {
             NexusChatUI.injectAnswerActions(ans);
         }
         await yieldToMain();
-        processNexusDynamicImageElements(container);
-        processNexusChartElements(container);
-        WidgetRunner.hydrateWidgets(container);
-    }
-    static async injectCopyButtons(container) {
-        if (!container) return;
-        NexusChatUI.wrapTables(container);
-        const yieldToMain = () => new Promise(resolve => setTimeout(resolve, 10));
-        const COPY_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
-        const CHECK_SVG = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-        const preBlocks = Array.from(container.querySelectorAll('pre'));
-        for (const pre of preBlocks) {
-            if (pre.classList.contains('nexus-d2-source') || pre.style.display === 'none') {
-                continue;
-            }
-            await yieldToMain();
-            let wrapper = pre.parentElement && pre.parentElement.classList.contains('nexus-code-block-wrap')
-                ? pre.parentElement
-                : null;
-            if (!wrapper) {
-                wrapper = document.createElement('div');
-                wrapper.className = 'nexus-code-block-wrap';
-                pre.parentNode.insertBefore(wrapper, pre);
-                wrapper.appendChild(pre);
-            }
-            pre.querySelectorAll('.nexus-code-copy-btn').forEach(old => old.remove());
-            wrapper.querySelectorAll('.nexus-code-copy-btn').forEach(old => old.remove());
-            wrapper.querySelectorAll('.nexus-code-header').forEach(old => old.remove());
-            let lang = 'Code';
-            const codeEl = pre.querySelector('code');
-            if (codeEl) {
-                const classes = Array.from(codeEl.classList);
-                const langClass = classes.find(c => c.startsWith('language-') || c.startsWith('lang-'));
-                if (langClass) {
-                    const rawLang = langClass.replace(/^(language-|lang-)/, '');
-                    if (rawLang === 'js' || rawLang === 'javascript') lang = 'JavaScript';
-                    else if (rawLang === 'ts' || rawLang === 'typescript') lang = 'TypeScript';
-                    else if (rawLang === 'html') lang = 'HTML';
-                    else if (rawLang === 'css') lang = 'CSS';
-                    else if (rawLang === 'py' || rawLang === 'python') lang = 'Python';
-                    else if (rawLang === 'json') lang = 'JSON';
-                    else if (rawLang === 'go' || rawLang === 'golang') lang = 'Go';
-                    else if (rawLang === 'rs' || rawLang === 'rust') lang = 'Rust';
-                    else if (rawLang === 'sh' || rawLang === 'bash' || rawLang === 'shell') lang = 'Bash';
-                    else if (rawLang === 'cpp' || rawLang === 'c++') lang = 'C++';
-                    else if (rawLang === 'cs' || rawLang === 'csharp') lang = 'C#';
-                    else if (rawLang) lang = rawLang.charAt(0).toUpperCase() + rawLang.slice(1);
-                }
-            }
-            const header = document.createElement('div');
-            header.className = 'nexus-code-header';
-            const langLabel = document.createElement('span');
-            langLabel.className = 'nexus-code-lang';
-            langLabel.textContent = lang;
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'nexus-code-actions';
-            const downloadBtn = document.createElement('button');
-            downloadBtn.className = 'nexus-code-download-btn';
-            downloadBtn.title = 'Download Code';
-            downloadBtn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-            downloadBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const codeText = (codeEl ? codeEl.innerText : pre.innerText).trim();
-                const blob = new Blob([codeText], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                let ext = 'txt';
-                const cleanLang = lang.toLowerCase();
-                if (cleanLang === 'javascript') ext = 'js';
-                else if (cleanLang === 'typescript') ext = 'ts';
-                else if (cleanLang === 'python') ext = 'py';
-                else if (cleanLang === 'html') ext = 'html';
-                else if (cleanLang === 'css') ext = 'css';
-                else if (cleanLang === 'json') ext = 'json';
-                else if (cleanLang === 'go') ext = 'go';
-                else if (cleanLang === 'rust') ext = 'rs';
-                else if (cleanLang === 'bash') ext = 'sh';
-                else if (cleanLang === 'c++') ext = 'cpp';
-                else if (cleanLang === 'c#') ext = 'cs';
-                a.download = `code_${Date.now()}.${ext}`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            });
-            const btn = document.createElement('button');
-            btn.className = 'nexus-code-copy-btn';
-            btn.title = 'Copy Code';
-            btn.innerHTML = COPY_SVG;
-            const showSuccess = () => {
-                btn.classList.add('copied');
-                btn.innerHTML = CHECK_SVG;
-                setTimeout(() => {
-                    btn.classList.remove('copied');
-                    btn.innerHTML = COPY_SVG;
-                }, 2000);
-            };
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const text = (codeEl ? codeEl.innerText : pre.innerText).trim();
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text)
-                        .then(showSuccess)
-                        .catch(() => execCommandFallback(text));
-                } else {
-                    execCommandFallback(text);
-                }
-                function execCommandFallback(t) {
-                    try {
-                        const ta = document.createElement('textarea');
-                        ta.value = t;
-                        ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
-                        document.body.appendChild(ta);
-                        ta.focus();
-                        ta.select();
-                        const ok = document.execCommand('copy');
-                        ta.remove();
-                        if (ok) showSuccess();
-                    } catch (_) { }
-                }
-            });
-            actionsDiv.appendChild(downloadBtn);
-            actionsDiv.appendChild(btn);
-            header.appendChild(langLabel);
-            header.appendChild(actionsDiv);
-            wrapper.insertBefore(header, pre);
-        }
+        hydrateDynamicContent(container);
     }
     static injectAnswerActions(answerDiv) {
         if (!answerDiv) return;
@@ -4444,18 +4159,6 @@ export class NexusChatUI {
         }
         if (nav) nav.style.display = 'none';
     }
-    static wrapTables(container) {
-        if (!container) return;
-        container.querySelectorAll('table').forEach(table => {
-            if (table.parentElement && table.parentElement.classList.contains('nexus-table-wrap')) {
-                return;
-            }
-            const wrapper = document.createElement('div');
-            wrapper.className = 'nexus-table-wrap';
-            table.parentNode.insertBefore(wrapper, table);
-            wrapper.appendChild(table);
-        });
-    }
     _decodeDataUrlText(dataUrl) {
         if (!dataUrl) return '';
         try {
@@ -4538,7 +4241,9 @@ export class NexusChatUI {
             const previewWindow = document.createElement('div');
 
             let typeClass = 'is-fallback';
-            if (fileObj.isPDF || this._isDocxFile(fileObj) || this._isXlsxFile(fileObj) || (fileObj.name && (fileObj.mimeType?.startsWith('text/') || /\.(json|js|jsx|ts|tsx|py|html|css|md|txt|csv|xml|sh|ini|bat|yml|yaml)/i.test(fileObj.name)))) {
+            const isDocx = typeof NexusFileProcessor !== 'undefined' && NexusFileProcessor.isDocxFile ? NexusFileProcessor.isDocxFile(fileObj) : (fileObj.name || '').toLowerCase().endsWith('.docx');
+            const isXlsx = typeof NexusFileProcessor !== 'undefined' && NexusFileProcessor.isXlsxFile ? NexusFileProcessor.isXlsxFile(fileObj) : (fileObj.name || '').toLowerCase().endsWith('.xlsx');
+            if (fileObj.isPDF || isDocx || isXlsx || (fileObj.name && (fileObj.mimeType?.startsWith('text/') || /\.(json|js|jsx|ts|tsx|py|html|css|md|txt|csv|xml|sh|ini|bat|yml|yaml)/i.test(fileObj.name)))) {
                 typeClass = 'is-document';
             } else if (fileObj.isVideo) {
                 typeClass = 'is-video';
@@ -4945,7 +4650,7 @@ export class NexusChatUI {
                 }
             }
         }
-        else if (this._isDocxFile(fileObj) || this._isXlsxFile(fileObj)) {
+        else if ((typeof NexusFileProcessor !== 'undefined' && NexusFileProcessor.isDocxFile ? NexusFileProcessor.isDocxFile(fileObj) : (fileObj.name || '').toLowerCase().endsWith('.docx')) || (typeof NexusFileProcessor !== 'undefined' && NexusFileProcessor.isXlsxFile ? NexusFileProcessor.isXlsxFile(fileObj) : (fileObj.name || '').toLowerCase().endsWith('.xlsx'))) {
             const derived = this.attachedFiles ? this.attachedFiles.filter(f => f.parentAttachmentId === fileObj.attachmentId) : [];
 
             const docContainer = document.createElement('div');
@@ -5026,68 +4731,6 @@ export class NexusChatUI {
             name: alt
         });
     }
-}
-function extractMainContent(doc = document) {
-    const docClone = doc.cloneNode(true);
-    const selectorsToRemove = [
-        'nav', 'footer', 'header', 'aside', 'script', 'style',
-        'iframe', 'noscript', 'form', 'svg', 'canvas',
-        '.ads', '#sidebar', '.sidebar', '.menu', '.navigation',
-        '.footer', '.header', '.ad-box', '.social-share', '.comments',
-        '[id^="nexus-"]', '[class^="nexus-"]'
-    ];
-    selectorsToRemove.forEach(s => {
-        docClone.querySelectorAll(s).forEach(el => el.remove());
-    });
-    const mainSelectors = ['article', 'main', '[role="main"]', '.post-content', '.article-content', '.entry-content'];
-    let contentEl = null;
-    for (const s of mainSelectors) {
-        const el = docClone.querySelector(s);
-        if (el && el.innerText.trim().length > 200) {
-            contentEl = el;
-            break;
-        }
-    }
-    if (!contentEl) contentEl = docClone.body;
-    let text = contentEl.innerText || contentEl.textContent || "";
-    text = text
-        .replace(/[ \t]+/g, ' ')
-        .replace(/\n\s*\n/g, '\n\n')
-        .trim();
-    return {
-        url: window.location.href,
-        title: document.title,
-        content: text
-    };
-}
-function nexusEstimateTokens(text) {
-    if (!text) return 0;
-    return Math.ceil(text.length / 3);
-}
-function nexusTruncateHistoryWindow(messages, maxTokens) {
-    if (maxTokens === null || maxTokens < 0) return [...messages];
-    const estimateFn = typeof window.nexusEstimateTokens === 'function'
-        ? window.nexusEstimateTokens
-        : (t => Math.ceil((t || '').length / 3));
-    const result = [];
-    let currentTokens = 0;
-    for (let i = messages.length - 1; i >= 0; i--) {
-        const msg = messages[i];
-        let pairTokens = estimateFn(msg.text || msg.content || '');
-        const pair = [msg];
-        if (msg.role === 'model' && i > 0 && messages[i - 1].role === 'user') {
-            const userMsg = messages[i - 1];
-            pairTokens += estimateFn(userMsg.text || userMsg.content || '');
-            pair.unshift(userMsg);
-            i--;
-        }
-        if (currentTokens + pairTokens > maxTokens) {
-            break;
-        }
-        result.unshift(...pair);
-        currentTokens += pairTokens;
-    }
-    return result;
 }
 
 if (typeof window !== "undefined") {

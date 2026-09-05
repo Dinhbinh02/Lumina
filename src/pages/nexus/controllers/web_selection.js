@@ -28,7 +28,7 @@ export function readWebSelectionFromStorage(scopeKey) {
             }))
             : [];
     } catch (error) {
-        console.warn('[Spotlight] Failed to read web selection from localStorage:', error);
+        console.warn('[Nexus] Failed to read web selection from localStorage:', error);
         return [];
     }
 }

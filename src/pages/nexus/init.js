@@ -65,8 +65,8 @@
     } catch (e) {}
 
     const viewParam = urlParams.get('view') || 'chat';
-    const appId = urlParams.get('app');
-    const noteId = urlParams.get('noteId');
+    const appId = urlParams.get('app') || urlParams.get('appId');
+    const noteId = urlParams.get('note') || urlParams.get('noteId');
 
     const pageIdMap = {
         apps: 'apps-page',
@@ -90,6 +90,7 @@
         .nexus-page-view { display: none !important; }
         #${activePageId} { display: flex !important; }
         ${viewParam === 'apps' && appId ? `
+        #apps-page.is-detail { display: flex !important; }
         #apps-hub-view { display: none !important; }
         #apps-studio-view { display: flex !important; }
         ` : ''}
@@ -103,6 +104,19 @@
         const mainContent = document.querySelector('.nexus-main-content');
         if (mainContent) {
             mainContent.setAttribute('data-active-view', viewParam);
+        }
+
+        if (viewParam === 'apps' && appId) {
+            const titleInput = document.getElementById('apps-studio-title-input');
+            if (titleInput) {
+                try {
+                    const cacheRaw = localStorage.getItem('nexus_apps_titles_cache');
+                    const cache = cacheRaw ? JSON.parse(cacheRaw) : {};
+                    if (cache[appId]) {
+                        titleInput.value = cache[appId];
+                    }
+                } catch (e) {}
+            }
         }
     });
 })();

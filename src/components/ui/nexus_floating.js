@@ -183,7 +183,7 @@ export class NexusMenu {
         menuEl.setAttribute('role', 'menu');
         menuEl.setAttribute('tabindex', '-1');
 
-        menuEl.style.zIndex = '10005';
+        menuEl.style.zIndex = '99999';
 
         const viewStack = [{ title: null, items }];
 
