@@ -136,8 +136,7 @@ console.log('\n[UNIT 6/8] Incomplete Streaming State (<GenerateWidget> in-progre
 
     const parsedHtml = marked.parse(partialStream);
     assert(parsedHtml.includes('nexus-widget-loading'), 'Renders loading skeleton during stream');
-    assert(parsedHtml.includes('nexus-widget-blueprint-body'), 'Renders blueprint grid body');
-    assert(parsedHtml.includes('nexus-blueprint-scanline'), 'Contains laser scanline element');
+    assert(parsedHtml.includes('nexus-widget-skeleton') || parsedHtml.includes('nexus-shimmer-skeleton'), 'Renders shimmer skeleton body');
     assert(parsedHtml.includes('Loading Tool'), 'Displays title on skeleton');
 }
 

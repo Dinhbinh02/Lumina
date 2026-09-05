@@ -1,6 +1,10 @@
-const esbuild = require('esbuild');
-const path = require('path');
-const fs = require('fs');
+import esbuild from 'esbuild';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const isWatch = process.argv.includes('--watch');
 
@@ -12,7 +16,10 @@ const baseCompilerOptions = {
     legalComments: 'none',
     charset: 'utf8',
     sourcemap: false,
-    drop: !isWatch ? ['debugger'] : []
+    drop: !isWatch ? ['debugger'] : [],
+    logOverride: {
+        'commonjs-variable-in-esm': 'silent'
+    }
 };
 
 function copyDirSync(src, dest, filter) {

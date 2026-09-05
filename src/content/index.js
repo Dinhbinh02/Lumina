@@ -246,6 +246,7 @@ import { NexusSelection } from './selection_utils.js';
 
     document.addEventListener('click', (e) => {
         if (isExtensionDisabled) return;
+        const path = e.composedPath ? e.composedPath() : [];
         const isInsideNexus = path.some(el => el.id === 'nexus-action-bar' || el.id === 'nexus-shadow-host' || (el.tagName && el.tagName.toLowerCase() === 'nexus-shadow-host'));
         if (isInsideNexus || (window.NexusSelection && NexusSelection.isInteractingWithActionBar)) return;
 

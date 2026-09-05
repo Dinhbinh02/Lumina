@@ -128,9 +128,6 @@ async function gatherCloudStats(token) {
     const cloudCols = data.nexus_notes_collections || [];
     stats.notes.notesCount = cloudNotes.filter(n => n && !n.isDeleted).length;
     stats.notes.collectionsCount = cloudCols.length;
-
-    stats.highlights.urlCount = Object.keys(data).filter(k => k.startsWith('highlights_')).length;
-
     const cloudTts = data.nexus_tts_recordings || [];
     stats.tts.recordingsCount = cloudTts.filter(r => r && !r.isDeleted).length;
 

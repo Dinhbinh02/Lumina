@@ -108,16 +108,16 @@ async function runAll() {
         assert(text && text.length > 50, 'Received valid text response from Gemini');
         console.log('  ✅ Received response from Gemini (' + text.length + ' chars)');
 
-        if (!/<GenerateWidget/i.test(text)) {
+        if (!/<(?:GenerateApp|GenerateWidget)/i.test(text)) {
             console.log('--- RESPONSE PREVIEW (First 600 chars) ---');
             console.log(text.slice(0, 600));
             console.log('--- END PREVIEW ---');
         }
-        assert(/<GenerateWidget/i.test(text), 'Produced <GenerateWidget> tag');
-        console.log('  ✅ Produced <GenerateWidget> tag');
+        assert(/<(?:GenerateApp|GenerateWidget)/i.test(text), 'Produced <GenerateApp> tag');
+        console.log('  ✅ Produced <GenerateApp> tag');
 
-        assert(/<\/GenerateWidget>/i.test(text), 'Closed </GenerateWidget> tag properly');
-        console.log('  ✅ Closed </GenerateWidget> tag properly');
+        assert(/<\/(?:GenerateApp|GenerateWidget)>/i.test(text), 'Closed </GenerateApp> tag properly');
+        console.log('  ✅ Closed </GenerateApp> tag properly');
 
         // Check Anti-Slop
         const hasGradient = /linear-gradient|radial-gradient/i.test(text);

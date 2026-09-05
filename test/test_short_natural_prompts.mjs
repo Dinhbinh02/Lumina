@@ -60,12 +60,12 @@ async function callGemini(userPrompt, systemInstruction) {
 }
 
 function analyzeWidget(text) {
-  const hasTag = /<GenerateWidget\b[^>]*>([\s\S]*?)<\/GenerateWidget>/i.test(text);
-  const tagMatch = text.match(/<GenerateWidget\s+([^>]+)>/i);
+  const hasTag = /<(?:GenerateApp|GenerateWidget)\b[^>]*>([\s\S]*?)<\/(?:GenerateApp|GenerateWidget)>/i.test(text);
+  const tagMatch = text.match(/<(?:GenerateApp|GenerateWidget)\s+([^>]+)>/i);
   const titleMatch = tagMatch ? tagMatch[1].match(/title="([^"]+)"/i) : null;
   const heightMatch = tagMatch ? tagMatch[1].match(/height="([^"]+)"/i) : null;
   
-  const innerHtml = hasTag ? text.match(/<GenerateWidget\b[^>]*>([\s\S]*?)<\/GenerateWidget>/i)[1] : '';
+  const innerHtml = hasTag ? text.match(/<(?:GenerateApp|GenerateWidget)\b[^>]*>([\s\S]*?)<\/(?:GenerateApp|GenerateWidget)>/i)[1] : '';
   const hasGradients = /linear-gradient|radial-gradient/i.test(innerHtml);
   const hasShadows = /box-shadow:\s*(?!none)[^;]+/i.test(innerHtml);
   const hasScript = /<script\b[^>]*>([\s\S]*?)<\/script>/i.test(innerHtml);
@@ -105,8 +105,8 @@ async function run() {
       console.log(`  Widget Title: "${analysis.title}"`);
       console.log(`  Initial Height: "${analysis.height}"`);
 
-      assert.strictEqual(analysis.hasTag, true, 'Model must produce <GenerateWidget> tag');
-      console.log('  ✅ Automatically triggered <GenerateWidget> from short prompt');
+      assert.strictEqual(analysis.hasTag, true, 'Model must produce <GenerateApp> tag');
+      console.log('  ✅ Automatically triggered <GenerateApp> from short prompt');
 
       assert.strictEqual(analysis.hasInputsOrButtons, true, 'Must contain interactive controls');
       console.log('  ✅ Generated interactive controls (sliders / buttons / inputs / canvas)');

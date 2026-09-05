@@ -88,26 +88,7 @@ export function renderKaTeXFormula(rawMath, isDisplay = false) {
     if (!isDisplay && /\\(?:frac|dfrac|cfrac|sum|int|prod|lim|begin)\b/.test(math) && !/\\displaystyle\b/.test(math)) {
         math = '\\displaystyle ' + math;
     }
-
-    const textMatches = [];
-    const placeholderMath = math.replace(/\\text\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, (m, txt) => {
-        const id = `TXPH${textMatches.length}END`;
-        textMatches.push({ id, txt });
-        return `\\text{${id}}`;
-    });
-
-    let rendered = katex.renderToString(placeholderMath, { displayMode: isDisplay, throwOnError: false, strict: 'ignore' });
-
-    for (const item of textMatches) {
-        const safeText = item.txt
-            .replace(/\\([%$&_#{}\\])/g, '$1')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/ /g, '&nbsp;');
-        rendered = rendered.replaceAll(item.id, safeText);
-    }
-    return rendered;
+    return katex.renderToString(math, { displayMode: isDisplay, throwOnError: false, strict: 'ignore' });
 }
 
 export function initMarkdownMath() {
@@ -257,9 +238,9 @@ export function initCodeAndMediaRenderer() {
             },
             table(token) {
                 const { header, rows } = token;
-                const ths = header.map(cell => `<th${cell.align ? ` align="${cell.align}"` : ''}>${cell.text}</th>`).join('');
+                const ths = header.map(cell => `<th${cell.align ? ` align="${cell.align}"` : ''}>${this.parser.parseInline(cell.tokens)}</th>`).join('');
                 const trs = rows.map(row => {
-                    const tds = row.map(cell => `<td${cell.align ? ` align="${cell.align}"` : ''}>${cell.text}</td>`).join('');
+                    const tds = row.map(cell => `<td${cell.align ? ` align="${cell.align}"` : ''}>${this.parser.parseInline(cell.tokens)}</td>`).join('');
                     return `<tr>${tds}</tr>`;
                 }).join('');
                 return `<div class="nexus-table-wrap"><table><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;

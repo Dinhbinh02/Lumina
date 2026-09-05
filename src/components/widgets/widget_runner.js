@@ -99,7 +99,7 @@ export const WidgetRunner = {
 
         const generateAppMatch = clean.match(/<(?:GenerateApp|GenerateWidget)[^>]*>([\s\S]*?)(?:<\/(?:GenerateApp|GenerateWidget)>|$)/i);
         if (generateAppMatch) {
-            return generateAppMatch[1].trim();
+            clean = generateAppMatch[1].trim();
         }
 
         const codeBlockMatch = clean.match(/```(?:html|xml)?\s*\n([\s\S]*?)\n```/i);
@@ -108,6 +108,11 @@ export const WidgetRunner = {
             if (codeContent.includes('<') && (codeContent.includes('</div>') || codeContent.includes('</html>') || codeContent.includes('</script>') || codeContent.includes('</style>'))) {
                 return codeContent;
             }
+        }
+
+        const strippedFence = clean.replace(/^```(?:html|xml)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+        if (strippedFence.includes('<') && (strippedFence.includes('</div>') || strippedFence.includes('</html>') || strippedFence.includes('</script>') || strippedFence.includes('</style>') || strippedFence.includes('</canvas>') || strippedFence.includes('</button>') || strippedFence.includes('</svg>') || strippedFence.includes('/>') || strippedFence.includes('>'))) {
+            return strippedFence;
         }
 
         const docTypeMatch = clean.match(/(<!DOCTYPE html[\s\S]*<\/html>)/i) ||

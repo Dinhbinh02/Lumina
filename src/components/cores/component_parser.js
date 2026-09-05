@@ -732,8 +732,14 @@ export function initComponentParser() {
                         </div>`;
                     }
 
+                    const titleHtml = token.title ? `
+                        <div class="nexus-metrics-header">
+                            <div class="nexus-metrics-title" style="font-size:14px;font-weight:600;margin-bottom:8px;">${safeTitle}</div>
+                        </div>` : '';
+
                     return `
                     <div class="nexus-metrics-wrapper">
+                        ${titleHtml}
                         <div class="nexus-metrics-grid">
                             ${itemsHtml}
                         </div>
@@ -832,8 +838,14 @@ export function initComponentParser() {
                         </div>`;
                     });
 
+                    const titleHtml = token.title ? `
+                        <div class="nexus-bento-header">
+                            <div class="nexus-bento-item-title" style="font-size:16px;font-weight:600;margin-bottom:8px;">${escapeHtml(token.title)}</div>
+                        </div>` : '';
+
                     return `
                     <div class="nexus-bento-container">
+                        ${titleHtml}
                         <div class="nexus-bento-grid">
                             ${itemsHtml}
                         </div>
